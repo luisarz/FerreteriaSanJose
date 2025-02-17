@@ -156,7 +156,7 @@ class InventoryResource extends Resource
                                 ->schema([
                                     Tables\Columns\ImageColumn::make('product.images')
                                         ->placeholder('Sin imagen')
-                                        ->defaultImageUrl(url('storage/products/noimage.jpg'))
+                                        ->defaultImageUrl(url('storage/products/noimage.png'))
                                         ->openUrlInNewTab()
                                         ->height(150)
                                         ->width(120)
