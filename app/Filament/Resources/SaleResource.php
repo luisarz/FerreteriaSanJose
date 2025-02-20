@@ -309,15 +309,14 @@ class SaleResource extends Resource
                                             ->label('F. Pago')
                                             ->relationship('paymentmethod', 'name')
                                             ->preload()
-                                            ->searchable()
+                                            ->required()
                                             ->default(1),
                                         Forms\Components\TextInput::make('cash')
                                             ->label('Efectivo')
                                             ->required()
                                             ->numeric()
                                             ->default(0.00)
-                                            ->reactive()
-                                            ->debounce(500)
+                                            ->live(true)
                                             ->afterStateUpdated(function ($set, $state, $get, Component $livewire, ?Sale $record) {
                                                 $sale_total = $record->sale_total;
                                                 $cash = $state;
@@ -328,29 +327,27 @@ class SaleResource extends Resource
                                                         ->body('El monto ingresado no puede ser menor que 0.')
                                                         ->danger()
                                                         ->send();
-                                                    $set('cash', 0); // Restablecer el efectivo a 0 en caso de error
-                                                    $set('change', 0); // También establecer el cambio en 0
+//                                                    $set('cash', 0); // Restablecer el efectivo a 0 en caso de error
+//                                                    $set('change', 0); // También establecer el cambio en 0
                                                 } elseif ($cash < $sale_total) {
-                                                    $set('cash', number_format($sale_total, 2, '.', '')); // Ajustar el efectivo al total de la venta
-                                                    $set('change', 0); // Sin cambio ya que el efectivo es igual al total
+//                                                    $set('cash', number_format($sale_total, 2, '.', '')); // Ajustar el efectivo al total de la venta
+//                                                    $set('change', 0); // Sin cambio ya que el efectivo es igual al total
+                                                    $set('change', number_format($cash - $sale_total, 2, '.', '')); // Calcular el cambio con formato
+
                                                 } else {
                                                     $set('change', number_format($cash - $sale_total, 2, '.', '')); // Calcular el cambio con formato
                                                 }
-// Operaciones adicionales
                                                 $idItem = $get('id'); // ID del item de venta
-                                                $data = [
-                                                    'cash' => $state,
-                                                    'change' => $get('change'),
-                                                ];
+                                                $data = ['cash' => $state,'change' => $get('change')];
                                                 updateTotalSale($idItem, $data);
-
-// Emitir evento para actualizar la venta
                                                 $livewire->dispatch('refreshSale');
 
                                             }),
                                         Forms\Components\TextInput::make('change')
                                             ->label('Cambio')
                                             ->required()
+                                            ->readOnly()
+                                            ->extraAttributes(['class' => 'bg-gray-100 border border-gray-500 rounded-md '])
                                             ->numeric()
                                             ->default(0.00),
                                     ])

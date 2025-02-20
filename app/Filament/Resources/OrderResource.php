@@ -359,9 +359,12 @@ class OrderResource extends Resource
             ->actions([
                 orderActions::printOrder(),
                 Tables\Actions\EditAction::make()->label('')->iconSize(IconSize::Large)->color('warning')
-                    ->visible(function ($record) {
-                        return $record->sale_status != 'Finalizado' && $record->sale_status != 'Anulado';
-                    }),
+//                    ->visible(function ($record) {
+//                        return $record->sale_status != 'Finalizado' && $record->sale_status != 'Anulado';
+//                    })
+            ->visible(function ($record) {
+                return $record->sale_status != 'Finalizado' && $record->is_invoiced_order == false;
+            }),
                 orderActions::closeOrder(),
                 orderActions::billingOrden(),
 //                Tables\Actions\DeleteAction::make()->label('')->iconSize(IconSize::Large)->color('danger'),

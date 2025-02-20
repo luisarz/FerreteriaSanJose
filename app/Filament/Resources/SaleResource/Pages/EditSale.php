@@ -45,6 +45,54 @@ class EditSale extends EditRecord
                 ->modalButton('Sí, Finalizar venta')
 
                 ->action(function (Actions\EditAction $edit) {
+                    if ($this->record->sale_total <= 0) {
+                        Notification::make('No se puede finalizar la venta')
+                            ->title('Error al finalizar venta')
+                            ->body('El monto total de la venta debe ser mayor a 0')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    $documentType=$this->data['document_type_id'];
+                    if($documentType==""){
+                        Notification::make('No se puede finalizar la venta')
+                            ->title('Tipo de documento')
+                            ->body('No se puede finalizar la venta, selecciona el tipo de documento a emitir')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+                    $operation_condition_id=$this->data['operation_condition_id'];
+                    if($operation_condition_id==""){
+                        Notification::make('No se puede finalizar la venta')
+                            ->title('Condición de operación')
+                            ->body('No se puede finalizar la venta, selecciona la condicion de la venta')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $payment_method_id=$this->data['payment_method_id'];
+
+                    if($payment_method_id==""){
+                        Notification::make('No se puede finalizar la venta')
+                            ->title('Forma de pago')
+                            ->body('No se puede finalizar la venta, selecciona la forma de pago')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $id_sale = $this->record->id; // Obtener el registro de la compra
+                    $sale = Sale::with('documenttype', 'customer', 'customer.country')->find($id_sale);
+                    $sale->update([
+                        'document_type_id' => $this->data['document_type_id'],
+                        'payment_method_id' => $this->data['payment_method_id'],
+                        'operation_condition_id' => $this->data['operation_condition_id'],
+
+                    ]);
 
 
                     $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(false);
@@ -94,8 +142,6 @@ class EditSale extends EditRecord
                     }
 
 
-                    $id_sale = $this->record->id; // Obtener el registro de la compra
-                    $sale = Sale::with('documenttype', 'customer', 'customer.country')->find($id_sale);
                     $salesItem = SaleItem::where('sale_id', $sale->id)->get();
                     $client = $sale->customer;
                     $documnetType = $sale->documenttype->name;

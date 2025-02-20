@@ -189,6 +189,7 @@ class ProviderResource extends Resource
                             ->default(null),
                         Forms\Components\TextInput::make('contact_seller')
                             ->label('Vendedor')
+
                             ->maxLength(255)
                             ->default(null),
                         Forms\Components\TextInput::make('phone_seller')
@@ -279,11 +280,18 @@ class ProviderResource extends Resource
                     ->boolean(),
                 Tables\Columns\TextColumn::make('contact_seller')
                     ->label('Vendedor')
-                    ->formatStateUsing(fn ($record) => "$record->contact_seller  <br> Telf: $record->phone_seller <br> Email:$record->email_seller") // Agrupar columnas
+                    ->placeholder('S/N')
+                    ->formatStateUsing(fn ($record) => collect([
+                        $record->contact_seller,
+                        $record->phone_seller ? "Telf: $record->phone_seller" : null,
+                        $record->email_seller ? "Email: $record->email_seller" : null
+                    ])->filter()->implode('<br>'))
+
                     ->html()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone_seller')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('S/N')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email_seller')
                     ->toggleable(isToggledHiddenByDefault: true)

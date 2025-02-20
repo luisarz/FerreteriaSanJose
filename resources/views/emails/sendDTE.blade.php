@@ -20,7 +20,7 @@
             overflow: hidden;
         }
         .header {
-            background-color: #d32f2f;
+            background-color: #111111;
             color: white;
             text-align: center;
             padding: 20px 10px;

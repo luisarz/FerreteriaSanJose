@@ -104,9 +104,11 @@ class orderActions
             ->label('Facturar')
             ->icon('heroicon-o-arrow-up-on-square-stack')
             ->iconSize(IconSize::Large)
-            ->visible(function ($record) {
-                return $record->sale_status != 'Finalizado' && $record->status != 'Anulado';
-            })
+//            ->visible(function ($record) {
+//                return $record->sale_status != 'Finalizado' && $record->status != 'Anulado';
+//            })
+            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado','Facturada', 'Anulado']))
+
             ->color('primary')
             ->action(function ($record) {
                 $whereHouse = auth()->user()->employee->branch_id ?? null;
@@ -174,7 +176,8 @@ class orderActions
                             ->default(fn($record) => $record?->sale_total),
                     ]),
             ])
-            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado', 'Anulado']))
+            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado','Facturada', 'Anulado']))
+//            ->hidden(fn($record) => !in_array($record->sale_status, ['Facturada', 'Anulado']))
             ->modalHeading('Confirmación')
             ->modalSubheading('¿Estás seguro de que deseas cerrar esta orden? Esta acción no se puede deshacer.')
             ->action(function ($record, array $data) {
@@ -242,6 +245,8 @@ class orderActions
             ->visible(function ($record) {
                 return $record->sale_status == 'Finalizado' && $record->is_invoiced_order == false;
             })
+//            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado','Facturada', 'Anulado']))
+
             ->modalHeading('Confirmación!!')
             ->modalSubheading('¿Estás seguro de que deseas cerrar esta orden? Esta acción no se puede deshacer.')
             ->action(function ($record) {

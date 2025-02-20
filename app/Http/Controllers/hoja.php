@@ -9,6 +9,7 @@ use App\Models\Inventory;
 use App\Models\Marca;
 use App\Models\Price;
 use App\Models\Product;
+use App\Models\Provider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -23,17 +24,69 @@ class hoja extends Controller
 
         //limpiar las tablas
         \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Customer::truncate();
+        Provider::truncate();
 
         //customer
         $clientes = DB::connection('mariadb2')->table('cliente')->get();
         foreach ($clientes as $oldCliente) {
             $cliente = new Customer();
+            $cliente->id=$oldCliente->id_cliente;
+            $cliente->name=$oldCliente->nombre_cliente;
+            $cliente->last_name=null;
+            $cliente->email="ferreteriasanjose.dte@gmail.com";
+            $cliente->phone=$oldCliente->movil?'(503)'.$oldCliente->movil:'';
+            $cliente->country_id=1;
+            $cliente->departamento_id=1;
+            $cliente->municipio_id=1;
+            $cliente->document_type_id=13;
+            $cliente->person_type_id=1;
+            $cliente->nrc=$oldCliente->nrc;
+            $cliente->nit=$oldCliente->nit;
+            $cliente->dui=$oldCliente->dui;
+            $cliente->is_taxed=true;
+            $cliente->wherehouse_id=$oldCliente->id_sucursal;
+            $cliente->save();
+
+        }
+
+        $providers=DB::connection('mariadb2')->table('proveedor')->get();
+        foreach ($providers as $provider){
+            $providerNew = new Provider();
+
+            $providerNew->id = $provider->id_proveedor; // Asignando el ID manualmente si es necesario
+            $providerNew->legal_name = $provider->proveedor;
+            $providerNew->comercial_name = $provider->proveedor;
+            $providerNew->country_id = 1;
+            $providerNew->department_id =1;
+            $providerNew->municipility_id = 1;
+            $providerNew->distrito_id = 1;
+            $providerNew->direction =  $provider->direccion;
+            $providerNew->phone_one = $provider->telefonos_proveedor;
+            $providerNew->phone_two = null;
+            $providerNew->email = null;
+            $providerNew->nrc = $provider->nrc;
+            $providerNew->nit = $provider->nit;
+            $providerNew->economic_activity_id = 1;
+            $providerNew->condition_payment =1;
+            $providerNew->credit_days =0;
+            $providerNew->credit_limit =0;
+            $providerNew->balance =0;
+            $providerNew->provider_type = 1;
+            $providerNew->is_active = true;
+            $providerNew->contact_seller = $provider->vendedor;
+            $providerNew->phone_seller = null;
+            $providerNew->email_seller = null;
+            $providerNew->last_purchase = null;
+            $providerNew->purchase_decimals = $provider->decimales;
+
+            $providerNew->save();
+
 
         }
 
 
-
-
+dd('Clinte y proveedores');
 
 
 

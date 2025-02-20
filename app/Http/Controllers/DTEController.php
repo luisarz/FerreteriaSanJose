@@ -318,7 +318,6 @@ class DTEController extends Controller
             }
         ])->find($idVenta);
 
-//        dd($venta);
         if (!$venta) {
             return [
                 'estado' => 'FALLO', // o 'ERROR'
@@ -357,16 +356,15 @@ class DTEController extends Controller
         ];
 
 
-        return response()->json($dte);
+//        return response()->json($dte);
         $responseData = $this->SendAnularDTE($dte, $idVenta);
-        return response()->json($responseData);
-
-        if (isset($responseData["estado"]) == "RECHAZADO") {
+        $reponse_anular = $responseData['response_anular']??null;
+        if (isset($reponse_anular['estado']) == "RECHAZADO") {
             return [
                 'estado' => 'FALLO', // o 'ERROR'
                 'mensaje' => 'DTE falló al enviarse: ' . implode(', ', $responseData['observaciones'] ?? []), // Concatenar observaciones
-                'descripcionMsg' => $responseData["descripcionMsg"] ?? null,
-                '$codigoGeneracion' => $codigoGeneracion ?? null
+                'descripcionMsg' => $reponse_anular['descripcionMsg'] ?? null,
+                'codigoGeneracion' => $codigoGeneracion['codigoGeneracion'] ?? null
             ];
         } else {
             $venta = Sale::find($idVenta);
@@ -418,23 +416,39 @@ class DTEController extends Controller
             curl_close($curl);
 
             $responseData = json_decode($response, true);
-            $responseHacienda = (isset($responseData["estado"]) == "RECHAZADO") ? $responseData : $responseData["respuestaHacienda"];
+            $responseData['response_anular'] = json_decode($responseData['descripcion'], true) ?? [];
+//            dd($responseData);
+            $response_anular = $responseData['response_anular'] ?? [];
+
+            $observacion_fail = str_replace(['[', ']', '"'], '', $response_anular['descripcionMsg'] ?? '');
+
+            $responseHacienda = ($responseData["estado"] == "RECHAZADO") ? $responseData : $responseData["respuestaHacienda"];
             $falloDTE = new HistoryDte;
             $falloDTE->sales_invoice_id = $idVenta;
-            $falloDTE->version = $responseHacienda["version"] ?? null;
-            $falloDTE->ambiente = $responseHacienda["ambiente"];
-            $falloDTE->versionApp = $responseHacienda["versionApp"];
-            $falloDTE->estado = $responseHacienda["estado"];
-            $falloDTE->codigoGeneracion = $responseHacienda["codigoGeneracion"];
+            $falloDTE->version = $responseHacienda["version"] ?? 2;
+            $falloDTE->ambiente = $responseHacienda["ambiente"] ?? "00";
+            $falloDTE->versionApp = $responseHacienda["versionApp"] ?? 2;
+            $falloDTE->estado = $responseHacienda["estado"] ?? "RECHAZADO";
+            $falloDTE->codigoGeneracion = $responseHacienda["codigoGeneracion"] ?? null;
             $falloDTE->selloRecibido = $responseHacienda["selloRecibido"] ?? null;
-            $fhProcesamiento = DateTime::createFromFormat('d/m/Y H:i:s', $responseHacienda["fhProcesamiento"]);
+
+            $fhProcesamiento = DateTime::createFromFormat('d/m/Y H:i:s', $responseHacienda["fhProcesamiento"] ?? null);
             $falloDTE->fhProcesamiento = $fhProcesamiento ? $fhProcesamiento->format('Y-m-d H:i:s') : null;
-            $falloDTE->clasificaMsg = $responseHacienda["clasificaMsg"];
-            $falloDTE->codigoMsg = $responseHacienda["codigoMsg"];
-            $falloDTE->descripcionMsg = $responseHacienda["descripcionMsg"];
-            $falloDTE->observaciones = json_encode($responseHacienda["observaciones"]);
-            $falloDTE->dte = $responseData ?? null;
+
+            $falloDTE->clasificaMsg = $responseHacienda["clasificaMsg"] ?? null;
+            $falloDTE->codigoMsg = $responseHacienda["codigoMsg"] ?? null;
+            $falloDTE->descripcionMsg = $responseHacienda["descripcionMsg"] ?? null;
+
+            $falloDTE->observaciones = isset($responseHacienda["observaciones"])
+                ? (is_array($responseHacienda["observaciones"])
+                    ? json_encode($responseHacienda["observaciones"], JSON_UNESCAPED_UNICODE)
+                    : $responseHacienda["observaciones"])
+                : $observacion_fail;
+
+            $falloDTE->dte = json_encode($responseData, JSON_UNESCAPED_UNICODE);
+
             $falloDTE->save();
+
             return $responseData;
 
         } catch (Exception $e) {
@@ -482,7 +496,6 @@ class DTEController extends Controller
             $path = $directory . '/' . $DTE['identificacion']['codigoGeneracion'] . '.jpg';
 
 
-
             QrCode::size(300)->generate($contenidoQR, $path);
             if (file_exists($path)) {
                 $qr = Storage::url("QR/{$DTE['identificacion']['codigoGeneracion']}.jpg");
@@ -504,7 +517,6 @@ class DTEController extends Controller
 //                ]);
 
             $pathPage = storage_path("app/public/DTEs/{$codGeneracion}.pdf");
-
 
 
             $pdfPage->save($pathPage);
@@ -553,7 +565,6 @@ class DTEController extends Controller
                 mkdir($directory, 0755, true); // Create the directory with proper permissions
             }
             $path = $directory . '/' . $DTE['identificacion']['codigoGeneracion'] . '.jpg';
-
 
 
             QrCode::size(300)->generate($contenidoQR, $path);
