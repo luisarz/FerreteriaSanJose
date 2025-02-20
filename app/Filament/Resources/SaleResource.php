@@ -436,8 +436,12 @@ class SaleResource extends Resource
                 Tables\Columns\TextColumn::make('sales_payment_status')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->label('Pago'),
-                Tables\Columns\TextColumn::make('sale_status')
-                    ->label('Estado'),
+                Tables\Columns\BadgeColumn::make('sale_status')
+                    ->label('Estado')
+                    ->extraAttributes(['class' => 'text-lg'])  // Cambia el tamaño de la fuente
+
+                    ->color(fn($record) => $record->sale_status === 'Anulado' ? 'danger' : 'success'),
+
                 Tables\Columns\IconColumn::make('is_taxed')
                     ->label('Gravado')
                     ->toggleable(isToggledHiddenByDefault: true)

@@ -368,7 +368,7 @@ class DTEController extends Controller
             ];
         } else {
             $venta = Sale::find($idVenta);
-            $venta->status = "Anulado";
+            $venta->sale_status = "Anulado";
             $venta->save();
             return [
                 'estado' => 'EXITO',
@@ -416,6 +416,7 @@ class DTEController extends Controller
             curl_close($curl);
 
             $responseData = json_decode($response, true);
+//            dd  ($responseData);
             $responseData['response_anular'] = json_decode($responseData['descripcion'], true) ?? [];
 //            dd($responseData);
             $response_anular = $responseData['response_anular'] ?? [];
