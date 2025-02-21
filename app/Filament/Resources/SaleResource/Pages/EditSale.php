@@ -64,6 +64,7 @@ class EditSale extends EditRecord
                             ->send();
                         return;
                     }
+
                     $operation_condition_id=$this->data['operation_condition_id'];
                     if($operation_condition_id==""){
                         Notification::make('No se puede finalizar la venta')
@@ -87,12 +88,16 @@ class EditSale extends EditRecord
 
                     $id_sale = $this->record->id; // Obtener el registro de la compra
                     $sale = Sale::with('documenttype', 'customer', 'customer.country')->find($id_sale);
-                    $sale->update([
-                        'document_type_id' => $this->data['document_type_id'],
-                        'payment_method_id' => $this->data['payment_method_id'],
-                        'operation_condition_id' => $this->data['operation_condition_id'],
-
-                    ]);
+                    $sale->document_type_id=$documentType;
+                    $sale->payment_method_id=$payment_method_id;
+                    $sale->operation_condition_id=$operation_condition_id;
+                    $sale->save();
+//                    $sale->update([
+//                        'document_type_id' => $documentType,
+//                        'payment_method_id' => $this->data['payment_method_id'],
+//                        'operation_condition_id' => $this->data['operation_condition_id'],
+//
+//                    ]);
 
 
                     $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(false);

@@ -115,7 +115,6 @@ class OrderResource extends Resource
                                                         Select::make('wherehouse_id')
                                                             ->label('Sucursal')
                                                            ->inlineLabel(false)
-                                                            // ->relationship('wherehouse', 'name')
                                                             ->options(function (callable $get) {
                                                                 $wherehouse = (Auth::user()->employee)->branch_id;
                                                                 if ($wherehouse) {
@@ -167,11 +166,8 @@ class OrderResource extends Resource
                                             ->disabled(),
 
                                     ])->columnSpan(9)
-                                    ->extraAttributes([
-                                        'class' => 'bg-blue-100 border border-blue-500 rounded-md p-2',
-                                    ])
+                                    ->extraAttributes([ 'class' => 'bg-blue-100 border border-blue-500 rounded-md p-2'])
                                     ->columns(2),
-
 
 //                                Section::make('Orden Total' . ($this->getOrderNumber() ?? 'Sin número'))
                                 Section::make('')

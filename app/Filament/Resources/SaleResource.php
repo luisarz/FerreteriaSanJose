@@ -21,6 +21,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Pages\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconSize;
 use Filament\Tables;
@@ -41,7 +42,7 @@ function updateTotalSale(mixed $idItem, array $data): void
     $applyTax = $data['is_taxed'] ?? false;
     $cash = $data['cash'] ?? false;
     $change = $data['change'] ?? false;
-    if($cash < 0){
+    if ($cash < 0) {
         Notification::make()
             ->title('Error')
             ->body('El monto ingresado no puede ser menor que 0.')
@@ -73,8 +74,8 @@ function updateTotalSale(mixed $idItem, array $data): void
         $sale->taxe = round($iva, 2);
         $sale->retention = round($retention, 2);
         $sale->sale_total = round($montoTotal - $retention, 2);
-        $sale->cash = $cash??0;
-        $sale->change = $change??0;
+        $sale->cash = $cash ?? 0;
+        $sale->change = $change ?? 0;
         $sale->save();
     }
 }
@@ -167,7 +168,6 @@ class SaleResource extends Resource
                                             ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
 
                                         Forms\Components\Select::make('customer_id')
-                                            ->columnSpanFull()
                                             ->searchable()
                                             ->live()
                                             ->preload()
@@ -199,7 +199,6 @@ class SaleResource extends Resource
                                                     ? "{$customer->name} {$customer->last_name} - NRC: {$customer->nrc} - DUI: {$customer->dui} - NIT: {$customer->nit}"
                                                     : 'Cliente no encontrado';
                                             })
-
                                             ->label('Cliente')
                                             ->createOptionForm([
                                                 Section::make('Nuevo Cliente')
@@ -207,13 +206,17 @@ class SaleResource extends Resource
                                                         Select::make('wherehouse_id')
                                                             ->label('Sucursal')
                                                             ->inlineLabel(false)
-                                                            ->relationship('wherehouse', 'name')
+                                                            // ->relationship('wherehouse', 'name')
+                                                            ->options(function (callable $get) {
+                                                                $wherehouse = (Auth::user()->employee)->branch_id;
+                                                                if ($wherehouse) {
+                                                                    return \App\Models\Branch::where('id', $wherehouse)->pluck('name', 'id');
+                                                                }
+                                                                return []; // Return an empty array if no wherehouse selected
+                                                            })
                                                             ->preload()
                                                             ->default(fn() => optional(Auth::user()->employee)->branch_id)
                                                             ->columnSpanFull(),
-
-
-                                                        // Null-safe check
                                                         Forms\Components\TextInput::make('name')
                                                             ->required()
                                                             ->label('Nombre'),
@@ -222,9 +225,66 @@ class SaleResource extends Resource
                                                             ->label('Apellido'),
                                                     ])->columns(2),
                                             ])
-                                        ,
+                                            ->createOptionUsing(function ($data) {
+                                                return Customer::create($data)->id; // Guarda y devuelve el ID del nuevo cliente
+                                            }),
 
-                                        Forms\Components\Select::make('sales_payment_status')
+
+                                        Select::make('order_id')
+                                            ->label('Órdenes')
+                                            ->searchable()
+                                            ->preload()
+                                            ->live()
+                                            ->inlineLabel(false)
+                                            ->getSearchResultsUsing(function (string $searchQuery) {
+                                                if (strlen($searchQuery) < 1) {
+                                                    return []; // No buscar si el texto es muy corto
+                                                }
+
+                                                // Buscar órdenes basadas en el cliente
+                                                return Sale::whereHas('customer', function ($customerQuery) use ($searchQuery) {
+                                                    $customerQuery->where('name', 'like', "%{$searchQuery}%")
+                                                        ->orWhere('last_name', 'like', "%{$searchQuery}%")
+                                                        ->orWhere('nrc', 'like', "%{$searchQuery}%")
+                                                        ->orWhere('dui', 'like', "%{$searchQuery}%");
+                                                })
+                                                    ->where('operation_type', 'Order')
+                                                    ->orWhere('order_number', 'like', "%{$searchQuery}%")
+                                                    ->whereNotIn('sale_status', ['Finalizado','Facturada','Anulado'])
+                                                    ->select(['id', 'order_number', 'operation_type'])
+                                                    ->limit(50)
+                                                    ->get()
+                                                    ->mapWithKeys(function ($sale) {
+                                                        // Formato para mostrar el resultado en el select
+                                                        $displayText = "Orden # : {$sale->order_number}  - Tipo: {$sale->operation_type}";
+
+                                                        // Incluir el nombre del cliente si es necesario
+                                                        if ($sale->customer) {
+                                                            $displayText .= " - Cliente: {$sale->customer->name}";
+                                                        }
+
+                                                        return [$sale->id => $displayText];
+                                                    });
+                                            })
+                                            ->getOptionLabelUsing(function ($value) {
+                                                // Obtener detalles de la orden seleccionada
+                                                $sale = Sale::find($value); // Buscar la orden por ID
+                                                return $sale
+                                                    ? "Orden # : {$sale->order_number} - Cliente: {$sale->customer->name} - Tipo: {$sale->operation_type}"
+                                                    : 'Orden no encontrada';
+                                            })
+                                            ->loadingMessage('Cargando ordenes...')
+                                            ->searchingMessage('Buscando Orden...')
+
+                                            ->afterStateUpdated(function ($state, callable $set) {
+                                                redirect('admin/sales/'.$state.'/edit');
+
+//                                                return redirect()->route('filament.resources.sales.edit', $state); // 'sales.edit' es la ruta de edición del recurso de "Sale"
+                                            }),
+
+
+
+        Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
                                                 'Pendiente' => 'Pendiente',
                                                 'Abono' => 'Abono',])
@@ -242,7 +302,7 @@ class SaleResource extends Resource
                                             ->hidden()
                                             ->required(),
                                         Section::make('')//Resumen Venta
-                                        ->description('Resumen Venta')
+                                        ->description('')
                                             ->compact()
                                             ->schema([
                                                 Forms\Components\Placeholder::make('net_amount')
@@ -277,6 +337,7 @@ class SaleResource extends Resource
                                 Section::make('Caja')
                                     ->compact()
                                     ->schema([
+
                                         Forms\Components\Toggle::make('is_taxed')
                                             ->label('Gravado')
                                             ->default(true)
@@ -338,7 +399,7 @@ class SaleResource extends Resource
                                                     $set('change', number_format($cash - $sale_total, 2, '.', '')); // Calcular el cambio con formato
                                                 }
                                                 $idItem = $get('id'); // ID del item de venta
-                                                $data = ['cash' => $state,'change' => $get('change')];
+                                                $data = ['cash' => $state, 'change' => $get('change')];
                                                 updateTotalSale($idItem, $data);
                                                 $livewire->dispatch('refreshSale');
 
@@ -501,9 +562,9 @@ class SaleResource extends Resource
             ])
             ->modifyQueryUsing(function ($query) {
                 $query->where('is_invoiced', true)
-                    ->whereIn('operation_type',['Sale','Order'])
+                    ->whereIn('operation_type', ['Sale', 'Order'])
                     ->orderby('operation_date', 'desc')
-                    ->orderby('document_internal_number','desc')
+                    ->orderby('document_internal_number', 'desc')
                     ->orderby('is_dte', 'desc');
             })
             ->recordUrl(null)
@@ -512,11 +573,11 @@ class SaleResource extends Resource
                     ->timePicker24()
                     ->label('Fecha de venta')
                     ->default([
-                        'start' => now()->subDays(30)->toDateTimeString()??now()->toDateTimeString(),
+                        'start' => now()->subDays(30)->toDateTimeString() ?? now()->toDateTimeString(),
                         'end' => now()->toDateTimeString() ?? now()->toDateTimeString(),
                     ]),
 
-        Tables\Filters\SelectFilter::make('documenttype')
+                Tables\Filters\SelectFilter::make('documenttype')
                     ->label('Sucursal')
 //                    ->multiple()
                     ->preload()
