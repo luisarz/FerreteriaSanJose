@@ -250,7 +250,7 @@ class SaleResource extends Resource
                                                 })
                                                     ->where('operation_type', 'Order')
                                                     ->orWhere('order_number', 'like', "%{$searchQuery}%")
-                                                    ->whereNotIn('sale_status', ['Finalizado','Facturada','Anulado'])
+                                                    ->whereNotIn('sale_status', ['Finalizado', 'Facturada', 'Anulado'])
                                                     ->select(['id', 'order_number', 'operation_type'])
                                                     ->limit(50)
                                                     ->get()
@@ -275,16 +275,14 @@ class SaleResource extends Resource
                                             })
                                             ->loadingMessage('Cargando ordenes...')
                                             ->searchingMessage('Buscando Orden...')
-
                                             ->afterStateUpdated(function ($state, callable $set) {
-                                                redirect('admin/sales/'.$state.'/edit');
+                                                redirect('admin/sales/' . $state . '/edit');
 
 //                                                return redirect()->route('filament.resources.sales.edit', $state); // 'sales.edit' es la ruta de edición del recurso de "Sale"
                                             }),
 
 
-
-        Forms\Components\Select::make('sales_payment_status')
+                                        Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
                                                 'Pendiente' => 'Pendiente',
                                                 'Abono' => 'Abono',])
