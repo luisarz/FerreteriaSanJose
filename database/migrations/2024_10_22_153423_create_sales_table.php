@@ -23,7 +23,7 @@ return new class extends Migration
             $table->foreignId('operation_condition_id')->nullable()->constrained('operation_conditions')->cascadeOnDelete();//Condicion de operacion contado, credito
             $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->cascadeOnDelete();//Metodo de pago cheque, efectivo, tarjeta
             $table->enum('sales_payment_status',['Pagada','Pendiente','Abono'])->nullable();
-            $table->enum('sale_status',['Nueva','Procesando','Cancelada','Facturada','Anulado'])->default('Nueva');
+            $table->enum('sale_status',['Nueva','Procesando','Cancelada','Facturada','Anulado','Finalizado'])->default('Nueva');
             $table->string('status')->nullable();
             $table->boolean('is_taxed')->default(true);
             $table->boolean('have_retention')->default(false);
@@ -41,10 +41,10 @@ return new class extends Migration
             $table->string('generationCode')->nullable();
             $table->string('receiptStamp')->nullable();
             $table->string('jsonUrl')->nullable();
-            $table->boolean('is_order')->default(false);
             $table->boolean('is_order_closed_without_invoiced')->default(false);
-            $table->boolean('is_invoiced_order')->default(false);
-            $table->string('order_number')->nullable();//NUmero de la orden es difernte en cada sucrusal
+            $table->boolean('is_invoiced')->default(false);
+            $table->enum('operation_type',['Sale','Quote','Order','Sales Remittance','Other'])->default('Sale');
+            $table->string('order_number')->nullable();//NUmero de la orden es difrente en cada sucrusal
             $table->decimal('discount_percentage',10,2)->default(0);
             $table->decimal('discount_money',10,2)->default(0);
             $table->decimal('total_order_after_discount',10,2)->default(0);

@@ -41,10 +41,10 @@ class AdminPanelProvider extends PanelProvider
 
         return $panel
             ->brandLogo(fn() => view('logo'))
-            ->brandLogoHeight('5rem')
+            ->brandLogoHeight('7.5rem')
             ->default()
-            ->font('serif')
-            ->sidebarWidth('20rem')
+            ->font('Poppins')
+            ->sidebarWidth('17rem')
             ->id('admin')
             ->path('admin')
             ->profile(isSimple: false)

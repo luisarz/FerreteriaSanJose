@@ -20,9 +20,9 @@ class ListOrders extends ListRecords
     }
     public function getTabs(): array
     {
-        $allOrders = Sale::withoutTrashed()->where('is_order',1)->whereNotIn('sale_status',['Anulado'])->count();
-        $closed = Sale::withoutTrashed()->where('is_order',1)->where('sale_status', 'Finalizado')->count();
-        $open = Sale::withoutTrashed()->where('is_order',1)->whereNotIn('sale_status', ['Finalizado','Anulado'])->count();
+        $allOrders = Sale::withoutTrashed()->where('operation_type','Order')->whereNotIn('sale_status',['Anulado'])->count();
+        $closed = Sale::withoutTrashed()->where('operation_type','Order')->whereIn('sale_status',  ['Finalizado','Facturada','Anulado'])->count();
+        $open = Sale::withoutTrashed()->where('operation_type','Order')->whereNotIn('sale_status', ['Finalizado','Facturada','Anulado'])->count();
 
         return [
             "Todas" => Tab::make()
@@ -33,11 +33,10 @@ class ListOrders extends ListRecords
                 ->badgeColor('success')
                 ->icon('heroicon-o-lock-closed')
                 ->modifyQueryUsing(function (\Illuminate\Database\Eloquent\Builder $query) {
-                    return $query->where('is_order', true)
-                        ->whereIn('sale_status', ['Finalizado', 'Anulado']);
+                    return $query->where('operation_type', "Order")
+                        ->whereIn('sale_status', ['Finalizado', 'Facturada','Anulado']);
                 }),
 
-//                ->modifyQueryUsing(fn (Builder  $query) => $query->where('is_order',true)->where('sale_status', 'Finalizado')),
 
             "Abiertas" => Tab::make()
                 ->label('Abiertas')
@@ -45,8 +44,8 @@ class ListOrders extends ListRecords
                 ->badgeColor('danger')
                 ->icon('heroicon-s-lock-open')
                 ->modifyQueryUsing(function (\Illuminate\Database\Eloquent\Builder $query) {
-                    return $query->where('is_order', true)
-                        ->whereNotIn('sale_status', ['Finalizado','Anulado']);
+                    return $query->where('operation_type', "Order")
+                        ->whereIn('sale_status', ['Nueva']);
                 }),
 
 

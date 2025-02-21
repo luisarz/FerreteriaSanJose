@@ -205,7 +205,7 @@ class orderActions
 
                     $order=Sale::find($record->id);
                     $order->cashbox_open_id = $openedCashBox;
-                    $order->is_order = true;
+                    $order->operation_type = 'Order';
                     $order->is_order_closed_without_invoiced = true;
                     $order->sale_status = 'Finalizado';
                     $order->discount_percentage = $data['descuento'];
@@ -258,7 +258,7 @@ class orderActions
                         ->body('La orden ha sido cerrada correctamente')
                         ->success()
                         ->send();
-                    $record->update(['is_order' => true, 'is_order_closed_without_invoiced' => true, 'sale_status' => 'Anulado']);
+                    $record->update(['operation_type' => "Order", 'is_order_closed_without_invoiced' => true, 'sale_status' => 'Anulado']);
                 }
             });
 

@@ -67,6 +67,7 @@ class AppServiceProvider extends ServiceProvider
 //                ->recordClasses(fn(Model $record) => $record->deleted_at ? 'border-red-500	text-danger bg-red-500 text-red opacity-50' : '');
                 ->recordClasses(fn(Model $record) => match (true) {
                     $record->deleted_at !== null => 'border-s-2 border-orange-600 dark:border-orange-300 opacity-50', // Tachado y con menor opacidad
+                    $record->sale_status == "Anulado" => 'danger border-s-2 border-orange-600 dark:border-orange-300 opacity-50', // Tachado y con menor opacidad
 
                     default => null,
                 });

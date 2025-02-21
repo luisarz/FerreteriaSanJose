@@ -192,7 +192,7 @@ class EditSale extends EditRecord
 
                     $sale->update([
                         'cashbox_open_id' => $openedCashBox,
-                        'is_invoiced_order' => true,
+                        'is_invoiced' => true,
                         'sales_payment_status' => 'Pagada',
                         'sale_status' => 'Facturada',
                         'document_internal_number' => $document_internal_number_new
@@ -203,11 +203,12 @@ class EditSale extends EditRecord
                     $correlativo = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $this->record->document_type_id)->first();
                     $correlativo->current_number = $document_internal_number_new;
                     $correlativo->save();
-                    Notification::make()
-                        ->title('Venta Finalizada')
-                        ->body('Venta finalizada con éxito. # Comprobante'. $document_internal_number_new)
-                        ->success()
-                        ->send();
+                   Notification::make()
+                    ->title('Venta Finalizada')
+                    ->body('Venta finalizada con éxito. # Comprobante **' . $document_internal_number_new . '**')
+                    ->success()
+                    ->send();
+
                     // Redirigir después de completar el proceso
                     $this->redirect(static::getResource()::getUrl('index'));
                 }),

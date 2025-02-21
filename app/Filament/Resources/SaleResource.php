@@ -376,6 +376,12 @@ class SaleResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('wherehouse.name')
+                    ->label('Sucursal')
+                    ->numeric()
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('operation_date')
                     ->label('Fecha de venta')
                     ->date('d/m/Y')
@@ -387,6 +393,7 @@ class SaleResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('document_internal_number')
                     ->label('#')
+                    ->numeric()
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\BadgeColumn::make('is_dte')
@@ -412,12 +419,7 @@ class SaleResource extends Resource
                     ->placeholder('S/N')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->label('Transmision'),
-                Tables\Columns\TextColumn::make('wherehouse.name')
-                    ->label('Sucursal')
-                    ->numeric()
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('seller.name')
                     ->label('Vendedor')
                     ->searchable()
@@ -498,7 +500,8 @@ class SaleResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->modifyQueryUsing(function ($query) {
-                $query->where('is_invoiced_order', true)
+                $query->where('is_invoiced', true)
+                    ->whereIn('operation_type',['Sale','Order'])
                     ->orderby('operation_date', 'desc')
                     ->orderby('document_internal_number','desc')
                     ->orderby('is_dte', 'desc');

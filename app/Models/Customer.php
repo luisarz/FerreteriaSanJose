@@ -37,6 +37,9 @@ class Customer extends Model
         'document_type_id'
 
     ];
+
+
+
     public function country()
     {
         return $this->belongsTo(Country::class);

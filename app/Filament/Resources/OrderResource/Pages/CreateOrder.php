@@ -38,9 +38,8 @@ class CreateOrder extends CreateRecord
                 ->icon('heroicon-o-check')
                 ->action('create')
                 ->before(function (Action $action, array &$data) {
-                    $data['is_order'] = true;
-                    $data['is_invoiced_order'] = false;
-                    dd($data);
+                    $data['operation_type'] = "Order";
+                    $data['is_invoiced'] = false;
                 })
                 ->extraAttributes([
                     'class' => 'alig', // Tailwind para ajustar el margen alinearlo a la derecha
@@ -73,15 +72,14 @@ class CreateOrder extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['is_order'] = true;
-        $data['is_invoiced_order'] = false;
+        $data['operation_type'] = "Order";
+        $data['is_invoiced'] = false;
         $whereHouse = auth()->user()->employee->branch_id ?? null;
         $lastOrder = \App\Models\Sale::where('wherehouse_id', $whereHouse)
             ->max('order_number');
         $nextNumber = $lastOrder ? intval(preg_replace('/[^0-9]/', '', $lastOrder)) + 1 : 1;
-        $data['order_number'] = str_pad($nextNumber, 9, '0', STR_PAD_LEFT);
+        $data['order_number'] = str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
         return $data; // Devuelve los datos modificados
-
     }
 
 

@@ -77,6 +77,8 @@ class OrderResource extends Resource
                                         Forms\Components\Select::make('customer_id')
                                             ->searchable()
                                             ->live()
+                                            ->inlineLabel(false)
+                                            ->columnSpanFull()
                                             ->preload()
                                             ->getSearchResultsUsing(function (string $query) {
                                                 if (strlen($query) < 2) {
@@ -112,14 +114,18 @@ class OrderResource extends Resource
                                                     ->schema([
                                                         Select::make('wherehouse_id')
                                                             ->label('Sucursal')
-//                                                            ->inlineLabel(false)
-                                                            ->relationship('wherehouse', 'name')
+                                                           ->inlineLabel(false)
+                                                            // ->relationship('wherehouse', 'name')
+                                                            ->options(function (callable $get) {
+                                                                $wherehouse = (Auth::user()->employee)->branch_id;
+                                                                if ($wherehouse) {
+                                                                    return \App\Models\Branch::where('id', $wherehouse)->pluck('name', 'id');
+                                                                }
+                                                                return []; // Return an empty array if no wherehouse selected
+                                                            })
                                                             ->preload()
                                                             ->default(fn() => optional(Auth::user()->employee)->branch_id)
                                                             ->columnSpanFull(),
-
-
-                                                        // Null-safe check
                                                         Forms\Components\TextInput::make('name')
                                                             ->required()
                                                             ->label('Nombre'),
@@ -128,62 +134,29 @@ class OrderResource extends Resource
                                                             ->label('Apellido'),
                                                     ])->columns(2),
                                             ])
+                                            ->createOptionUsing(function ($data) {
+                                                return Customer::create($data)->id; // Guarda y devuelve el ID del nuevo cliente
+                                            })
                                         ,
 
-//                                        Forms\Components\Select::make('customer_id')
-//                                            ->relationship('customer', 'name')
-//                                            ->required()
-//                                            ->options(function (callable $get) {
-//                                                $documentType = $get('document_type_id');
-//                                                if ($documentType == 2) {
-//                                                    return Customer::whereNotNull('departamento_id')
-//                                                        ->whereNotNull('distrito_id')//MUnicipio
-//                                                        ->whereNotNull('economicactivity_id')
-//                                                        ->whereNotNull('nrc')
-//                                                        ->whereNotNull('dui')
-//                                                        ->orderBy('name')
-//                                                        ->pluck('name', 'id');
-//                                                }
-//                                                return Customer::orderBy('name')->pluck('name', 'id');
-//                                            })
-//                                            ->preload()
-//                                            ->searchable()
-//                                            ->label('Cliente')
-////                                                    ->inlineLabel(false)
-////                                                    ->columnSpanFull()
-//                                            ->createOptionForm([
-//
-//
-//                                                Section::make('Nuevo Cliente')
-//                                                    ->schema([
-//
-//
-//                                                        // Null-safe check
-//                                                        Forms\Components\TextInput::make('name')
-//                                                            ->required()
-//                                                            ->label('Nombre'),
-//                                                        Forms\Components\TextInput::make('last_name')
-//                                                            ->required()
-//                                                            ->label('Apellido'),
-//                                                    ])->columns(2),
-//                                            ])
-//                                        ,
-                                        Forms\Components\Select::make('mechanic_id')
-                                            ->label('Mecanico')
-                                            ->preload()
-                                            ->searchable()
-                                            ->live()
-                                            ->options(function (callable $get) {
-                                                $wherehouse = $get('wherehouse_id');
-                                                if ($wherehouse) {
-                                                    return Employee::where('branch_id', $wherehouse)
-                                                        ->where('job_title_id',4)
-                                                        ->where('is_active',true)
-                                                        ->pluck('name', 'id');
-                                                }
-                                                return []; // Return an empty array if no wherehouse selected
-                                            })
-                                            ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
+                                      
+                                        // Forms\Components\Select::make('mechanic_id')
+                                        //     ->label('Mecanico')
+                                        //     ->preload()
+                                        //     ->searchable()
+                                        //     ->live()
+                                        //     ->options(function (callable $get) {
+                                        //         $wherehouse = $get('wherehouse_id');
+                                        //         if ($wherehouse) {
+                                        //             return Employee::where('branch_id', $wherehouse)
+                                        //                 ->where('job_title_id',4)
+                                        //                 ->where('is_active',true)
+                                        //                 ->pluck('name', 'id');
+                                        //         }
+                                        //         return []; // Return an empty array if no wherehouse selected
+                                        //     })
+                                        //     ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
+
                                         Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
                                                 'Pendiente' => 'Pendiente',
@@ -260,7 +233,7 @@ class OrderResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\IconColumn::make('is_invoiced_order')
+                Tables\Columns\IconColumn::make('is_invoiced')
                     ->boolean()
                     ->tooltip('Facturada')
                     ->trueIcon('heroicon-o-lock-closed')
@@ -277,11 +250,11 @@ class OrderResource extends Resource
                     ->label('Vendedor')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('mechanic.name')
-                    ->label('Mecánico')
-                    ->searchable()
-                    ->placeholder('No asignado')
-                    ->sortable(),
+//                Tables\Columns\TextColumn::make('mechanic.name')
+//                    ->label('Mecánico')
+//                    ->searchable()
+//                    ->placeholder('No asignado')
+//                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Cliente')
@@ -312,13 +285,15 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('discount_percentage')
                     ->label('Descuento')
                     ->suffix('%')
+                 ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
-                Tables\Columns\TextColumn::make('discount_money')
-                    ->label('Taller')
-                    ->money('USD', locale: 'en_US')
-                    ->sortable(),
+//                Tables\Columns\TextColumn::make('discount_money')
+//                    ->label('Taller')
+//                    ->money('USD', locale: 'en_US')
+//                    ->sortable(),
                 Tables\Columns\TextColumn::make('total_order_after_discount')
-                    ->label('Total Orden')
+                    ->label('Total - Descuento')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->money('USD', locale: 'en_US')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cash')
@@ -344,7 +319,7 @@ class OrderResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->modifyQueryUsing(function ($query) {
-                $query->where('is_order', true)->orderby('operation_date', 'desc')->orderBy('order_number', 'desc');
+                $query->where('operation_type', "Order")->orderby('operation_date', 'desc')->orderBy('order_number', 'desc');
             })
             ->recordUrl(null)
             ->filters([
@@ -363,7 +338,7 @@ class OrderResource extends Resource
 //                        return $record->sale_status != 'Finalizado' && $record->sale_status != 'Anulado';
 //                    })
             ->visible(function ($record) {
-                return $record->sale_status != 'Finalizado' && $record->is_invoiced_order == false;
+                return $record->sale_status != 'Finalizado' && $record->is_invoiced == false;
             }),
                 orderActions::closeOrder(),
                 orderActions::billingOrden(),
