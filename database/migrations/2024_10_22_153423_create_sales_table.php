@@ -32,6 +32,7 @@ return new class extends Migration
             $table->decimal('discount',10,2)->default(0);
             $table->decimal('retention',10,2)->default(0);
             $table->decimal('sale_total',10,2)->default(0);
+            $table->decimal('pending_sale',10,2)->default(0);
             $table->decimal('cash',10,2)->default(0);
             $table->decimal('change',10,2)->default(0);
             $table->foreignId('casher_id')->nullable()->constrained('employees')->cascadeOnDelete();//Cajero

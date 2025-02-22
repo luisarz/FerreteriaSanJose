@@ -469,15 +469,25 @@ class SaleResource extends Resource
 //                    ->falseIcon('heroicon-o-shield-exclamation')
 //                    ->label('DTE')
 //                    ->sortable(),
-                Tables\Columns\TextColumn::make('billingModel.name')
+
+                Tables\Columns\BadgeColumn::make('billingModel')
                     ->sortable()
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Facturacion'),
-                Tables\Columns\TextColumn::make('transmisionType.name')
+                    ->label('Facturación')
+                    ->tooltip(fn($state) => $state?->id === 2 ? 'Diferido' : 'Previo')
+                    ->icon(fn($state) => $state?->id === 2 ? 'heroicon-o-clock' : 'heroicon-o-check-circle')
+                    ->color(fn($state) => $state?->id === 2 ? 'danger' : 'success')
+                    ->formatStateUsing(fn($state) => $state?->id === 2 ? 'Diferido' : 'Previo'), // Aquí se define el badge
+
+
+                Tables\Columns\BadgeColumn::make('transmisionType')
+                    ->label('Transmisión')
                     ->placeholder('S/N')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Transmision'),
+                    ->tooltip(fn($state) => $state?->id === 2 ? 'Contingencia' : 'Normal')
+                    ->icon(fn($state) => $state?->id === 2 ? 'heroicon-o-clock' : 'heroicon-o-check-circle')
+                    ->color(fn($state) => $state?->id === 2 ? 'danger' : 'success')
+                    ->formatStateUsing(fn($state) => $state?->id === 2 ? 'Contingencia' : 'Normal'), // Texto del badge
+
 
                 Tables\Columns\TextColumn::make('seller.name')
                     ->label('Vendedor')
