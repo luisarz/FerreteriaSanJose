@@ -50,6 +50,17 @@
       0 => 'CharrafiMed\\GlobalSearchModal\\GlobalSearchModalServiceProvider',
     ),
   ),
+  'eightynine/filament-page-alerts' => 
+  array (
+    'aliases' => 
+    array (
+      'FilamentPageAlerts' => 'EightyNine\\FilamentPageAlerts\\Facades\\FilamentPageAlerts',
+    ),
+    'providers' => 
+    array (
+      0 => 'EightyNine\\FilamentPageAlerts\\FilamentPageAlertsServiceProvider',
+    ),
+  ),
   'filament/actions' => 
   array (
     'providers' => 

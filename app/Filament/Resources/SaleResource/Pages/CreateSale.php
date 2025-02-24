@@ -14,6 +14,21 @@ use Illuminate\Contracts\Support\Htmlable;
 class CreateSale extends CreateRecord
 {
     protected static string $resource = SaleResource::class;
+protected function getCreatedNotificationTitle(): ?string
+{
+    return 'Venta iniciada';
+}
+protected function getCreatedNotification(): ?Notification
+{
+    return Notification::make()
+        ->title('Venta iniciada')
+        ->body('La venta se ha iniciado correctamente')
+        ->success();
+}
+    public static function getQueryParameterWhitelist(): array
+    {
+        return ['branch_id'];
+}
 
     public function getTitle(): string|Htmlable
     {

@@ -14,6 +14,7 @@ use App\Models\SaleItem;
 use App\Models\Tribute;
 use App\Service\GetCashBoxOpenedService;
 use App\Tables\Actions\dteActions;
+use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
@@ -43,10 +44,11 @@ function updateTotalSale(mixed $idItem, array $data): void
     $cash = $data['cash'] ?? false;
     $change = $data['change'] ?? false;
     if ($cash < 0) {
-        Notification::make()
-            ->title('Error')
+
+        PageAlert::make()
+            ->title('Saved successfully')
             ->body('El monto ingresado no puede ser menor que 0.')
-            ->danger()
+            ->success()
             ->send();
         return;
     }
@@ -230,56 +232,7 @@ class SaleResource extends Resource
                                             }),
 
 
-                                        Select::make('order_id')
-                                            ->label('Órdenes')
-                                            ->searchable()
-                                            ->preload()
-                                            ->live()
-                                            ->inlineLabel(false)
-                                            ->getSearchResultsUsing(function (string $searchQuery) {
-                                                if (strlen($searchQuery) < 1) {
-                                                    return []; // No buscar si el texto es muy corto
-                                                }
 
-                                                // Buscar órdenes basadas en el cliente
-                                                return Sale::whereHas('customer', function ($customerQuery) use ($searchQuery) {
-                                                    $customerQuery->where('name', 'like', "%{$searchQuery}%")
-                                                        ->orWhere('last_name', 'like', "%{$searchQuery}%")
-                                                        ->orWhere('nrc', 'like', "%{$searchQuery}%")
-                                                        ->orWhere('dui', 'like', "%{$searchQuery}%");
-                                                })
-                                                    ->where('operation_type', 'Order')
-                                                    ->orWhere('order_number', 'like', "%{$searchQuery}%")
-                                                    ->whereNotIn('sale_status', ['Finalizado', 'Facturada', 'Anulado'])
-                                                    ->select(['id', 'order_number', 'operation_type'])
-                                                    ->limit(50)
-                                                    ->get()
-                                                    ->mapWithKeys(function ($sale) {
-                                                        // Formato para mostrar el resultado en el select
-                                                        $displayText = "Orden # : {$sale->order_number}  - Tipo: {$sale->operation_type}";
-
-                                                        // Incluir el nombre del cliente si es necesario
-                                                        if ($sale->customer) {
-                                                            $displayText .= " - Cliente: {$sale->customer->name}";
-                                                        }
-
-                                                        return [$sale->id => $displayText];
-                                                    });
-                                            })
-                                            ->getOptionLabelUsing(function ($value) {
-                                                // Obtener detalles de la orden seleccionada
-                                                $sale = Sale::find($value); // Buscar la orden por ID
-                                                return $sale
-                                                    ? "Orden # : {$sale->order_number} - Cliente: {$sale->customer->name} - Tipo: {$sale->operation_type}"
-                                                    : 'Orden no encontrada';
-                                            })
-                                            ->loadingMessage('Cargando ordenes...')
-                                            ->searchingMessage('Buscando Orden...')
-                                            ->afterStateUpdated(function ($state, callable $set) {
-                                                redirect('admin/sales/' . $state . '/edit');
-
-//                                                return redirect()->route('filament.resources.sales.edit', $state); // 'sales.edit' es la ruta de edición del recurso de "Sale"
-                                            }),
 
 
                                         Forms\Components\Select::make('sales_payment_status')
@@ -333,8 +286,59 @@ class SaleResource extends Resource
 
 
                                 Section::make('Caja')
+
                                     ->compact()
                                     ->schema([
+                                        Select::make('order_id')
+                                            ->label('Órdenes')
+                                            ->searchable()
+                                            ->preload()
+                                            ->live()
+                                            ->inlineLabel(false)
+                                            ->getSearchResultsUsing(function (string $searchQuery) {
+                                                if (strlen($searchQuery) < 1) {
+                                                    return []; // No buscar si el texto es muy corto
+                                                }
+
+                                                // Buscar órdenes basadas en el cliente
+                                                return Sale::whereHas('customer', function ($customerQuery) use ($searchQuery) {
+                                                    $customerQuery->where('name', 'like', "%{$searchQuery}%")
+                                                        ->orWhere('last_name', 'like', "%{$searchQuery}%")
+                                                        ->orWhere('nrc', 'like', "%{$searchQuery}%")
+                                                        ->orWhere('dui', 'like', "%{$searchQuery}%");
+                                                })
+                                                    ->where('operation_type', 'Order')
+                                                    ->orWhere('order_number', 'like', "%{$searchQuery}%")
+                                                    ->whereNotIn('sale_status', ['Finalizado', 'Facturada', 'Anulado'])
+                                                    ->select(['id', 'order_number', 'operation_type'])
+                                                    ->limit(50)
+                                                    ->get()
+                                                    ->mapWithKeys(function ($sale) {
+                                                        // Formato para mostrar el resultado en el select
+                                                        $displayText = "Orden # : {$sale->order_number}  - Tipo: {$sale->operation_type}";
+
+                                                        // Incluir el nombre del cliente si es necesario
+                                                        if ($sale->customer) {
+                                                            $displayText .= " - Cliente: {$sale->customer->name}";
+                                                        }
+
+                                                        return [$sale->id => $displayText];
+                                                    });
+                                            })
+                                            ->getOptionLabelUsing(function ($value) {
+                                                // Obtener detalles de la orden seleccionada
+                                                $sale = Sale::find($value); // Buscar la orden por ID
+                                                return $sale
+                                                    ? "Orden # : {$sale->order_number} - Cliente: {$sale->customer->name} - Tipo: {$sale->operation_type}"
+                                                    : 'Orden no encontrada';
+                                            })
+                                            ->loadingMessage('Cargando ordenes...')
+                                            ->searchingMessage('Buscando Orden...')
+                                            ->afterStateUpdated(function ($state, callable $set) {
+                                                redirect('admin/sales/' . $state . '/edit');
+
+//                                                return redirect()->route('filament.resources.sales.edit', $state); // 'sales.edit' es la ruta de edición del recurso de "Sale"
+                                            }),
 
                                         Forms\Components\Toggle::make('is_taxed')
                                             ->label('Gravado')

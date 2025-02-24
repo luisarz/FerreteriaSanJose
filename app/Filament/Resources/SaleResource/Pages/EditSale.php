@@ -14,6 +14,7 @@ use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Service\GetCashBoxOpenedService;
+use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -45,7 +46,7 @@ class EditSale extends EditRecord
                 ->modalButton('Sí, Finalizar venta')
                 ->action(function (Actions\EditAction $edit) {
                     if ($this->record->sale_total <= 0) {
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Error al finalizar venta')
                             ->body('El monto total de la venta debe ser mayor a 0')
                             ->danger()
@@ -56,7 +57,7 @@ class EditSale extends EditRecord
 
                     $documentType = $this->data['document_type_id'];
                     if ($documentType == "") {
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Tipo de documento')
                             ->body('No se puede finalizar la venta, selecciona el tipo de documento a emitir')
                             ->danger()
@@ -66,7 +67,7 @@ class EditSale extends EditRecord
 
                     $operation_condition_id = $this->data['operation_condition_id'];
                     if ($operation_condition_id == "") {
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Condición de operación')
                             ->body('No se puede finalizar la venta, selecciona la condicion de la venta')
                             ->danger()
@@ -77,7 +78,7 @@ class EditSale extends EditRecord
                     $payment_method_id = $this->data['payment_method_id'];
 
                     if ($payment_method_id == "") {
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Forma de pago')
                             ->body('No se puede finalizar la venta, selecciona la forma de pago')
                             ->danger()
@@ -88,7 +89,7 @@ class EditSale extends EditRecord
 
                     $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(false);
                     if (!$openedCashBox) {
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Caja cerrada')
                             ->body('No se puede finalizar la venta porque no hay caja abierta')
                             ->danger()
@@ -98,7 +99,7 @@ class EditSale extends EditRecord
 
 
                     if ($this->record->sale_total <= 0) {
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Error al finalizar venta')
                             ->body('El monto total de la venta debe ser mayor a 0')
                             ->danger()
@@ -116,7 +117,7 @@ class EditSale extends EditRecord
                             : 0.0;
 
                         if ($cash < $sale_total) {
-                            Notification::make('No se puede finalizar la venta')
+                            PageAlert::make('No se puede finalizar la venta')
                                 ->title('Error al finalizar venta')
                                 ->body('El monto en efectivo es menor al total de la venta')
                                 ->danger()
@@ -132,7 +133,7 @@ class EditSale extends EditRecord
                     $billing_model = $modeloFacturacion->billing_model;
                     $transmision_type = $modeloFacturacion->transmision_type;
                     if($billing_model==null || $billing_model==""){
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Error al finalizar venta')
                             ->body('No se puede finalizar la venta, Sin definir el modelo de facturacion')
                             ->danger()
@@ -140,7 +141,7 @@ class EditSale extends EditRecord
                         return;
                     }
                     if($transmision_type==null || $transmision_type==""){
-                        Notification::make('No se puede finalizar la venta')
+                        PageAlert::make('No se puede finalizar la venta')
                             ->title('Error al finalizar venta')
                             ->body('No se puede finalizar la venta, Sin definir el tipo de transmision')
                             ->danger()
@@ -226,7 +227,7 @@ class EditSale extends EditRecord
                     $correlativo = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $this->record->document_type_id)->first();
                     $correlativo->current_number = $document_internal_number_new;
                     $correlativo->save();
-                    Notification::make()
+                    PageAlert::make()
                         ->title('Venta Finalizada')
                         ->body('Venta finalizada con éxito. # Comprobante **' . $document_internal_number_new . '**')
                         ->success()
@@ -241,14 +242,14 @@ class EditSale extends EditRecord
             Action::make('cancelSale')
                 ->label('Cancelar venta')
                 ->icon('heroicon-o-no-symbol')
-                ->color('warning')
+                ->color('danger')
                 ->requiresConfirmation()
                 ->modalHeading('Confirmación')
                 ->modalSubheading('¿Estás seguro de que deseas cancelar esta venta? Esta acción no se puede deshacer.')
                 ->modalButton('Sí, cancelar venta')
                 ->action(function (Actions\DeleteAction $delete) {
                     if ($this->record->is_dte) {
-                        Notification::make()
+                        PageAlert::make()
                             ->title('Error al anular venta')
                             ->body('No se puede cancelar una venta con DTE.')
                             ->danger()

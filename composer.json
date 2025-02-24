@@ -14,6 +14,7 @@
     "bezhansalleh/filament-shield": "^3.2",
     "calebporzio/sushi": "^2.4",
     "charrafimed/global-search-modal": "^3.4",
+    "eightynine/filament-page-alerts": "^3.0",
     "filament/filament": "^3.2",
     "hasnayeen/themes": "^3.0",
     "laravel/framework": "^11.9",

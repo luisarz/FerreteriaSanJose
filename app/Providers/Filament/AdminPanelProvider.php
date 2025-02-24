@@ -7,6 +7,7 @@ use App\Filament\Resources\LogResource;
 use App\Filament\Resources\SaleResource;
 use App\Models\DteTransmisionWherehouse;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
+use EightyNine\FilamentPageAlerts\FilamentPageAlertsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -89,6 +90,7 @@ class AdminPanelProvider extends PanelProvider
                 GlobalSearchModalPlugin::make(),
                 ActivitylogPlugin::make()->label('Bitacora')
                     ->pluralLabel('Bitacora')->navigationSort(3),
+                FilamentPageAlertsPlugin::make()
 
             ])
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, function () {
