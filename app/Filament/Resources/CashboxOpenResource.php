@@ -64,7 +64,7 @@ class CashboxOpenResource extends Resource
                                         $query->where('branch_id', $whereHouse);
                                     })
                                     ->default(auth()->user()->employee->id)
-                                    ->visible(function (CashBoxOpen $record = null) {
+                                    ->visible(function (?CashBoxOpen $record = null) {
                                         return $record === null;
 
                                     })
@@ -76,7 +76,7 @@ class CashboxOpenResource extends Resource
                                     ->label('Fecha de apertura')
                                     ->inlineLabel(true)
                                     ->default(now())
-                                    ->visible(function (CashBoxOpen $record = null) {
+                                    ->visible(function (?CashBoxOpen $record = null) {
                                         return $record === null;
 
                                     })
@@ -92,7 +92,7 @@ class CashboxOpenResource extends Resource
                             ])->columns(2)
                         ,
                         Forms\Components\Section::make('')
-                            ->hidden(function (CashBoxOpen $record = null) {
+                            ->hidden(function (?CashBoxOpen $record = null) {
                                 if ($record === null) {
                                     return true;
                                 }
@@ -141,7 +141,7 @@ class CashboxOpenResource extends Resource
                             ])->columns(2)
                         ,
                         Forms\Components\Section::make('Cierre')
-                            ->hidden(function (CashBoxOpen $record = null) {
+                            ->hidden(function (?CashBoxOpen $record = null) {
                                 if ($record === null) {
                                     return true;
                                 }
@@ -151,7 +151,7 @@ class CashboxOpenResource extends Resource
                                 ->label('Fecha de cierre')
                                 ->required()
                                 ->default(now())
-                                ->hidden(function (CashBoxOpen $record = null) {
+                                ->hidden(function (?CashBoxOpen $record = null) {
                                     return $record === null;
                                 })
                                 ->inlineLabel(true),
@@ -171,7 +171,7 @@ class CashboxOpenResource extends Resource
                                         . ($totalInCash ?? '-') .
                                         '</span>');
                                 })
-                                ->hidden(function (CashBoxOpen $record = null) {
+                                ->hidden(function (?CashBoxOpen $record = null) {
                                     if ($record === null) {
                                         return true;
                                     }
@@ -183,7 +183,7 @@ class CashboxOpenResource extends Resource
                                 })
                                 ->required()
                                 ->label('Empleado Cierra')
-                                ->hidden(function (CashBoxOpen $record = null) {
+                                ->hidden(function (?CashBoxOpen $record = null) {
                                     if ($record === null) {
                                         return true;
                                     }

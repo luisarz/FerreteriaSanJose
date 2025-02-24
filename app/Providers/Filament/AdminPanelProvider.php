@@ -45,7 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('6rem')
             ->default()
             ->font('Poppins')
-            ->sidebarWidth('17rem')
+            ->sidebarWidth('18rem')
             ->id('admin')
             ->path('admin')
             ->profile(isSimple: false)
