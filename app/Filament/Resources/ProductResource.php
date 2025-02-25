@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\IconSize;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -107,6 +108,7 @@ class ProductResource extends Resource
                         Forms\Components\FileUpload::make('images')
                             ->directory('products')
                             ->image()
+                            ->openable()
 //                            ->avatar()
 //                            ->multiple()
                             ->columnSpanFull(),
@@ -222,12 +224,12 @@ class ProductResource extends Resource
 
             ])
             ->actions([
+                Tables\Actions\ViewAction::make()->label('')->iconSize(IconSize::Large),
+                Tables\Actions\EditAction::make()->label('')->iconSize(IconSize::Large)->color('warning'),
+                Tables\Actions\ReplicateAction::make()->label('')->iconSize(IconSize::Large),
+                Tables\Actions\DeleteAction::make()->label('')->iconSize(IconSize::Large)->color('danger'),
+                Tables\Actions\RestoreAction::make()->label('')->iconSize(IconSize::Large)->color('success'),
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\ReplicateAction::make(),
-                    Tables\Actions\DeleteAction::make(),
-                    Tables\Actions\RestoreAction::make(),
                 ]) ->link()
                     ->label('Acciones'),
             ], position: Tables\Enums\ActionsPosition::AfterContent)

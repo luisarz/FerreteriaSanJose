@@ -3,6 +3,7 @@
 use App\Http\Controllers\DTEController;
 use App\Http\Controllers\hoja;
 use App\Http\Controllers\OrdenController;
+use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\SenEmailDTEController;
 use App\Http\Controllers\TransferController;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,7 @@ Route::get('/sendDTE/{idVenta}', [SenEmailDTEController::class, 'SenEmailDTECont
 Route::get('/ordenPrint/{idVenta}', [OrdenController::class, 'generarPdf'])->middleware(['auth'])->name('ordenGenerarPdf');
 Route::get('/closeCashboxPrint/{idCasboxClose}', [OrdenController::class, 'closeClashBoxPrint'])->middleware(['auth'])->name('closeClashBoxPrint');
 Route::get('/admin/sales/{idVenta}/edit', [OrdenController::class, 'billingOrder'])->middleware(['auth'])->name('billingOrder');
-
+Route::get('/printQuote/{idVenta}', [QuoteController::class, 'printQuote'])->name('printQuote');
 //Traslados
 Route::get('/printTransfer/{idTransfer}', [TransferController::class, 'printTransfer'])->middleware(['auth'])->name('printTransfer');
 

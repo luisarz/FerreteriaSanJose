@@ -10,6 +10,8 @@ use App\Models\Employee;
 use App\Models\Sale;
 use App\Tables\Actions\dteActions;
 use App\Tables\Actions\orderActions;
+use App\Tables\Actions\QuoteAction;
+use Couchbase\QueryOptions;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -108,14 +110,13 @@ class QuoteResource extends Resource
                                                     ? "{$customer->name} {$customer->last_name} - NRC: {$customer->nrc} - DUI: {$customer->dui} - NIT: {$customer->nit}"
                                                     : 'Cliente no encontrado';
                                             })
-
                                             ->label('Cliente')
                                             ->createOptionForm([
                                                 Section::make('Nuevo Cliente')
                                                     ->schema([
                                                         Select::make('wherehouse_id')
                                                             ->label('Sucursal')
-                                                           ->inlineLabel(false)
+                                                            ->inlineLabel(false)
                                                             ->options(function (callable $get) {
                                                                 $wherehouse = (Auth::user()->employee)->branch_id;
                                                                 if ($wherehouse) {
@@ -139,8 +140,6 @@ class QuoteResource extends Resource
                                             })
                                         ,
 
-                                      
-
 
                                         Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
@@ -152,7 +151,7 @@ class QuoteResource extends Resource
                                             ->disabled(),
 
                                     ])->columnSpan(9)
-                                    ->extraAttributes([ 'class' => 'bg-blue-100 border border-blue-500 rounded-md p-2'])
+                                    ->extraAttributes(['class' => 'bg-blue-100 border border-blue-500 rounded-md p-2'])
                                     ->columns(2),
 
 //                                Section::make('Orden Total' . ($this->getOrderNumber() ?? 'Sin número'))
@@ -267,7 +266,7 @@ class QuoteResource extends Resource
                 Tables\Columns\TextColumn::make('discount_percentage')
                     ->label('Descuento')
                     ->suffix('%')
-                 ->toggleable(isToggledHiddenByDefault: true)
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
 //                Tables\Columns\TextColumn::make('discount_money')
 //                    ->label('Taller')
@@ -317,15 +316,12 @@ class QuoteResource extends Resource
 
             ])
             ->actions([
-                orderActions::printOrder(),
+                QuoteAction::printQuote(),
                 Tables\Actions\EditAction::make()->label('')->iconSize(IconSize::Large)->color('warning')
-
-            ->visible(function ($record) {
-                return $record->sale_status != 'Finalizado' && $record->is_invoiced == false;
-            }),
-//                orderActions::closeOrder(),
+                    ->visible(function ($record) {
+                        return $record->sale_status != 'Finalizado' && $record->is_invoiced == false;
+                    }),
                 orderActions::billingOrden(),
-//                Tables\Actions\DeleteAction::make()->label('')->iconSize(IconSize::Large)->color('danger'),
                 orderActions::cancelOrder(),
                 Tables\Actions\RestoreAction::make()->label('')->iconSize(IconSize::Large)->color('success'),
             ], position: ActionsPosition::BeforeCells)

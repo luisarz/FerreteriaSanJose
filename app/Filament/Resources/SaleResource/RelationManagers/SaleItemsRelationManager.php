@@ -46,10 +46,7 @@ class SaleItemsRelationManager extends RelationManager
                                     ->iconColor('success')
                                     ->compact()
                                     ->schema([
-                                        Forms\Components\TextInput::make('aplications')
-                                            ->inlineLabel(false)
-                                            ->columnSpanFull()
-                                            ->label('Aplicaciones'),
+
 
                                         Select::make('inventory_id')
                                             ->label('Producto')
@@ -143,7 +140,10 @@ class SaleItemsRelationManager extends RelationManager
 
 
                                             }),
-
+                                        Forms\Components\TextInput::make('aplications')
+                                            ->inlineLabel(false)
+                                            ->columnSpanFull()
+                                            ->label('Aplicaciones'),
 
                                         Forms\Components\TextInput::make('quantity')
                                             ->label('Cantidad')
