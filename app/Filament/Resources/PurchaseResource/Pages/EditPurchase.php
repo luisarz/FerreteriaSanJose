@@ -29,7 +29,7 @@ class EditPurchase extends EditRecord
     }
 
 
-    #[On('refreshPurchase')]
+   #[On('refreshPurchase')]
     public function refresh(): void
     {
     }

@@ -4,16 +4,47 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PurchaseResource\Pages;
 use App\Filament\Resources\PurchaseResource\RelationManagers;
-use App\Models\Employee;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Models\Tribute;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
+use Livewire\Component;
+
+function updateTotaPurchase(mixed $idItem, array $data): void
+{
+    $have_perception = $data['have_perception'] ?? false;
+    $retentionPorcentage = 1;
+
+    $purchase = Purchase::find($idItem);
+    if ($purchase) {
+        // Fetch tax rates with default values
+        $ivaRate = Tribute::where('id', 1)->value('rate') ?? 0;
+        $isrRate = 1;//Tribute::where('id', 3)->value('rate') ?? 0;
+
+        $ivaRate /= 100;
+        $isrRate /= 100;
+        // Calculate total and net amounts
+        $montoTotal = PurchaseItem::where('purchase_id', $purchase->id)->sum('total') ?? 0;
+        // Calculate tax and retention conditionally
+        $iva =$montoTotal * 0.13 ;
+        $perception = $have_perception ? $montoTotal * $isrRate : 0;
+
+        // Round and save calculated values
+        $purchase->net_value = round($montoTotal, 2);
+        $purchase->taxe_value = round($iva, 2);
+        $purchase->perception_value = round($perception, 2);
+        $purchase->purchase_total = round($montoTotal + $perception+$iva, 2);
+        $purchase->save();
+    }
+}
 
 class PurchaseResource extends Resource
 {
@@ -42,19 +73,10 @@ class PurchaseResource extends Resource
                                     ->searchable()
                                     ->required(),
                                 Forms\Components\Select::make('employee_id')
-//                                    ->relationship('employee', 'name')
+                                    ->relationship('employee', 'name')
                                     ->label('Empleado')
                                     ->preload()
                                     ->searchable()
-                                    ->options(function (callable $get) {
-                                        $wherehouse = $get('wherehouse_id');
-                                        $saler = \Auth::user()->employee->id ?? null;
-                                        if ($wherehouse) {
-                                            return Employee::where('id', $saler)->pluck('name', 'id');
-                                        }
-                                        return []; // Return an empty array if no wherehouse selected
-                                    })
-                                    ->default(fn() => optional(Auth::user()->employee)->id)
                                     ->required(),
                                 Forms\Components\Select::make('wherehouse_id')
                                     ->label('Sucursal')
@@ -128,7 +150,6 @@ class PurchaseResource extends Resource
                                     ->required(),
 
 
-
                             ])->columnSpan(3)->columns(2),
                         Forms\Components\Section::make('Total')
                             ->compact()
@@ -138,29 +159,37 @@ class PurchaseResource extends Resource
                                 Forms\Components\Toggle::make('have_perception')
                                     ->label('Percepción')
                                     ->live()
-                                    ->required(),
+                                    ->required()
+                                    ->afterStateUpdated(function ($set, $state, $get, Component $livewire) {
+                                        $idItem = $get('id'); // ID del item de venta
+                                        $data = [
+                                            'have_perception' => $state,
+                                        ];
+                                        updateTotaPurchase($idItem, $data);
+                                        $livewire->dispatch('refreshPurchase');
+                                    }),
                                 Forms\Components\Placeholder::make('net_value')
-                                    ->content(function(?Purchase $record) {
+                                    ->content(function (?Purchase $record) {
                                         return $record ? ($record->net_value ?? 0) : 0;
                                     })
                                     ->inlineLabel()
                                     ->label('Neto'),
 
                                 Forms\Components\Placeholder::make('taxe_value')
-                                    ->content(function(?Purchase $record) {
+                                    ->content(function (?Purchase $record) {
                                         return $record ? ($record->taxe_value ?? 0) : 0;
                                     })
                                     ->inlineLabel()
                                     ->label('IVA'),
 
                                 Forms\Components\Placeholder::make('perception_value')
-                                    ->content(fn(?Purchase $record) => $record->perception_value??0)
+                                    ->content(fn(?Purchase $record) => $record->perception_value ?? 0)
                                     ->inlineLabel()
                                     ->label('Percepción:'),
 
                                 Forms\Components\Placeholder::make('purchase_total')
                                     ->label('Total')
-                                    ->content(fn(?Purchase $record) => new HtmlString('<span style="font-weight: bold; color: red; font-size: 18px;">$ ' . number_format($record->purchase_total??0, 2) . '</span>'))
+                                    ->content(fn(?Purchase $record) => new HtmlString('<span style="font-weight: bold; color: red; font-size: 18px;">$ ' . number_format($record->purchase_total ?? 0, 2) . '</span>'))
                                     ->inlineLabel()
                                     ->extraAttributes(['class' => 'p-0 text-lg']) // Tailwind classes for padding and font size
                                     ->columnSpan('full'),
@@ -245,7 +274,7 @@ class PurchaseResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make('ver compra'),
 //                Tables\Actions\EditAction::make()->label('Modificar'),
             ])
             ->bulkActions([
@@ -270,6 +299,5 @@ class PurchaseResource extends Resource
             'edit' => Pages\EditPurchase::route('/{record}/edit'),
         ];
     }
-
 
 }
