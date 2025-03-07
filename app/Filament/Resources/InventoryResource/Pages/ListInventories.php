@@ -12,7 +12,7 @@ use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
 class ListInventories extends ListRecords
 {
     protected static string $resource = InventoryResource::class;
-
+protected static ?string $navigationLabel = "Inventarios";
     protected function getHeaderActions(): array
     {
         return [

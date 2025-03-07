@@ -72,6 +72,8 @@ class OrderResource extends Resource
                                                 }
                                                 return []; // Return an empty array if no wherehouse selected
                                             })
+                                            ->default(fn() => optional(Auth::user()->employee)->id)
+
                                             ->required()
                                             ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
                                         Forms\Components\Select::make('customer_id')

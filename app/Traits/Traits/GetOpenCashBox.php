@@ -28,13 +28,13 @@ trait GetOpenCashBox
             ->whereIn('sale_status',['Facturada','Finalizado'] );
 
         if ($isOrder) {
-            $query->where('is_order', true);
+            $query->whereIn('operation_type', ['Order']);
             if ($isClosedWithoutInvoiced) {
                 $query->where('is_order_closed_without_invoiced', true);
             }
             $column = 'total_order_after_discount'; // For order totals
         } else {
-            $query->where('is_order', false);
+            $query->whereIn('operation_type', ['Sale']);
             $column = 'sale_total'; // For sale totals
         }
 

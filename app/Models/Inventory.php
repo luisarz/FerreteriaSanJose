@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Helpers\KardexHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Inventory extends Model
@@ -71,6 +72,10 @@ class Inventory extends Model
     public function prices()
     {
         return $this->hasMany(Price::class);
+    }
+    public function inventoriesGrouped(): HasMany
+    {
+        return $this->hasMany(InventoryGrouped::class,'inventory_grouped_id','id');
     }
 
 }

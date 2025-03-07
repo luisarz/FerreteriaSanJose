@@ -77,7 +77,7 @@
                 <table style="text-align: left; border: black solid 1px; border-radius: 10px;">
                     <tr>
                         <td style="width: 5%">
-                            <img src="{{ public_path($datos['logo'] ?? '') }}" alt="Logo Empresa">
+                            <img src="{{ asset($datos['logo'] ?? '') }}" alt="Logo Empresa">
                         </td>
                         <td style="width: 95%">
                             <h3>{{ $datos['empresa']['nombre'] }}</h3>
@@ -145,7 +145,7 @@
                     </p>
                 </td>
                 <td style="align-items: end;">
-                    <img src="{{ public_path($qr) }}" alt="QR Código" width="100px">
+                    <img src="{{ asset($qr) }}" alt="QR Código" width="100px">
                 </td>
             </tr>
         </table>

@@ -9,6 +9,7 @@ use App\Models\CashBoxCorrelative;
 use App\Models\Customer;
 use App\Models\DteTransmisionWherehouse;
 use App\Models\Inventory;
+use App\Models\InventoryGrouped;
 use App\Models\Provider;
 use App\Models\PurchaseItem;
 use App\Models\Sale;
@@ -132,7 +133,7 @@ class EditSale extends EditRecord
                     $modeloFacturacion = DteTransmisionWherehouse::where('wherehouse', $wherehouse_id)->first();
                     $billing_model = $modeloFacturacion->billing_model;
                     $transmision_type = $modeloFacturacion->transmision_type;
-                    if($billing_model==null || $billing_model==""){
+                    if ($billing_model == null || $billing_model == "") {
                         PageAlert::make('No se puede finalizar la venta')
                             ->title('Error al finalizar venta')
                             ->body('No se puede finalizar la venta, Sin definir el modelo de facturacion')
@@ -140,7 +141,7 @@ class EditSale extends EditRecord
                             ->send();
                         return;
                     }
-                    if($transmision_type==null || $transmision_type==""){
+                    if ($transmision_type == null || $transmision_type == "") {
                         PageAlert::make('No se puede finalizar la venta')
                             ->title('Error al finalizar venta')
                             ->body('No se puede finalizar la venta, Sin definir el tipo de transmision')
@@ -169,43 +170,83 @@ class EditSale extends EditRecord
                     $salesItem = SaleItem::where('sale_id', $sale->id)->get();
                     $client = $sale->customer;
                     $documnetType = $sale->documenttype->name ?? 'S/N';
-                    $entity = $client->name . ' ' . $client->last_name;
+//                    $entity = $client->name??'' . ' ' . $client->last_name??'';
+                    $entity = ($client->name ?? 'Varios') . ' ' . ($client->last_name ?? '');
+
                     $pais = $client->country->name ?? 'Salvadoreña';
                     foreach ($salesItem as $item) {
-                        $inventory = Inventory::find($item->inventory_id);
+                        $inventory = Inventory::with('product')->find($item->inventory_id);
+                        //Buscar si producto compuiesto y descar los inventarios que tenga
+                        //inventoriasGourped;
+//                        foreach ($inventory as $item) {
+//                            //descar los inventario internos
+//                        }
 
                         // Verifica si el inventario existe
                         if (!$inventory) {
                             \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
                             continue; // Si no se encuentra el inventario, continua con el siguiente item
                         }
-
                         // Actualiza el stock del inventario
-                        $newStock = $inventory->stock - $item->quantity;
-                        $inventory->update(['stock' => $newStock]);
+
+                        //verificar si es un producto compuesto
+                        $is_grouped = $inventory->product->is_grouped;
+                        if ($is_grouped) {
+                            //si es compuesto traemos todos los inventario que lo componen
+                            $inventoriesGrouped = InventoryGrouped::with('inventoryChild.product')->where('inventory_grouped_id', $item->inventory_id)->get();
+                            foreach ($inventoriesGrouped as $inventarioHijo) {
+//                                dd($inventoryGrouped->inventoryChild);
+                                $kardex = KardexHelper::createKardexFromInventory(
+                                    $inventarioHijo->inventoryChild->branch_id, // Se pasa solo el valor de branch_id (entero)
+                                    $sale->created_at, // date
+                                    'Venta', // operation_type
+                                    $sale->id, // operation_id
+                                    $item->id, // operation_detail_id
+                                    $documnetType, // document_type
+                                    $document_internal_number_new, // document_number
+                                    $entity, // entity
+                                    $pais, // nationality
+                                    $inventarioHijo->inventory_child_id, // inventory_id
+                                    $inventarioHijo->inventoryChild->stock ?? 0 + $inventarioHijo->quantity ?? 0, // previous_stock
+                                    0, // stock_in
+                                    $inventarioHijo->quantity, // stock_out
+                                    $inventarioHijo->inventoryChild->stock ?? 0 - $inventarioHijo->quantity ?? 0, // stock_actual
+                                    0, // money_in
+                                    $inventarioHijo->quantity ?? 0 * $inventarioHijo->sale_price ?? 0, // money_out
+                                    $inventarioHijo->inventoryChild->stock ?? 0 * $inventarioHijo->sale_price ?? 0, // money_actual
+                                    $inventarioHijo->sale_price??0, // sale_price
+                                    $inventarioHijo->inventoryChild->cost_without_taxes??0 // purchase_price
+                                );
+                            }
+                        } else {
+                            $newStock = $inventory->stock - $item->quantity;
+                            $inventory->update(['stock' => $newStock]);
+                            $kardex = KardexHelper::createKardexFromInventory(
+                                $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
+                                $sale->created_at, // date
+                                'Venta', // operation_type
+                                $sale->id, // operation_id
+                                $item->id, // operation_detail_id
+                                $documnetType, // document_type
+                                $document_internal_number_new, // document_number
+                                $entity, // entity
+                                $pais, // nationality
+                                $inventory->id, // inventory_id
+                                $inventory->stock + $item->quantity, // previous_stock
+                                0, // stock_in
+                                $item->quantity, // stock_out
+                                $newStock, // stock_actual
+                                0, // money_in
+                                $item->quantity * $item->price, // money_out
+                                $inventory->stock * $item->price, // money_actual
+                                $item->price, // sale_price
+                                0 // purchase_price
+                            );
+                        }
+
 
                         // Crear el Kardex
-                        $kardex = KardexHelper::createKardexFromInventory(
-                            $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
-                            $sale->created_at, // date
-                            'Venta', // operation_type
-                            $sale->id, // operation_id
-                            $item->id, // operation_detail_id
-                            $documnetType, // document_type
-                            $document_internal_number_new, // document_number
-                            $entity, // entity
-                            $pais, // nationality
-                            $inventory->id, // inventory_id
-                            $inventory->stock + $item->quantity, // previous_stock
-                            0, // stock_in
-                            $item->quantity, // stock_out
-                            $newStock, // stock_actual
-                            0, // money_in
-                            $item->quantity * $item->price, // money_out
-                            $inventory->stock * $item->price, // money_actual
-                            $item->price, // sale_price
-                            0 // purchase_price
-                        );
+
 
                         // Verifica si la creación del Kardex fue exitosa
                         if (!$kardex) {
@@ -224,7 +265,7 @@ class EditSale extends EditRecord
 
                     //obtener id de la caja y buscar la caja
                     $idCajaAbierta = (new GetCashBoxOpenedService())->getOpenCashBoxId(true);
-                    $correlativo = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $this->record->document_type_id)->first();
+                    $correlativo = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $documentType)->first();
                     $correlativo->current_number = $document_internal_number_new;
                     $correlativo->save();
                     PageAlert::make()

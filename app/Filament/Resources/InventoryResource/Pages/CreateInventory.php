@@ -12,6 +12,7 @@ class CreateInventory extends CreateRecord
 {
     protected static string $resource = InventoryResource::class;
 
+    protected static bool $canCreateAnother=false;
     protected function beforeCreate(): void
     {
         $product_id = $this->data['product_id'];

@@ -163,7 +163,9 @@ class AdminPanelProvider extends PanelProvider
             NavigationItem::make('Manual de usuario')
                 ->url(asset('storage/manual.pdf'), shouldOpenInNewTab: true)
                 ->icon('heroicon-o-book-open')
-        ]);
-
+        ])
+        ->renderHook('topbar.start', function () {
+        return '<div class="text-lg font-bold text-gray-900">' . (Session::get('modulo_nombre') ?? 'Módulo Actual') . '</div>';
+    });
     }
 }

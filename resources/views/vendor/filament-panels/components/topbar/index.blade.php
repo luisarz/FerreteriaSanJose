@@ -152,8 +152,8 @@
             @endif
         @endif
         <div>
-            <h1 class="fi-header-heading text-2xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-3xl">
-               Suc-  {{ auth()->user()->employee->wherehouse->name}}
+            <h1 class="fi-header-heading text-1xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-1xl">
+               Suc-  <span class="badge ">{{ auth()->user()->employee->wherehouse->name??'' }}</span>
 
 
             </h1>

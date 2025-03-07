@@ -10,6 +10,7 @@ use Illuminate\Contracts\Support\Htmlable;
 class CreatePurchase extends CreateRecord
 {
     protected static string $resource = PurchaseResource::class;
+    protected static bool $canCreateAnother=false;
 
     public function getTitle(): string|Htmlable
     {

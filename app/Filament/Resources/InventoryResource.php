@@ -14,6 +14,7 @@ use Filament\Actions\ReplicateAction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Resources\RelationManagers\RelationGroup;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
@@ -31,16 +32,13 @@ class InventoryResource extends Resource
 
     protected static ?string $model = Inventory::class;
     protected static ?string $navigationGroup = 'Inventario';
-
     protected static ?string $label = 'Inventario'; // Singular
-    protected static ?string $pluralLabel = null;
+    protected static ?string $pluralLabel = "Lista de inventario";
+    protected static ?string $badgeColor = 'danger';
 
 
-    public static function getPluralLabel(): string
-    {
-        $label = self::getWhereHouse();
-        return self::getLabel() . ' - ' . $label; // Usar la misma lógica para plural o ajustarlo según sea necesario
-    }
+
+//
 
     public static function form(Form $form): Form
     {
@@ -52,75 +50,82 @@ class InventoryResource extends Resource
         $iva = $tax->rate / $divider;
         return $form
             ->schema([
-                Forms\Components\Section::make('Informacion del Inventario')
-                    ->columns(2)
+                Forms\Components\Section::make()
                     ->compact()
+                    ->columns(2)
                     ->schema([
-                        Forms\Components\Select::make('product_id')
-                            ->required()
-                            ->inlineLabel(false)
-                            ->preload()
-                            ->columnSpanFull()
-                            ->relationship('product', 'name')
-                            ->searchable(['name', 'sku'])
-                            ->placeholder('Seleccionar producto')
-                            ->loadingMessage('Cargando productos...')
-                            ->getOptionLabelsUsing(function ($record) {
-                                return "{$record->name} (SKU: {$record->sku})";  // Formato de la etiqueta
-                            }),
+                        Forms\Components\Section::make('Informacion del Inventario')
+                            ->columns(3)
+                            ->compact()
+                            ->schema([
+                                Forms\Components\Select::make('product_id')
+                                    ->required()
+                                    ->inlineLabel(false)
+                                    ->preload()
+                                    ->columnSpanFull()
+                                    ->relationship('product', 'name')
+                                    ->searchable(['name', 'sku'])
+                                    ->placeholder('Seleccionar producto')
+                                    ->loadingMessage('Cargando productos...')
+                                    ->getOptionLabelsUsing(function ($record) {
+                                        return "{$record->name} (SKU: {$record->sku})";  // Formato de la etiqueta
+                                    }),
 
-                        Forms\Components\Select::make('branch_id')
-                            ->label('Sucursal')
-                            ->placeholder('Seleccionar sucursal')
-                            ->relationship('branch', 'name')
-                            ->preload()
-                            ->searchable(['name'])
-                            ->required(),
+                                Forms\Components\Select::make('branch_id')
+                                    ->label('Sucursal')
+                                    ->placeholder('Seleccionar sucursal')
+                                    ->relationship('branch', 'name')
+                                    ->preload()
+                                    ->searchable(['name'])
+                                    ->required(),
 
-                        Forms\Components\TextInput::make('stock')
-                            ->required()
-                            ->numeric()
-                            ->default(0),
-                        Forms\Components\Hidden::make('stock_actual')
-                            ->default(0) // Valor predeterminado para nuevos registros
-                            ->afterStateHydrated(function (Forms\Components\Hidden $component, $state, $record) {
-                                if ($record) {
-                                    $component->state($record->stock);
-                                }
-                            }),
+                                Forms\Components\TextInput::make('stock')
+                                    ->required()
+                                    ->numeric()
+                                    ->default(0),
+                                Forms\Components\Hidden::make('stock_actual')
+                                    ->default(0) // Valor predeterminado para nuevos registros
+                                    ->afterStateHydrated(function (Forms\Components\Hidden $component, $state, $record) {
+                                        if ($record) {
+                                            $component->state($record->stock);
+                                        }
+                                    }),
 
-                        Forms\Components\TextInput::make('stock_min')
-                            ->label('Stock Minimo')
-                            ->required()
-                            ->numeric()
-                            ->default(0),
-                        Forms\Components\TextInput::make('stock_max')
-                            ->label('Stock Maximo')
-                            ->required()
-                            ->numeric()
-                            ->default(0),
-                        Forms\Components\TextInput::make('cost_without_taxes')
-                            ->required()
-                            ->prefix('$')
-                            ->label('Costo sin impuestos')
-                            ->numeric()
-                            ->inputMode('decimal')
-                            ->hintColor('red')
-                            ->debounce(500) // Espera 500 ms después de que el usuario deje de escribir
-                            ->afterStateUpdated(function ($state, callable $set) use ($iva) {
-                                $costWithoutTaxes = $state ?: 0; // Valor predeterminado en 0 si está vacío
-                                $costWithTaxes = round($costWithoutTaxes * $iva, 2); // Cálculo del costo con impuestos
-                                $costWithTaxes += $costWithoutTaxes; // Suma el costo sin impuestos
-                                $set('cost_with_taxes', $costWithTaxes); // Actualiza el campo
-                            })
-                            ->default(0.00),
-                        Forms\Components\TextInput::make('cost_with_taxes')
-                            ->label('Costo con impuestos')
-                            ->required()
-                            ->readOnly()
-                            ->numeric()
-                            ->prefix('$')
-                            ->default(0.00),
+                                Forms\Components\TextInput::make('stock_min')
+                                    ->label('Stock Minimo')
+                                    ->required()
+                                    ->numeric()
+                                    ->default(0),
+                                Forms\Components\TextInput::make('stock_max')
+                                    ->label('Stock Maximo')
+                                    ->required()
+                                    ->numeric()
+                                    ->default(0),
+                                Forms\Components\TextInput::make('cost_without_taxes')
+                                    ->required()
+                                    ->prefix('$')
+                                    ->label('C. sin IVA')
+                                    ->numeric()
+                                    ->inputMode('decimal')
+                                    ->hintColor('red')
+                                    ->debounce(500) // Espera 500 ms después de que el usuario deje de escribir
+                                    ->afterStateUpdated(function ($state, callable $set) use ($iva) {
+                                        $costWithoutTaxes = $state ?: 0; // Valor predeterminado en 0 si está vacío
+                                        $costWithTaxes = round($costWithoutTaxes * $iva, 2); // Cálculo del costo con impuestos
+                                        $costWithTaxes += $costWithoutTaxes; // Suma el costo sin impuestos
+                                        $set('cost_with_taxes', $costWithTaxes); // Actualiza el campo
+                                    })
+                                    ->default(0.00),
+                                Forms\Components\TextInput::make('cost_with_taxes')
+                                    ->label('C. + IVA')
+                                    ->required()
+                                    ->readOnly()
+                                    ->numeric()
+                                    ->prefix('$')
+                                    ->default(0.00),
+
+
+                            ]),
                         Forms\Components\Section::make('Configuración')
                             ->columns(3)
                             ->compact()
@@ -139,7 +144,7 @@ class InventoryResource extends Resource
                                     ->required(),
                             ]) // Fin de la sección de configuración
 
-                    ]),
+                    ])
             ]);
     }
 
@@ -186,8 +191,7 @@ class InventoryResource extends Resource
                                     ->copyable()
                                     ->copyMessage('SKU code copado')
                                     ->copyMessageDuration(1500)
-                                    ->copyableState(fn (Inventory $record): string => "Color: {$record->color}")
-
+                                    ->copyableState(fn(Inventory $record): string => "Color: {$record->color}")
                                     ->icon('heroicon-s-qr-code')
                                     ->searchable()
                                     ->sortable(),
@@ -200,8 +204,8 @@ class InventoryResource extends Resource
                                     ->icon('heroicon-s-circle-stack')
                                     ->getStateUsing(function ($record) {
 //                                        return $record->stock>0?number_format($record->stock,2):'Sin Existencia';
-                                        return  $record->stock
-                                            ?  number_format($record['stock'], 2,'.')
+                                        return $record->stock
+                                            ? number_format($record['stock'], 2, '.')
                                             : 'Sin Stock';
                                     })
                                     ->color(function ($record) {
@@ -222,48 +226,8 @@ class InventoryResource extends Resource
                                         return $defaultPrice
                                             ? '$' . number_format($defaultPrice['price'], 2)
                                             : 'Sin precio';
-                                    })
-
-                                    ->sortable(),
-//                                Tables\Columns\TextColumn::make('stock_min')
-//                                    ->label('Stock Minimo')
-//                                    ->numeric()
-//                                    ->toggleable(isToggledHiddenByDefault: true)
+                                    }),
 //                                    ->sortable(),
-//                                Tables\Columns\TextColumn::make('stock_max')
-//                                    ->label('Stock Maximo')
-//                                    ->toggleable(isToggledHiddenByDefault: true),
-//                                Tables\Columns\TextColumn::make('cost_without_taxes')
-//                                    ->label('Costo')
-//                                    ->numeric()
-//                                    ->money('USD', locale: 'en_US')
-//                                    ->sortable(),
-//                                Tables\Columns\TextColumn::make('cost_with_taxes')
-//                                    ->label('C.+    IVA')
-//                                    ->numeric()
-//                                    ->money('USD', locale: 'en_US')
-//                                    ->sortable(),
-//                                Tables\Columns\IconColumn::make('is_stock_alert')
-//                                    ->toggleable(isToggledHiddenByDefault: true)
-//                                    ->boolean(),
-//                                Tables\Columns\IconColumn::make('is_expiration_date')
-//                                    ->toggleable(isToggledHiddenByDefault: true)
-//                                    ->boolean(),
-//                                Tables\Columns\IconColumn::make('is_active')
-//                                    ->toggleable(isToggledHiddenByDefault: true)
-//                                    ->boolean(),
-//                                Tables\Columns\TextColumn::make('deleted_at')
-//                                    ->dateTime()
-//                                    ->sortable()
-//                                    ->toggleable(isToggledHiddenByDefault: true),
-//                                Tables\Columns\TextColumn::make('created_at')
-//                                    ->dateTime()
-//                                    ->sortable()
-//                                    ->toggleable(isToggledHiddenByDefault: true),
-//                                Tables\Columns\TextColumn::make('updated_at')
-//                                    ->dateTime()
-//                                    ->sortable()
-//                                    ->toggleable(isToggledHiddenByDefault: true),
                             ])->extraAttributes([
                                 'class' => 'space-y-2'
                             ])
@@ -291,17 +255,6 @@ class InventoryResource extends Resource
                     ->placeholder('Buscar por sucursal'),
 //
             ])->filtersFormColumns(2)
-//            ->modifyQueryUsing(function ($query) {
-//                $actualWhereHouse = \Auth::user()->employee->wherehouse->id;
-//                // Asegúrate de aplicar la condición al query del filtro
-//                $query->when(request('filter_branch_id'), function ($query, $filterBranchId) use ($actualWhereHouse) {
-//                    $query->where('branch_id', $filterBranchId);
-//                }, function ($query) use ($actualWhereHouse) {
-//                    // Aplica la sucursal actual si no hay un filtro explícito
-//                    $query->where('branch_id', $actualWhereHouse);
-//                });
-//            })
-
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
@@ -351,7 +304,7 @@ class InventoryResource extends Resource
                     ->label('Acciones'),
             ])
             ->persistFiltersInSession()
-        ->recordUrl(null)
+            ->recordUrl(null)
             ->headerActions([
 
             ])
@@ -379,8 +332,13 @@ class InventoryResource extends Resource
 
     public static function getRelations(): array
     {
+        $relations = [];
+
+
         return [
             RelationManagers\PricesRelationManager::class,
+            //Mostrarla solo si el inventario padre tiene producto compuesto true
+            RelationManagers\GroupingInventoryRelationManager::class,
         ];
     }
 
@@ -389,7 +347,6 @@ class InventoryResource extends Resource
         return [
             'index' => Pages\ListInventories::route('/'),
             'create' => Pages\CreateInventory::route('/create'),
-//            'replicate' => Pages\ReplicateInventory::route('/{record}/replicate'),
             'edit' => Pages\EditInventory::route('/{record}/edit'),
         ];
     }

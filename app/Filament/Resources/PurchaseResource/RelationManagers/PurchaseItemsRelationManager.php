@@ -81,7 +81,6 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->numeric()
                             ->columnSpan(1)
                             ->required()
-                            ->live()
                             ->debounce(500)
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $this->calculateTotal($get, $set);
@@ -92,7 +91,6 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->step(0.01)
                             ->prefix('%')
                             ->numeric()
-                            ->live()
                             ->columnSpan(1)
                             ->required()
                             ->default(0)
@@ -105,7 +103,6 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->label('Total')
                             ->step(0.01)
                             ->columnSpan(1)
-                            ->live()
                             ->debounce(500)
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $total = ($get('total') !== "" && $get('total') !== null) ? $get('total') : 0;

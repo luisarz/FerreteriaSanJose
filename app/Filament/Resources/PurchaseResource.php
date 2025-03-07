@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PurchaseResource\Pages;
 use App\Filament\Resources\PurchaseResource\RelationManagers;
+use App\Models\Employee;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use Filament\Forms;
@@ -11,6 +12,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 
 class PurchaseResource extends Resource
@@ -40,10 +42,19 @@ class PurchaseResource extends Resource
                                     ->searchable()
                                     ->required(),
                                 Forms\Components\Select::make('employee_id')
-                                    ->relationship('employee', 'name')
+//                                    ->relationship('employee', 'name')
                                     ->label('Empleado')
                                     ->preload()
                                     ->searchable()
+                                    ->options(function (callable $get) {
+                                        $wherehouse = $get('wherehouse_id');
+                                        $saler = \Auth::user()->employee->id ?? null;
+                                        if ($wherehouse) {
+                                            return Employee::where('id', $saler)->pluck('name', 'id');
+                                        }
+                                        return []; // Return an empty array if no wherehouse selected
+                                    })
+                                    ->default(fn() => optional(Auth::user()->employee)->id)
                                     ->required(),
                                 Forms\Components\Select::make('wherehouse_id')
                                     ->label('Sucursal')
@@ -234,7 +245,8 @@ class PurchaseResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make()->label('Modificar'),
+                Tables\Actions\ViewAction::make(),
+//                Tables\Actions\EditAction::make()->label('Modificar'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

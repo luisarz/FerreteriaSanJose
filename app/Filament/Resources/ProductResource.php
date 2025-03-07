@@ -7,6 +7,7 @@ use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Resources\Components\Tab;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\IconSize;
@@ -99,6 +100,10 @@ class ProductResource extends Resource
                                     ->label('Activo')
                                     ->default(true)
                                     ->required(),
+                                Forms\Components\Toggle::make('is_grouped')
+                                    ->label('Compuesto')
+                                    ->default(true)
+                                    ->required(),
                                 Forms\Components\Toggle::make('is_taxed')
                                     ->label('Gravado')
                                     ->default(true)
@@ -109,8 +114,6 @@ class ProductResource extends Resource
                             ->directory('products')
                             ->image()
                             ->openable()
-//                            ->avatar()
-//                            ->multiple()
                             ->columnSpanFull(),
 
                     ])->columns(2)
@@ -131,7 +134,7 @@ class ProductResource extends Resource
                                 ->schema([
                                     Tables\Columns\ImageColumn::make('images')
                                         ->placeholder('Sin imagen')
-                                        ->defaultImageUrl(url('storage/products/noimage.png'))
+//                                        ->defaultImageUrl(url('storage/products/noimage.jpg'))
                                         ->openUrlInNewTab()
                                         ->height(150)
                                         ->square()
@@ -156,7 +159,6 @@ class ProductResource extends Resource
                                     ->label('Aplicaicones')
                                     ->badge()
                                     ->icon('heroicon-s-cog')
-
                                     ->sortable()
                                     ->separator(';')
                                     ->searchable(),
@@ -166,6 +168,12 @@ class ProductResource extends Resource
                                     ->icon('heroicon-s-qr-code')
                                     ->copyMessage('SKU  copied')
                                     ->searchable(),
+                                Tables\Columns\BooleanColumn::make('is_grouped')
+                                    ->label('Servicio')
+                                    ->trueIcon('heroicon-o-server-stack')
+                                    ->falseIcon('heroicon-o-server')
+                                    ->sortable(),
+
 
                                 Tables\Columns\TextColumn::make('bar_code')
                                     ->icon('heroicon-s-code-bracket-square')
@@ -230,7 +238,7 @@ class ProductResource extends Resource
                 Tables\Actions\DeleteAction::make()->label('')->iconSize(IconSize::Large)->color('danger'),
                 Tables\Actions\RestoreAction::make()->label('')->iconSize(IconSize::Large)->color('success'),
                 Tables\Actions\ActionGroup::make([
-                ]) ->link()
+                ])->link()
                     ->label('Acciones'),
             ], position: Tables\Enums\ActionsPosition::AfterContent)
             ->bulkActions([

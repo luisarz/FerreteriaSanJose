@@ -14,6 +14,7 @@ use App\Models\SaleItem;
 use App\Models\Tribute;
 use App\Service\GetCashBoxOpenedService;
 use App\Tables\Actions\dteActions;
+use Carbon\Carbon;
 use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
@@ -26,6 +27,7 @@ use Filament\Pages\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconSize;
 use Filament\Tables;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Enums\ActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
@@ -161,11 +163,13 @@ class SaleResource extends Resource
                                             ->live()
                                             ->options(function (callable $get) {
                                                 $wherehouse = $get('wherehouse_id');
+                                                $saler = \Auth::user()->employee->id ?? null;
                                                 if ($wherehouse) {
-                                                    return Employee::where('branch_id', $wherehouse)->pluck('name', 'id');
+                                                    return Employee::where('id', $saler)->pluck('name', 'id');
                                                 }
                                                 return []; // Return an empty array if no wherehouse selected
                                             })
+                                            ->default(fn() => optional(Auth::user()->employee)->id)
                                             ->required()
                                             ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
 
@@ -173,6 +177,7 @@ class SaleResource extends Resource
                                             ->searchable()
                                             ->live()
                                             ->preload()
+                                            ->columnSpanFull()
                                             ->inlineLabel(false)
                                             ->getSearchResultsUsing(function (string $query) {
                                                 if (strlen($query) < 2) {
@@ -232,9 +237,6 @@ class SaleResource extends Resource
                                             }),
 
 
-
-
-
                                         Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
                                                 'Pendiente' => 'Pendiente',
@@ -286,15 +288,14 @@ class SaleResource extends Resource
 
 
                                 Section::make('Caja')
-
                                     ->compact()
                                     ->schema([
                                         Select::make('order_id')
                                             ->label('Órdenes')
                                             ->searchable()
+                                            ->placeholder('Orden #')
                                             ->preload()
                                             ->live()
-                                            ->inlineLabel(false)
                                             ->getSearchResultsUsing(function (string $searchQuery) {
                                                 if (strlen($searchQuery) < 1) {
                                                     return []; // No buscar si el texto es muy corto
@@ -372,6 +373,7 @@ class SaleResource extends Resource
                                             ->label('F. Pago')
                                             ->relationship('paymentmethod', 'name')
                                             ->preload()
+                                            ->searchable()
                                             ->required()
                                             ->default(1),
                                         Forms\Components\TextInput::make('cash')
@@ -476,7 +478,7 @@ class SaleResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('billingModel')
                     ->sortable()
-                    ->searchable()
+//                    ->searchable()
                     ->label('Facturación')
                     ->tooltip(fn($state) => $state?->id === 2 ? 'Diferido' : 'Previo')
                     ->icon(fn($state) => $state?->id === 2 ? 'heroicon-o-clock' : 'heroicon-o-check-circle')
@@ -547,6 +549,7 @@ class SaleResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sale_total')
                     ->label('Total')
+                    ->summarize(Sum::make()->label('Total')->money('USD', locale: 'en_US'))
                     ->money('USD', locale: 'en_US')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cash')
@@ -583,11 +586,10 @@ class SaleResource extends Resource
             ->filters([
                 DateRangeFilter::make('operation_date')
                     ->timePicker24()
-                    ->label('Fecha de venta')
-                    ->default([
-                        'start' => now()->subDays(30)->toDateTimeString() ?? now()->toDateTimeString(),
-                        'end' => now()->toDateTimeString() ?? now()->toDateTimeString(),
-                    ]),
+                    ->startDate(Carbon::now())
+                    ->endDate(Carbon::now())
+                    ->label('Fecha de venta'),
+
 
                 Tables\Filters\SelectFilter::make('documenttype')
                     ->label('Sucursal')

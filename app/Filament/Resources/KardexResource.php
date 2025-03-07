@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\KardexResource\Pages;
 use App\Models\Kardex;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -139,8 +140,7 @@ class KardexResource extends Resource
                     Tables\Columns\TextColumn::make('stock_in')
                         ->label('Entrada')
                         ->numeric()
-                        ->summarize(Sum::make()
-                            ->label('Entrada'))
+                        ->summarize(Sum::make()->label('Entrada'))
                         ->extraAttributes(['class' => 'bg-success-200']) // Agregar clases CSS para el borde
 
                         ->sortable(),
@@ -207,10 +207,9 @@ class KardexResource extends Resource
             ->filters([
                 DateRangeFilter::make('date')->timePicker24()
                     ->label('Fecha de venta')
-                    ->default([
-                        'start' => now()->subDays(30)->format('Y-m-d'),
-                        'end' => now()->format('Y-m-d'),
-                    ]),
+                    ->startDate(Carbon::now())
+                ->endDate(Carbon::now())
+
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
