@@ -258,6 +258,10 @@ class DTEController extends Controller
                 ];
             }
 
+            //fecha contingencia
+            //estado contingencia
+            //
+
             curl_close($curl);
 
             $responseData = json_decode($response, true);
@@ -505,17 +509,17 @@ class DTEController extends Controller
             }
 
 
-            $pdf = Pdf::loadView('DTE.dte-print-ticket', compact('datos', 'qr'));
-//                ->setOptions([
+            $pdf = Pdf::loadView('DTE.dte-print-ticket', compact('datos', 'qr'))
+                ->setOptions([
 //                    'isHtml5ParserEnabled' => true,
 //                    'isRemoteEnabled' => true,
-//                ]);
+                ]);
 
-            $pdfPage = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'));
-//                ->setOptions([
+            $pdfPage = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
+                ->setOptions([
 //                    'isHtml5ParserEnabled' => true,
 //                    'isRemoteEnabled' => true,
-//                ]);
+                ]);
 
             $pathPage = storage_path("app/public/DTEs/{$codGeneracion}.pdf");
 

@@ -30,28 +30,30 @@ class SalesStat extends BaseWidget
             $purchase_total = Purchase::whereBetween('purchase_date', [$startDate, $endDate])
                 ->where('wherehouse_id',$whereHouse)
                 ->sum('purchase_total');
+            return [
+                Stat::make('Total de ventas', number_format($sales_total,2,'.',','))
+                    ->description('Total de ventas realizadas')
+                    ->icon('heroicon-o-shopping-cart')
+                    ->chart([0,$sales_total])
+                    ->color('success')
+                ,
+                Stat::make('Total de Compras', number_format($purchase_total,2,'.',','))
+                    ->description('Total de compras realizadas')
+                    ->icon('heroicon-o-shopping-cart')
+                    ->chart([0,number_format($purchase_total,2,'.',',')])
+                    ->color('danger'),
+
+                Stat::make('Utilidad', number_format($sales_total-$purchase_total,2,'.',','))
+                    ->description('Utilidad Total')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->chart([0,$sales_total-$purchase_total])
+                    ->color('success')
+
+
+            ];
         }
-
-        return [
-            Stat::make('Total de ventas', number_format($sales_total,2,'.',','))
-            ->description('Total de ventas realizadas')
-            ->icon('heroicon-o-shopping-cart')
-                ->chart([0,$sales_total])
-                ->color('success')
-            ,
-            Stat::make('Total de Compras', number_format($purchase_total,2,'.',','))
-                ->description('Total de compras realizadas')
-                ->icon('heroicon-o-shopping-cart')
-                ->chart([0,number_format($purchase_total,2,'.',',')])
-                ->color('danger'),
-
-            Stat::make('Utilidad', number_format($sales_total-$purchase_total,2,'.',','))
-                ->description('Utilidad Total')
-                ->icon('heroicon-o-currency-dollar')
-                ->chart([0,$sales_total-$purchase_total])
-                ->color('success')
+        return [];
 
 
-        ];
     }
 }

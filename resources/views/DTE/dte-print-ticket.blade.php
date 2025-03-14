@@ -98,9 +98,11 @@
             </td>
         </tr>
     </table>
-    <div style="text-align: left">Vendedor: {{ $datos['DTE']['extencion']['nombEntrega']??'S/N' }}</div>
+    <div style="text-align: left;">Vendedor: {{ $datos['DTE']['extencion']['nombEntrega']??'S/N' }}</div>
     ---------------------------------------------------------------------------
     <div style="text-align: left">
+        <h4>DOCUMENTO TRIBUTARIO ELECTRÓNICO</h4>
+        <h5>{{ $datos['tipoDocumento'] }}</h5>
         <b>Código de generación</b> <br>
         {{ $datos['DTE']['respuestaHacienda']['codigoGeneracion'] }} <br>
         <b>Número de control</b> <br>

@@ -115,7 +115,7 @@ class SaleResource extends Resource
                                             ->default(now()),
                                         Forms\Components\Select::make('wherehouse_id')
                                             ->label('Sucursal')
-                                            ->live()
+                                            ->debounce(500)
                                             ->relationship('wherehouse', 'name')
                                             ->preload()
                                             ->disabled()
@@ -160,7 +160,7 @@ class SaleResource extends Resource
                                             ->label('Vendedor')
                                             ->preload()
                                             ->searchable()
-                                            ->live()
+                                            ->debounce(500)
                                             ->options(function (callable $get) {
                                                 $wherehouse = $get('wherehouse_id');
                                                 $saler = \Auth::user()->employee->id ?? null;
@@ -175,7 +175,7 @@ class SaleResource extends Resource
 
                                         Forms\Components\Select::make('customer_id')
                                             ->searchable()
-                                            ->live()
+                                            ->debounce(500)
                                             ->preload()
                                             ->columnSpanFull()
                                             ->inlineLabel(false)
@@ -295,7 +295,7 @@ class SaleResource extends Resource
                                             ->searchable()
                                             ->placeholder('Orden #')
                                             ->preload()
-                                            ->live()
+                                            ->debounce(500)
                                             ->getSearchResultsUsing(function (string $searchQuery) {
                                                 if (strlen($searchQuery) < 1) {
                                                     return []; // No buscar si el texto es muy corto
@@ -506,6 +506,10 @@ class SaleResource extends Resource
                 Tables\Columns\TextColumn::make('salescondition.name')
                     ->label('Condición')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('status_sale_credit')
+                    ->label('Credito')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('paymentmethod.name')
                     ->label('Método de pago')
                     ->toggleable(isToggledHiddenByDefault: true)
@@ -577,7 +581,7 @@ class SaleResource extends Resource
             ])
             ->modifyQueryUsing(function ($query) {
                 $query->where('is_invoiced', true)
-                    ->whereIn('operation_type', ['Sale', 'Order'])
+                    ->whereIn('operation_type', ['Sale', 'Order','Quote'])
                     ->orderby('operation_date', 'desc')
                     ->orderby('document_internal_number', 'desc')
                     ->orderby('is_dte', 'desc');

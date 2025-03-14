@@ -27,7 +27,8 @@ class OrdenController extends Controller
     public function generarPdf($idVenta)
     {
         //abrir el json en DTEs
-        $datos = Sale::with('customer', 'saleDetails', 'whereHouse', 'saleDetails.inventory', 'saleDetails.inventory.product', 'documenttype', 'seller','mechanic')->find($idVenta);
+        $datos = Sale::with('customer', 'saleDetails', 'whereHouse', 'saleDetails.inventory', 'saleDetails.inventory.product', 'documenttype', 'seller', 'mechanic')
+            ->find($idVenta);
         $empresa = $this->getConfiguracion();
 
         $formatter = new NumeroALetras();
@@ -35,6 +36,28 @@ class OrdenController extends Controller
         $pdf = Pdf::loadView('order.order-print-pdf', compact('datos', 'empresa', 'montoLetras')); // Cargar vista y pasar datos
 
 
+        return $pdf->stream("Orden-ventas-.{$idVenta}.pdf"); // El PDF se abre en una nueva pestaña
+
+    }
+
+    public function ordenGenerarTicket($idVenta)
+    {
+        //abrir el json en DTEs
+        $datos = Sale::with('customer', 'saleDetails', 'whereHouse', 'saleDetails.inventory', 'saleDetails.inventory.product', 'documenttype', 'seller', 'mechanic')->find($idVenta);
+        $empresa = $this->getConfiguracion();
+        $logo = auth()->user()->employee->wherehouse->logo;
+        $logoPath=\Storage::url($logo);
+
+        $formatter = new NumeroALetras();
+        $montoLetras = $formatter->toInvoice($datos->sale_total, 2, 'DoLARES');
+        $pdf = Pdf::loadView('order.order-print-ticket', compact('datos', 'empresa', 'montoLetras','logoPath')) // Cargar vista y pasar datos
+
+        ->setPaper([25, -10, 250, 1000]) // Tamaño personalizado
+        ->setOptions([
+//            'isPhpEnabled' => true, // Permite PHP en la vista
+//            'isRemoteEnabled' => true,
+
+        ]);
         return $pdf->stream("Orden-ventas-.{$idVenta}.pdf"); // El PDF se abre en una nueva pestaña
 
     }

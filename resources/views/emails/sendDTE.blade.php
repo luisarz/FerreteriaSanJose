@@ -91,7 +91,7 @@
             para realizar cualquier gestión relacionada con este documento en {{$sale->wherehouse->company->name.' - '.$sale->wherehouse->name}}.
         </p>
         <p>
-            Si necesitas más información sobre tu factura código: <strong>82A78003-B9FE-1AC9-B828-0004AC1EA976</strong>
+            Si necesitas más información sobre tu factura código: <strong>{{$sale->generationCode}}</strong>
             o tienes alguna consulta, por favor no dudes en comunicarte con nosotros a través del
             <strong>{{$sale->wherehouse->phone??''}}</strong> o <a href="{{$sale->wherehouse->email??''}}">{{$sale->wherehouse->email??''}}</a>.
         </p>

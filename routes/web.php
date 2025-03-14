@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DTEController;
+use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\hoja;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\QuoteController;
@@ -28,11 +29,12 @@ Route::get('/printDTETicket/{idVenta}', [DTEController::class, 'printDTETicket']
 Route::get('/printDTEPdf/{idVenta}', [DTEController::class, 'printDTEPdf'])->middleware(['auth'])->name('printDTEPdf');
 Route::get('/sendDTE/{idVenta}', [SenEmailDTEController::class, 'SenEmailDTEController'])->middleware(['auth'])->name('sendDTE');
 Route::get('/ordenPrint/{idVenta}', [OrdenController::class, 'generarPdf'])->middleware(['auth'])->name('ordenGenerarPdf');
+Route::get('/ordenPrintTicket/{idVenta}', [OrdenController::class, 'ordenGenerarTicket'])->middleware(['auth'])->name('ordenGenerarTicket');
 Route::get('/closeCashboxPrint/{idCasboxClose}', [OrdenController::class, 'closeClashBoxPrint'])->middleware(['auth'])->name('closeClashBoxPrint');
 Route::get('/admin/sales/{idVenta}/edit', [OrdenController::class, 'billingOrder'])->middleware(['auth'])->name('billingOrder');
 Route::get('/printQuote/{idVenta}', [QuoteController::class, 'printQuote'])->name('printQuote');
 //Traslados
 Route::get('/printTransfer/{idTransfer}', [TransferController::class, 'printTransfer'])->middleware(['auth'])->name('printTransfer');
-
+Route::get('employee/sales/{id_employee}/{star_date}/{end_date}',[EmployeesController::class, 'sales'])->middleware(['auth'])->name('employee.sales');
 
 require __DIR__.'/auth.php';

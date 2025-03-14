@@ -6,6 +6,7 @@ use App\Helpers\KardexHelper;
 use App\Http\Controllers\OrdenController;
 use App\Models\CashBoxOpen;
 use App\Models\Company;
+use App\Models\DteTransmisionWherehouse;
 use App\Models\Inventory;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -93,7 +94,13 @@ class orderActions
             ->icon('heroicon-o-printer')
             ->iconSize(IconSize::Large)
             ->color('primary')
-            ->url(fn($record) => route('ordenGenerarPdf', ['idVenta' => $record->id]))
+            ->url(function ($record) {
+                $idSucursal = auth()->user()->employee->branch_id;
+                $print = DteTransmisionWherehouse::where('wherehouse', $idSucursal)->first();
+                $ruta = $print->printer_type == 1 ? 'ordenGenerarTicket' : 'ordenGenerarPdf';
+                return route($ruta, ['idVenta' => $record->id]);
+
+            })
             ->openUrlInNewTab(); // Esto asegura que se abra en una nueva pestaña
 
     }
@@ -107,8 +114,7 @@ class orderActions
 //            ->visible(function ($record) {
 //                return $record->sale_status != 'Finalizado' && $record->status != 'Anulado';
 //            })
-            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado','Facturada', 'Anulado']))
-
+            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado', 'Facturada', 'Anulado']))
             ->color('primary')
             ->action(function ($record) {
                 $whereHouse = auth()->user()->employee->branch_id ?? null;
@@ -163,7 +169,7 @@ class orderActions
                             ->afterStateUpdated(function (?Sale $record, $state, callable $set) {
                                 $saleTotal = $record->sale_total ?? 0;
                                 $discountedTotal = $saleTotal - ($saleTotal * $state / 100);
-                                $set('total_a_cancelar', number_format($discountedTotal, 2,'.',''));
+                                $set('total_a_cancelar', number_format($discountedTotal, 2, '.', ''));
                             }),
 
                         TextInput::make('total_a_cancelar')
@@ -176,7 +182,7 @@ class orderActions
                             ->default(fn($record) => $record?->sale_total),
                     ]),
             ])
-            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado','Facturada', 'Anulado']))
+            ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado', 'Facturada', 'Anulado']))
 //            ->hidden(fn($record) => !in_array($record->sale_status, ['Facturada', 'Anulado']))
             ->modalHeading('Confirmación')
             ->modalSubheading('¿Estás seguro de que deseas cerrar esta orden? Esta acción no se puede deshacer.')
@@ -203,7 +209,7 @@ class orderActions
                     $discountedTotal = $saleTotal - ($saleTotal * $data['descuento'] / 100);
                     $discountMoney = number_format($saleTotal - $discountedTotal, 2, '.', '');
 
-                    $order=Sale::find($record->id);
+                    $order = Sale::find($record->id);
                     $order->cashbox_open_id = $openedCashBox;
                     $order->operation_type = 'Order';
                     $order->is_order_closed_without_invoiced = true;
@@ -212,7 +218,6 @@ class orderActions
                     $order->discount_money = $discountMoney;
                     $order->total_order_after_discount = $data['total_a_cancelar'];
                     $order->save();
-
 
 
                     return Notification::make('Orden cerrada')

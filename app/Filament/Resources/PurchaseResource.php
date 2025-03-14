@@ -9,6 +9,7 @@ use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Tribute;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -17,6 +18,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 function updateTotaPurchase(mixed $idItem, array $data): void
 {
@@ -76,6 +78,7 @@ class PurchaseResource extends Resource
                                     ->relationship('employee', 'name')
                                     ->label('Empleado')
                                     ->preload()
+                                    ->default(fn () => optional(\Auth::user()->employee)->id ?? '')
                                     ->searchable()
                                     ->required(),
                                 Forms\Components\Select::make('wherehouse_id')
@@ -118,6 +121,7 @@ class PurchaseResource extends Resource
                                         'Contado' => 'Contado',
                                         'Crédito' => 'Crédito',
                                     ])
+                                    ->default('Contado')
                                     ->required()
                                     ->live() // Hace el campo reactivo para detectar cambios
                                     ->afterStateUpdated(function (callable $set, $state) {
@@ -137,8 +141,8 @@ class PurchaseResource extends Resource
                                     ->label('Días de Crédito')
                                     ->numeric()
                                     ->default(null)
-                                    ->visible(fn(callable $get) => $get('purchase_condition') === 'Crédito') // Solo visible cuando se selecciona "Crédito"
-                                    ->required(fn(callable $get) => $get('purchase_condition') === 'Crédito'), // Obligatorio solo si "Crédito" es seleccionado
+                                    ->visible(fn(callable $get) => $get('pruchase_condition') != 'Contado') // Solo visible cuando se selecciona "Crédito"
+                                    ->required(fn(callable $get) => $get('pruchase_condition') != 'Contado'), // Obligatorio solo si "Crédito" es seleccionado
 
                                 Forms\Components\Select::make('status')
                                     ->options([
@@ -271,10 +275,18 @@ class PurchaseResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                DateRangeFilter::make('purchase_date')
+                    ->timePicker24()
+                    ->startDate(Carbon::now())
+                    ->endDate(Carbon::now())
+                    ->label('Fecha de Compra'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make('ver compra'),
+                Tables\Actions\ViewAction::make('ver compra')
+                    ->modal()
+                    ->modalHeading('Ver Compra')
+                    ->modalWidth('6xl'),
+
 //                Tables\Actions\EditAction::make()->label('Modificar'),
             ])
             ->bulkActions([

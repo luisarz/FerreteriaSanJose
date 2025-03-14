@@ -31,26 +31,47 @@ class PurchaseItemsRelationManager extends RelationManager
                         Select::make('inventory_id')
                             ->label('Producto')
                             ->searchable()
-                            ->live()
-                            ->debounce(300)
+                            ->debounce(500)
                             ->columnSpanFull()
                             ->inlineLabel(false)
-                            ->getSearchResultsUsing(function (string $query) {
-                                $whereHouse = \Auth::user()->employee->branch_id;
-                                if (strlen($query) < 3) {
-                                    return []; // No cargar resultados hasta que haya al menos 3 letras
+                            ->getSearchResultsUsing(function (string $query, callable $get) {
+                                $whereHouse = \Auth::user()->employee->branch_id; // Sucursal del usuario
+                                $aplications = $get('aplications');
+                                if (strlen($query) < 2) {
+                                    return []; // No buscar si el texto es muy corto
                                 }
-                                return Inventory::with('product')
-                                    ->where('branch_id', $whereHouse)
-                                    ->whereHas('product', function ($q) use ($query) {
-                                        $q->where('name', 'like', "%{$query}%")
-                                            ->orWhere('sku', 'like', "%{$query}%")
-                                            ->orWhere('bar_code', 'like', "%{$query}%");
+                                // Dividir el texto ingresado en palabras clave
+                                $keywords = explode(' ', $query);
+
+                                return Inventory::with([
+                                    'product:id,name,sku,bar_code,aplications',
+                                    'prices' => function ($q) {
+                                        $q->where('is_default', 1)->select('id', 'inventory_id', 'price'); // Carga solo el precio predeterminado
+                                    },
+                                ])
+                                    ->where('branch_id', $whereHouse) // Filtra por sucursal
+                                    ->whereHas('prices', function ($q) {
+                                        $q->where('is_default', 1); // Verifica que tenga un precio predeterminado
                                     })
-                                    ->limit(50) // Limita el número de resultados para evitar cargas pesadas
+                                    ->whereHas('product', function ($q) use ($aplications, $keywords) {
+                                        $q->where(function ($queryBuilder) use ($keywords) {
+                                            foreach ($keywords as $word) {
+                                                $queryBuilder->where('name', 'like', "%{$word}%")
+                                                    ->orWhere('sku', 'like', "%{$word}%")
+                                                    ->orWhere('bar_code', 'like', "%{$word}%");
+                                            }
+                                        });
+
+                                        if (!empty($aplications)) {
+                                            $q->where('aplications', 'like', "%{$aplications}%");
+                                        }
+                                    })
+                                    ->select(['id', 'branch_id', 'product_id', 'stock']) // Selecciona solo las columnas necesarias
+                                    ->limit(50) // Limita el número de resultados
                                     ->get()
                                     ->mapWithKeys(function ($inventory) {
-                                        $displayText = "{$inventory->product->name} - SKU: {$inventory->product->sku} - Codigo: {$inventory->product->bar_code}";
+                                        $price = optional($inventory->prices->first())->price; // Obtén el precio predeterminado
+                                        $displayText = "{$inventory->product->name} - Cod: {$inventory->product->bar_code} - STOCK: {$inventory->stock} - $ {$price}";
                                         return [$inventory->id => $displayText];
                                     });
                             })
@@ -66,7 +87,6 @@ class PurchaseItemsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('quantity')
                             ->label('Cantidad')
                             ->step(1)
-                            ->live()
                             ->numeric()
                             ->debounce(500)
                             ->columnSpan(1)

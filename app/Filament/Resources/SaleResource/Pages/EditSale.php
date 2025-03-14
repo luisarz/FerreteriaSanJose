@@ -55,6 +55,8 @@ class EditSale extends EditRecord
 
                         return;
                     }
+                    $salePayment_status='Pagada';
+                    $status_sale_credit=0;
 
                     $documentType = $this->data['document_type_id'];
                     if ($documentType == "") {
@@ -125,6 +127,9 @@ class EditSale extends EditRecord
                                 ->send();
                             return;
                         }
+                    }else{
+//                        $salePayment_status='Pendiente';
+                        $status_sale_credit=1;
                     }
 
                     //Obtenre modeloFacturacion
@@ -258,8 +263,10 @@ class EditSale extends EditRecord
                     $sale->update([
                         'cashbox_open_id' => $openedCashBox,
                         'is_invoiced' => true,
-                        'sales_payment_status' => 'Pagada',
+                        'sales_payment_status' => $salePayment_status,
                         'sale_status' => 'Facturada',
+                        'status_sale_credit'=>$status_sale_credit,
+                        'operation_date'=> $this->data['operation_date'],
                         'document_internal_number' => $document_internal_number_new
                     ]);
 

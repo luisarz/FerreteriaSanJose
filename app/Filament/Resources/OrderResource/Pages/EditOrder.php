@@ -7,6 +7,7 @@ use App\Helpers\KardexHelper;
 use App\Models\Inventory;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -70,6 +71,12 @@ class EditOrder extends EditRecord
             ->title('Orden enviada')
             ->body('La orden ha sido enviada correctamente')
             ->success()
+            ->send();
+
+        PageAlert::make()
+            ->title('Error al anular venta')
+            ->body('No se puede cancelar una venta con DTE')
+            ->danger()
             ->send();
         $this->redirect(static::getResource()::getUrl('index'));
 

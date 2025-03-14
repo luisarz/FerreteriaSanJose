@@ -5,6 +5,7 @@ namespace App\Filament\Resources\InventoryResource\RelationManagers;
 use App\Models\Inventory;
 use App\Models\InventoryGrouped;
 use App\Models\Price;
+use App\Models\Product;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -14,6 +15,7 @@ use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Table;
 use Filament\Forms;
 use Filament\Tables;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 
@@ -134,7 +136,15 @@ class GroupingInventoryRelationManager extends RelationManager
     }
 
 
-
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
+    {
+        $product_id=$ownerRecord->product_id;
+        $product=Product::find($product_id);
+        $is_grouped=$product->is_grouped;
+//        dd($is_grouped);
+//        dd($ownerRecord->product_id);
+        return $is_grouped === 1;
+    }
 
 
 

@@ -5,20 +5,25 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Filament\Resources\EmployeeResource\RelationManagers;
 use App\Models\Distrito;
+use App\Models\DteTransmisionWherehouse;
 use App\Models\Employee;
 use App\Models\Municipality;
+use Carbon\Carbon;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\IconSize;
 use Filament\Tables;
 use Filament\Tables\Enums\ActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Validation\ValidationException;
+use Malzariey\FilamentDaterangepickerFilter\Fields\DateRangePicker;
 use NunoMaduro\Collision\Adapters\Phpunit\State;
 
 class EmployeeResource extends Resource
@@ -58,7 +63,6 @@ class EmployeeResource extends Resource
                                             ->searchable()
                                             ->preload()
                                             ->required(),
-
 
 
                                     ])->columnSpanFull(true),
@@ -199,20 +203,20 @@ class EmployeeResource extends Resource
                                     ]),
                                 Forms\Components\Card::make('Configuración')
                                     ->columns(3)
-                                ->schema([
+                                    ->schema([
 
-                                    Forms\Components\Toggle::make('is_comisioned')
-                                        ->label('Comision por venta')
-                                        ->required(),
-                                    Forms\Components\TextInput::make('comision')
-                                        ->prefix('%')
-                                        ->label('Comision')
-                                        ->numeric()
-                                        ->default(null),
-                                    Forms\Components\Toggle::make('is_active')
-                                        ->default(true)
-                                        ->required(),
-                                ])
+                                        Forms\Components\Toggle::make('is_comisioned')
+                                            ->label('Comision por venta')
+                                            ->required(),
+                                        Forms\Components\TextInput::make('comision')
+                                            ->prefix('%')
+                                            ->label('Comision')
+                                            ->numeric()
+                                            ->default(null),
+                                        Forms\Components\Toggle::make('is_active')
+                                            ->default(true)
+                                            ->required(),
+                                    ])
                             ]),
                         Tabs\Tab::make('Datos de Familiares')
                             ->icon('heroicon-o-phone')
@@ -269,7 +273,6 @@ class EmployeeResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('birthdate')
                     ->toggleable(isToggledHiddenByDefault: true)
-
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('gender'),
@@ -279,11 +282,9 @@ class EmployeeResource extends Resource
 
                 Tables\Columns\TextColumn::make('marital_name')
                     ->toggleable(isToggledHiddenByDefault: true)
-
                     ->searchable(),
                 Tables\Columns\TextColumn::make('marital_phone')
                     ->toggleable(isToggledHiddenByDefault: true)
-
                     ->searchable(),
                 Tables\Columns\TextColumn::make('dui')
                     ->searchable(),
@@ -306,12 +307,10 @@ class EmployeeResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('job_title_id')
                     ->toggleable(isToggledHiddenByDefault: true)
-
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_comisioned')
                     ->toggleable(isToggledHiddenByDefault: true)
-
                     ->boolean(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
@@ -335,15 +334,51 @@ class EmployeeResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\ReplicateAction::make()
-                    ->excludeAttributes(['email','dui','nit','photo','created_at','updated_at','deleted_at']),
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
-                    Tables\Actions\RestoreAction::make(),
+//                Tables\Actions\ActionGroup::make([
+                Tables\Actions\Action::make('select_date_range')
+                    ->label('')
+                    ->icon('heroicon-s-calendar-date-range')
+                    ->color('success')
+                    ->iconSize(IconSize::Medium)
+                    ->modalWidth('max-w-2xl')
+                    ->form([
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Fecha Inicio')
+                            ->default(Carbon::now()->startOfMonth())
+                            ->required(),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Fecha Fin')
+                            ->default(Carbon::now()->endOfMonth())
+                            ->required(),
+                    ])
+                    ->action(function (array $data, $record) {
 
-                ]),
+                        $url = route('employee.sales', [
+                            'id_employee' => $record->id,
+                            'star_date' => date('d-m-Y', strtotime($data['start_date'])),
+                            'end_date' => date('d-m-Y', strtotime($data['end_date']))
+                        ]);
+
+                        // Devolver la URL como una respuesta JSON para que el frontend la maneje
+                        return \Filament\Notifications\Notification::make()
+                            ->title('Reporte de ventas')
+                            ->body('Haz clic aquí para ver los resultados.')
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('Ver reporte')
+                                    ->button()
+                                    ->url($url, true) // true = abrir en nueva pestaña
+                            ])
+                            ->send();
+                    })
+                ->modalButton('Generar Reporte'),
+
+                Tables\Actions\ViewAction::make()->label('')->iconSize(IconSize::Medium),
+//                    Tables\Actions\ReplicateAction::make()->label('')->excludeAttributes(['email','dui','nit','photo','created_at','updated_at','deleted_at']),
+                Tables\Actions\EditAction::make()->label('')->iconSize(IconSize::Medium),
+                Tables\Actions\DeleteAction::make()->label('')->iconSize(IconSize::Medium),
+                Tables\Actions\RestoreAction::make()->label('')->iconSize(IconSize::Medium),
+
+//                ]),
             ], position: ActionsPosition::BeforeColumns)
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -351,6 +386,7 @@ class EmployeeResource extends Resource
                 ]),
             ]);
     }
+
     protected function onValidationError(ValidationException $exception): void
     {
         Notification::make()
@@ -358,6 +394,7 @@ class EmployeeResource extends Resource
             ->danger()
             ->send();
     }
+
     public static function getRelations(): array
     {
         return [

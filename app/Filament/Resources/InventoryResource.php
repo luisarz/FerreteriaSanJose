@@ -22,6 +22,7 @@ use Filament\Tables\Table;
 use Filament\Notifications\Actions\Action;
 use Filament\Tables\Actions;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Model;
 
 class InventoryResource extends Resource
 {
@@ -335,12 +336,15 @@ class InventoryResource extends Resource
         $relations = [];
 
 
+
         return [
             RelationManagers\PricesRelationManager::class,
-            //Mostrarla solo si el inventario padre tiene producto compuesto true
             RelationManagers\GroupingInventoryRelationManager::class,
         ];
     }
+
+
+
 
     public static function getPages(): array
     {

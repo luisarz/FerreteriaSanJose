@@ -23,6 +23,7 @@ class Dashboard extends \Filament\Pages\Dashboard
                 ->compact()
                 ->schema([
                     Select::make('whereHouse')
+                        ->label('Sucursal')
                         ->inlineLabel(false)
                         ->placeholder('Seleccione una sucursal')
                         ->options(function () {
