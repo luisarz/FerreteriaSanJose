@@ -296,8 +296,6 @@ class InventoryResource extends Resource
                                 $action->halt(); // Detener la acción en caso de error
                             }
                         }),
-
-
                     Tables\Actions\DeleteAction::make(),
                     Tables\Actions\ForceDeleteAction::make(),
                 ])

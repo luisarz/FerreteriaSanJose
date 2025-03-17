@@ -45,8 +45,7 @@ class CategoryResource extends Resource
                         Forms\Components\TextInput::make('commission_percentage')
                             ->label('Comisión por venta') // Corregido el acento en "producto"
                             ->required()
-                            ->numeric()
-                            ->maxLength(2),
+                            ->numeric(),
                     ])->columns(2),
             ]);
     }
