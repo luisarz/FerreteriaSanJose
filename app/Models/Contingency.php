@@ -18,6 +18,10 @@ class Contingency extends Model
         'continvengy_motivation',
         'end_date'
     ];
+    protected $casts = [
+        'end_date' => 'datetime',
+    ];
+
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Branch::class,'warehouse_id','id');

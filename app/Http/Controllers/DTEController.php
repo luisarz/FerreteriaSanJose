@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\Contingency;
 use App\Models\HistoryDte;
 use App\Models\Sale;
 use DateTime;
@@ -105,8 +106,22 @@ class DTEController extends Controller
             ];
             $i++;
         }
+        $branchId = auth()->user()->employee->branch_id ?? null;
+        if (!$branchId) {
+            return false;
+        }
+        $exiteContingencia = Contingency::where('warehouse_id', $branchId)
+            ->where('is_close', 0)->first();
+        $uuidContingencia = null;
+        $transmissionType = 1;
+        if ($exiteContingencia) {
+            $exiteContingencia = $exiteContingencia->uuid_hacienda;
+            $transmissionType = 2;
+        }
         $dte = [
             "documentType" => "01",
+            "transmissionType" => $transmissionType,
+            "contingency" => $exiteContingencia,
             "invoiceId" => intval($factura->document_internal_number),
             "establishmentType" => $establishmentType,
             "conditionCode" => $conditionCode,
@@ -245,8 +260,9 @@ class DTEController extends Controller
             ));
 
             $response = curl_exec($curl);
+//            dd($response);
 
-//            return response()->json($response);
+            return response()->json($response);
 
             // Check for cURL errors
             if ($response === false) {
@@ -362,7 +378,7 @@ class DTEController extends Controller
 
 //        return response()->json($dte);
         $responseData = $this->SendAnularDTE($dte, $idVenta);
-        $reponse_anular = $responseData['response_anular']??null;
+        $reponse_anular = $responseData['response_anular'] ?? null;
         if (isset($reponse_anular['estado']) == "RECHAZADO") {
             return [
                 'estado' => 'FALLO', // o 'ERROR'

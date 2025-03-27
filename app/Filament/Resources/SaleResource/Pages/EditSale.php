@@ -6,6 +6,7 @@ use App\Filament\Resources\SaleResource;
 use App\Helpers\KardexHelper;
 use App\Models\CashBox;
 use App\Models\CashBoxCorrelative;
+use App\Models\Contingency;
 use App\Models\Customer;
 use App\Models\DteTransmisionWherehouse;
 use App\Models\Inventory;
@@ -55,8 +56,8 @@ class EditSale extends EditRecord
 
                         return;
                     }
-                    $salePayment_status='Pagada';
-                    $status_sale_credit=0;
+                    $salePayment_status = 'Pagada';
+                    $status_sale_credit = 0;
 
                     $documentType = $this->data['document_type_id'];
                     if ($documentType == "") {
@@ -127,33 +128,47 @@ class EditSale extends EditRecord
                                 ->send();
                             return;
                         }
-                    }else{
+                    } else {
 //                        $salePayment_status='Pendiente';
-                        $status_sale_credit=1;
+                        $status_sale_credit = 1;
                     }
 
                     //Obtenre modeloFacturacion
                     //Obtener tipo de transmision
                     $wherehouse_id = $this->record->wherehouse_id;
-                    $modeloFacturacion = DteTransmisionWherehouse::where('wherehouse', $wherehouse_id)->first();
-                    $billing_model = $modeloFacturacion->billing_model;
-                    $transmision_type = $modeloFacturacion->transmision_type;
-                    if ($billing_model == null || $billing_model == "") {
-                        PageAlert::make('No se puede finalizar la venta')
-                            ->title('Error al finalizar venta')
-                            ->body('No se puede finalizar la venta, Sin definir el modelo de facturacion')
-                            ->danger()
-                            ->send();
-                        return;
+                    $exiteContingencia = Contingency::where('warehouse_id', $wherehouse_id)
+                        ->where('is_close', 0)->first();
+                    $billing_model = 1;
+                    $transmision_type = 1;
+                    if ($exiteContingencia) {
+                        $exiteContingencia = $exiteContingencia->uuid_hacienda;
+                        $transmision_type = 2;
+                        $billing_model = 2;
                     }
-                    if ($transmision_type == null || $transmision_type == "") {
-                        PageAlert::make('No se puede finalizar la venta')
-                            ->title('Error al finalizar venta')
-                            ->body('No se puede finalizar la venta, Sin definir el tipo de transmision')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
+
+
+//                    $wherehouse_id = $this->record->wherehouse_id;
+//                    $modeloFacturacion = DteTransmisionWherehouse::where('wherehouse', $wherehouse_id)->first();
+//                    $billing_model = $modeloFacturacion->billing_model;
+//                    $transmision_type = $modeloFacturacion->transmision_type;
+//                    if ($billing_model == null || $billing_model == "") {
+//                        PageAlert::make('No se puede finalizar la venta')
+//                            ->title('Error al finalizar venta')
+//                            ->body('No se puede finalizar la venta, Sin definir el modelo de facturacion')
+//                            ->danger()
+//                            ->send();
+//                        return;
+//                    }
+
+
+//                    if ($transmision_type == null || $transmision_type == "") {
+//                        PageAlert::make('No se puede finalizar la venta')
+//                            ->title('Error al finalizar venta')
+//                            ->body('No se puede finalizar la venta, Sin definir el tipo de transmision')
+//                            ->danger()
+//                            ->send();
+//                        return;
+//                    }
 
                     $id_sale = $this->record->id; // Obtener el registro de la compra
                     $sale = Sale::with('documenttype', 'customer', 'customer.country')->find($id_sale);
@@ -219,8 +234,8 @@ class EditSale extends EditRecord
                                     0, // money_in
                                     $inventarioHijo->quantity ?? 0 * $inventarioHijo->sale_price ?? 0, // money_out
                                     $inventarioHijo->inventoryChild->stock ?? 0 * $inventarioHijo->sale_price ?? 0, // money_actual
-                                    $inventarioHijo->sale_price??0, // sale_price
-                                    $inventarioHijo->inventoryChild->cost_without_taxes??0 // purchase_price
+                                    $inventarioHijo->sale_price ?? 0, // sale_price
+                                    $inventarioHijo->inventoryChild->cost_without_taxes ?? 0 // purchase_price
                                 );
                             }
                         } else {
@@ -265,8 +280,8 @@ class EditSale extends EditRecord
                         'is_invoiced' => true,
                         'sales_payment_status' => $salePayment_status,
                         'sale_status' => 'Facturada',
-                        'status_sale_credit'=>$status_sale_credit,
-                        'operation_date'=> $this->data['operation_date'],
+                        'status_sale_credit' => $status_sale_credit,
+                        'operation_date' => $this->data['operation_date'],
                         'document_internal_number' => $document_internal_number_new
                     ]);
 

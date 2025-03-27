@@ -4,8 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ContingencyResource\Pages;
 use App\Filament\Resources\ContingencyResource\RelationManagers;
+use App\Http\Controllers\ContingencyController;
 use App\Models\Contingency;
+use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -68,7 +71,54 @@ class ContingencyResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make('Cerrar'),
+//                Tables\Actions\Action::make()
+                 Tables\Actions\Action::make('close')
+                    ->label('Cerrar')
+                    ->icon('heroicon-o-plus-circle')
+                    ->requiresConfirmation()
+                    ->visible(function ($record) {
+                        return $record->is_close == 0;
+                    })
+
+                    ->modalSubmitActionLabel('Cerrar Contingencia')
+                    ->form([
+
+                            Select::make('confirmacion')
+                                ->label('Confirmar')
+                                ->inlineLabel(false)
+                                ->options(['si' => 'Sí, deseo Cerrar', 'no' => 'No, no enviar'])
+                                ->required(),
+
+                        ]
+                    )
+                    ->action(function ($record, array $data) {
+                        if ($data['confirmacion'] === 'si') {
+                            $dteController = new ContingencyController();
+                            if($record->uuid_hacienda == null){
+                                PageAlert::make()
+                                    ->title('No se puede cerrar la contingencia')
+                                    ->danger()
+                                    ->send();
+                            }
+                            $resultado = $dteController->contingencyCloseDTE($record->uuid_hacienda);
+                            if($resultado){
+                                PageAlert::make()
+                                    ->title('Contingencia generada Exitosa')
+                                    ->success()
+                                    ->send();
+                            }else{
+                                PageAlert::make()
+                                    ->title('Fallo en envío')
+                                    ->danger()
+                                    ->send();
+                            }
+                        } else {
+                            PageAlert::make()
+                                ->title('Se canceló el envío')
+                                ->warning()
+                                ->send();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -88,8 +138,8 @@ class ContingencyResource extends Resource
     {
         return [
             'index' => Pages\ListContingencies::route('/'),
-            'create' => Pages\CreateContingency::route('/create'),
-            'edit' => Pages\EditContingency::route('/{record}/edit'),
+//            'create' => Pages\CreateContingency::route('/create'),
+//            'edit' => Pages\EditContingency::route('/{record}/edit'),
         ];
     }
 }

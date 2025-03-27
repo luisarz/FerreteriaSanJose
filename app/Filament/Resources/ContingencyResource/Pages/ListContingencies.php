@@ -30,6 +30,7 @@ class ListContingencies extends ListRecords
                     if (!$branchId) {
                         return false;
                     }
+                    // Check if there's an open contingency for this branch
                     return !Contingency::where('warehouse_id', $branchId)
                         ->where('is_close', 0)
                         ->exists();
