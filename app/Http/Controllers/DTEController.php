@@ -69,8 +69,8 @@ class DTEController extends Controller
         $receptor = [
             "documentType" => null,//$factura->customer->documenttypecustomer->code ?? null,
             "documentNum" => null,//$factura->customer->dui ?? $factura->customer->nit,
-            "nit" => $factura->customer->nit ?? null,
-            "nrc" => str_replace("-", "", $factura->customer->nrc) ?? null,
+            "nit" =>  null,
+            "nrc" =>  null,
             "name" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
             "phoneNumber" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->phone ?? '') : null,
             "email" => isset($factura->customer) ? trim($factura->customer->email ?? '') : null,
@@ -666,11 +666,12 @@ class DTEController extends Controller
     /**
      * @param array $dte
      * @param $idVenta
-     * @return array|string[]
+     * @return array
      */
     public function extracted(array $dte, $idVenta): array
     {
         $responseData = $this->SendDTE($dte, $idVenta);
+//        return response()->json($responseData);
         if (isset($responseData['respuestaHacienda"']["estado"]) && $responseData['respuestaHacienda"']["estado"] === "RECHAZADO") {
             return [
                 'estado' => 'FALLO', // o 'ERROR'

@@ -36,6 +36,8 @@ class ContingencyResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('uuid_hacienda')
                     ->label('Hacienda')
+                    ->limit(15)
+                    ->copyable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('start_date')
@@ -47,58 +49,34 @@ class ContingencyResource extends Resource
                     ->placeholder('Fecha Inicio')
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('duration')
-                    ->label('Duración')
-                    ->formatStateUsing(function ($record) {
-                        // Check if both dates exist
-                        if (empty($record->start_date) || empty($record->end_date)) {
-                            return 'Sin datos';
-                        }
 
-                        try {
-                            $start = Carbon::parse($record->start_date);
-                            $end = Carbon::parse($record->end_date);
-
-                            // Check if start date is after end date
-                            if ($start->greaterThan($end)) {
-                                return 'Fecha inválida';
-                            }
-
-                            $diff = $start->diff($end);
-
-                            // Build the duration string
-                            $parts = [];
-                            if ($diff->d > 0) $parts[] = "{$diff->d} días";
-                            if ($diff->h > 0) $parts[] = "{$diff->h}h";
-                            if ($diff->i > 0) $parts[] = "{$diff->i}m";
-
-                            return empty($parts) ? '0m' : implode(' ', $parts);
-
-                        } catch (\Exception $e) {
-                            return 'Formato inválido';
-                        }
-                    })
-                    ->sortable(),
                 Tables\Columns\BadgeColumn::make('is_close')
                     ->extraAttributes(['class' => 'text-lg'])  // Cambia el tamaño de la fuente
-                    ->label('Estado Contingencia')
+                    ->label('Estado')
+
                     ->tooltip(fn ($state) => $state === 1 ? 'Cerrada' : 'Abierto')
                     ->icon(fn ($state) => $state === 1 ? 'heroicon-o-clock' : 'heroicon-o-check-circle')
                     ->color(fn ($state) => $state === 1 ? 'success' : 'danger')
                     ->formatStateUsing(fn ($state) => $state === 1 ? 'Cerrada' : 'Abierta'),
 
 
-        Tables\Columns\TextColumn::make('contingencyType.name')
-                    ->label('Tipo de Contingencia')
+                Tables\Columns\TextColumn::make('contingencyType.name')
+                    ->label('Tipo')
+                    ->limit(15)
+                    ->tooltip(fn ($state) => $state ? $state : 'Nombre no disponible')  // Mostrar el nombre directamente en el tooltip
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('contingency_motivation')
                     ->label('Motivo')
+                    ->limit(15)
+                    ->tooltip(fn ($state) => $state ? $state : 'Nombre no disponible')  // Mostrar el nombre directamente en el tooltip
+
                     ->placeholder('Sin motivo')
                     ->searchable(),
 
             ])
             ->filters([
-                //
+
             ])
             ->actions([
 //                Tables\Actions\Action::make()
@@ -152,7 +130,7 @@ class ContingencyResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+//                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

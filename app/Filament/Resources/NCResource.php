@@ -84,7 +84,7 @@ function updateTotalSale(mixed $idItem, array $data): void
     }
 }
 
-class SaleResource extends Resource
+class NCResource extends Resource
 {
     protected static ?string $model = Sale::class;
 
