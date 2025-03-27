@@ -107,7 +107,7 @@ class DTEController extends Controller
         }
         $dte = [
             "documentType" => "01",
-            "invoiceId" => intval($factura->id),
+            "invoiceId" => intval($factura->document_internal_number),
             "establishmentType" => $establishmentType,
             "conditionCode" => $conditionCode,
             "receptor" => $receptor,
@@ -265,10 +265,10 @@ class DTEController extends Controller
             curl_close($curl);
 
             $responseData = json_decode($response, true);
-
-            // return response()->json($responseData);
+//dd($responseData);
 
             $responseHacienda = (isset($responseData["estado"]) == "RECHAZADO") ? $responseData : $responseData["respuestaHacienda"];
+//            dd($responseData['identificacion']['numeroControl']);
             $falloDTE = new HistoryDte;
             $ventaID = intval($idVenta);
             $falloDTE->sales_invoice_id = $ventaID;
@@ -278,7 +278,7 @@ class DTEController extends Controller
             $falloDTE->estado = $responseHacienda["estado"] ?? null;
             $falloDTE->codigoGeneracion = $responseHacienda["codigoGeneracion"] ?? null;
             $falloDTE->selloRecibido = $responseHacienda["selloRecibido"] ?? null;
-//            return $responseHacienda;
+            $falloDTE->num_control = $responseData["identificacion"]['numeroControl'] ?? null;
             if (isset($responseHacienda["fhProcesamiento"])) {
                 $fhProcesamiento = DateTime::createFromFormat('d/m/Y H:i:s', $responseHacienda["fhProcesamiento"]);
                 $falloDTE->fhProcesamiento = $fhProcesamiento ? $fhProcesamiento->format('Y-m-d H:i:s') : null;

@@ -229,13 +229,13 @@
   ),
   'rmsramos/activitylog' => 
   array (
-    'providers' => 
-    array (
-      0 => 'Rmsramos\\Activitylog\\ActivitylogServiceProvider',
-    ),
     'aliases' => 
     array (
       'Activitylog' => 'Rmsramos\\Activitylog\\Facades\\Activitylog',
+    ),
+    'providers' => 
+    array (
+      0 => 'Rmsramos\\Activitylog\\ActivitylogServiceProvider',
     ),
   ),
   'ryangjchandler/blade-capture-directive' => 

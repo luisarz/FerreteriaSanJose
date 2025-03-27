@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Auth\CustomLogin;
 use App\Filament\Resources\LogResource;
 use App\Filament\Resources\SaleResource;
+use App\Models\Contingency;
 use App\Models\DteTransmisionWherehouse;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use EightyNine\FilamentPageAlerts\FilamentPageAlertsPlugin;
@@ -94,10 +95,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, function () {
                 $whereHouse = auth()->user()->employee->branch_id ?? null;
-                $DTETransmisionType = DteTransmisionWherehouse::where('wherehouse', $whereHouse)->first();
+                $DTETransmisionType = Contingency::where('warehouse_id', $whereHouse)->where('is_close',0)->first();
                 $labelTransmisionType = "Previo Normal";
                 $labelTransmisionTypeBorderColor = " #52b01e ";
-                if ($DTETransmisionType->billing_model != 1) {//Previo Normal)
+                if ($DTETransmisionType) {//Previo Normal)
                     $labelTransmisionType = " Deferido Contingencia ";
                     $labelTransmisionTypeBorderColor = " red ";
                 }

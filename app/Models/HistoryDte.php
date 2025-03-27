@@ -9,6 +9,9 @@ class HistoryDte extends Model
 {
     use SoftDeletes;
 
+    /**
+     * @var mixed|null
+     */
     protected $fillable = [
         'sales_invoice_id',
         'version',
@@ -17,6 +20,7 @@ class HistoryDte extends Model
         'estado',
         'codigoGeneracion',
         'selloRecibido',
+        'num_control',
         'fhProcesamiento',
         'clasificaMsg',
         'codigoMsg',

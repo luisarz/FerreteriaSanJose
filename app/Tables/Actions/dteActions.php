@@ -174,6 +174,8 @@ class dteActions
                 $print = DteTransmisionWherehouse::where('wherehouse',$idSucursal)->first();
                 $ruta = $print->printer_type == 1 ? 'printDTETicket' : 'printDTEPdf';
                 return route($ruta, ['idVenta' => $record->generationCode]);
+
+
             })
 
             ->openUrlInNewTab(); // Esto asegura que se abra en una nueva pestaña

@@ -23,6 +23,7 @@
     "livewire/livewire": "^3.4",
     "livewire/volt": "^1.0",
     "luecano/numero-a-letras": "^4.0",
+    "maatwebsite/excel": "^3.1",
     "malzariey/filament-daterangepicker-filter": "^3.1",
     "novadaemon/filament-pretty-json": "^2.3",
     "psr/simple-cache": "2.0",

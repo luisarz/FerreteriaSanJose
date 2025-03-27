@@ -17,7 +17,7 @@ class DteTransmisionWherehouseResource extends Resource
 {
     protected static ?string $model = DteTransmisionWherehouse::class;
     protected static ?string $label = 'Transmision DTE';
-    protected static ?string $pluralLabel = 'Transmisión DTE Sucursal';
+    protected static ?string $pluralLabel = 'Impresión DTE Sucursal';
     protected static ?string $navigationGroup = 'Configuración';
     protected static ?int $navigationSort = 3;
 
