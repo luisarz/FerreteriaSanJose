@@ -69,10 +69,12 @@ class DTEController extends Controller
         $receptor = [
             "documentType" => null,//$factura->customer->documenttypecustomer->code ?? null,
             "documentNum" => null,//$factura->customer->dui ?? $factura->customer->nit,
-            "nrc" => null,//str_replace("-","",$factura->customer->nrc) ?? null,
+            "nit" => $factura->customer->nit ?? null,
+            "nrc" => str_replace("-", "", $factura->customer->nrc) ?? null,
             "name" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
             "phoneNumber" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->phone ?? '') : null,
             "email" => isset($factura->customer) ? trim($factura->customer->email ?? '') : null,
+            "businessName" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
             "economicAtivity" => isset($factura->customer->economicactivity) ? trim($factura->customer->economicactivity->code ?? '') : null,
             "address" => isset($factura->customer) ? trim($factura->customer->address ?? '') : null,
             "codeCity" => isset($factura->customer->departamento) ? trim($factura->customer->departamento->code ?? '') : null,
@@ -115,16 +117,16 @@ class DTEController extends Controller
         $uuidContingencia = null;
         $transmissionType = 1;
         if ($exiteContingencia) {
-            $exiteContingencia = $exiteContingencia->uuid_hacienda;
+            $uuidContingencia = $exiteContingencia->uuid_hacienda;
             $transmissionType = 2;
         }
         $dte = [
             "documentType" => "01",
-            "transmissionType" => $transmissionType,
-            "contingency" => $exiteContingencia,
             "invoiceId" => intval($factura->document_internal_number),
             "establishmentType" => $establishmentType,
             "conditionCode" => $conditionCode,
+            "transmissionType" => $transmissionType,
+            "contingency" => $uuidContingencia,
             "receptor" => $receptor,
             "extencion" => $extencion,
             "items" => $items
@@ -133,23 +135,7 @@ class DTEController extends Controller
 //        $dteJSON = json_encode($dte, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 //        return response()->json($dte);
 
-        $responseData = $this->SendDTE($dte, $idVenta);
-
-//        return response()->json($responseData);
-
-        if (isset($responseData["estado"]) == "RECHAZADO") {
-            return [
-                'estado' => 'FALLO', // o 'ERROR'
-                'response' => $responseData,
-                'mensaje' => 'DTE falló al enviarse: ' . implode(', ', $responseData['observaciones'] ?? []), // Concatenar observaciones
-            ];
-        } else {
-            $this->saveJson($responseData, $idVenta);
-            return [
-                'estado' => 'EXITO',
-                'mensaje' => 'DTE enviado correctamente',
-            ];
-        }
+        return $this->extracted($dte, $idVenta);
     }
 
     function CCFJson($idVenta)
@@ -202,9 +188,23 @@ class DTEController extends Controller
             ];
             $i++;
         }
+        $branchId = auth()->user()->employee->branch_id ?? null;
+        if (!$branchId) {
+            return false;
+        }
+        $exiteContingencia = Contingency::where('warehouse_id', $branchId)
+            ->where('is_close', 0)->first();
+        $uuidContingencia = null;
+        $transmissionType = 1;
+        if ($exiteContingencia) {
+            $uuidContingencia = $exiteContingencia->uuid_hacienda;
+            $transmissionType = 2;
+        }
         $dte = [
             "documentType" => "03",
             "invoiceId" => intval($factura->id),
+            "transmissionType" => $transmissionType,
+            "contingency" => $uuidContingencia,
             "establishmentType" => trim($establishmentType),
             "conditionCode" => trim($conditionCode),
             "receptor" => $receptor,
@@ -215,21 +215,7 @@ class DTEController extends Controller
 //        return response()->json($dte);
 
 
-        $responseData = $this->SendDTE($dte, $idVenta);
-        if (isset($responseData["estado"]) == "RECHAZADO") {
-            return [
-                'estado' => 'FALLO', // o 'ERROR'
-                'mensaje' => 'DTE falló al enviarse: ' . implode(', ', $responseData['observaciones'] ?? []), // Concatenar observaciones
-            ];
-        } else {
-            $this->saveJson($responseData, $idVenta);
-
-
-            return [
-                'estado' => 'EXITO',
-                'mensaje' => 'DTE enviado correctamente',
-            ];
-        }
+        return $this->extracted($dte, $idVenta);
     }
 
     function SendDTE($dteData, $idVenta) // Assuming $dteData is the data you need to send
@@ -260,9 +246,8 @@ class DTEController extends Controller
             ));
 
             $response = curl_exec($curl);
-//            dd($response);
+            curl_close($curl);
 
-            return response()->json($response);
 
             // Check for cURL errors
             if ($response === false) {
@@ -278,13 +263,21 @@ class DTEController extends Controller
             //estado contingencia
             //
 
-            curl_close($curl);
 
             $responseData = json_decode($response, true);
-//dd($responseData);
+
+
+
+
+            //validar si respuesta hacienda es null pero tiene firma, si es asi es contingencia
+
 
             $responseHacienda = (isset($responseData["estado"]) == "RECHAZADO") ? $responseData : $responseData["respuestaHacienda"];
-//            dd($responseData['identificacion']['numeroControl']);
+//            $responseHacienda = isset($responseData["estado"]) && $responseData["estado"] === "RECHAZADO"
+//                ? $responseData
+//                : ($responseData["respuestaHacienda"] ?? $responseData["identificacion"] ?? null);
+
+
             $falloDTE = new HistoryDte;
             $ventaID = intval($idVenta);
             $falloDTE->sales_invoice_id = $ventaID;
@@ -293,6 +286,8 @@ class DTEController extends Controller
             $falloDTE->versionApp = $responseHacienda["versionApp"] ?? 0;
             $falloDTE->estado = $responseHacienda["estado"] ?? null;
             $falloDTE->codigoGeneracion = $responseHacienda["codigoGeneracion"] ?? null;
+            $falloDTE->contingencia = $responseHacienda["tipoContingencia"] ?? null;
+            $falloDTE->motivo_contingencia = $responseHacienda["motivoContin"] ?? null;
             $falloDTE->selloRecibido = $responseHacienda["selloRecibido"] ?? null;
             $falloDTE->num_control = $responseData["identificacion"]['numeroControl'] ?? null;
             if (isset($responseHacienda["fhProcesamiento"])) {
@@ -305,15 +300,18 @@ class DTEController extends Controller
             $falloDTE->clasificaMsg = $responseHacienda["clasificaMsg"] ?? null;
             $falloDTE->codigoMsg = $responseHacienda["codigoMsg"] ?? null;
             $falloDTE->descripcionMsg = $responseHacienda["descripcionMsg"] ?? null;
-            $falloDTE->observaciones = json_encode($responseHacienda["observaciones"] ?? $responseHacienda["descripcion"]);
+            $falloDTE->observaciones = isset($responseHacienda["observaciones"]) ? json_encode($responseHacienda["observaciones"]) : (isset($responseHacienda["descripcion"]) ? json_encode($responseHacienda["descripcion"]) : null);
+
             $falloDTE->dte = $responseData ?? null;
             $falloDTE->save();
+
+
             return $responseData;
 
         } catch (Exception $e) {
             $data = [
                 'estado' => 'RECHAZADO',
-                'mensaje' => "Ocurrio un eror " . $e->getMessage()
+                'mensaje' => "Ocurrio un eror " . $e
             ];
             return $data;
         }
@@ -640,15 +638,18 @@ class DTEController extends Controller
      * @param $idVenta
      * @return void
      */
-    public function saveJson(mixed $responseData, $idVenta): void
+    public function saveJson(mixed $responseData, $idVenta, $enviado_hacienda): void
     {
-        $fileName = "DTEs/{$responseData['respuestaHacienda']['codigoGeneracion']}.json";
+       $codGeneration=$responseData['respuestaHacienda']['codigoGeneracion'];
+        $fileName = "DTEs/{$codGeneration}.json";
+
         $jsonContent = json_encode($responseData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         Storage::disk('public')->put($fileName, $jsonContent);
 
         $venta = Sale::find($idVenta);
         $venta->is_dte = true;
-        $venta->generationCode = $responseData["respuestaHacienda"]["codigoGeneracion"] ?? null;
+        $venta->is_hacienda_send = $enviado_hacienda;
+        $venta->generationCode = $codGeneration ?? null;
         $venta->jsonUrl = $fileName;
         $venta->save();
     }
@@ -659,6 +660,35 @@ class DTEController extends Controller
             return $array[$clave];
         } else {
             return 'Clave no encontrada';
+        }
+    }
+
+    /**
+     * @param array $dte
+     * @param $idVenta
+     * @return array|string[]
+     */
+    public function extracted(array $dte, $idVenta): array
+    {
+        $responseData = $this->SendDTE($dte, $idVenta);
+        if (isset($responseData['respuestaHacienda"']["estado"]) && $responseData['respuestaHacienda"']["estado"] === "RECHAZADO") {
+            return [
+                'estado' => 'FALLO', // o 'ERROR'
+                'response' => $responseData,
+                'mensaje' => 'DTE falló al enviarse: ' . implode(', ', $responseData['descripcionMsg'] ?? []), // Concatenar observaciones
+            ];
+        } else if ($responseData['respuestaHacienda']["estado"] == "PENDIENTE") {
+            $this->saveJson($responseData, $idVenta, false);
+            return [
+                'estado' => 'CONTINGENCIA',
+                'mensaje' => 'DTE procesado correctamente - Pendiente envio a hacienda',
+            ];
+        } else {
+            $this->saveJson($responseData, $idVenta, true);
+            return [
+                'estado' => 'EXITO',
+                'mensaje' => 'DTE enviado correctamente',
+            ];
         }
     }
 }

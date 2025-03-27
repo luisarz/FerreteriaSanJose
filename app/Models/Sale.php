@@ -38,6 +38,7 @@ class Sale extends Model
         'billing_model',
         'transmision_type',
         'is_dte',
+        'is_hacienda_send',
         'generationCode',
         'receiptStamp',
         'jsonUrl',

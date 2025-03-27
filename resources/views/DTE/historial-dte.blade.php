@@ -19,9 +19,19 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
         @foreach ($historial as $item)
-            <tr style="{{$item['estado'] == 'RECHAZADO' ? 'background-color: rgb(254 202 202); ' : 'background-color: rgb(134 239 172);'}}">
+{{--            <tr style="{{$item['estado'] == 'RECHAZADO' ? 'background-color: rgb(254 202 202); ' : 'background-color: rgb(134 239 172);'}}">--}}
+            <tr style="
+    @if ($item['estado'] == 'RECHAZADO')
+        background-color: rgb(254 202 202); /* Rojo claro */
+    @elseif ($item['is_hacienda_send'] == 0)
+        background-color: rgb(253 230 138); /* Amarillo claro */
+    @else
+        background-color: rgb(134 239 172); /* Verde claro */
+    @endif
+">
 
-{{--            <td class="px-4 py-2">{{$item["sales_invoice_id"]}}</td>--}}
+
+            {{--            <td class="px-4 py-2">{{$item["sales_invoice_id"]}}</td>--}}
                 <td class="px-4 py-2">{{$item["version"]}}</td>
                 <td class="px-4 py-2">{{$item["ambiente"]=="00"?'Prueba':'Produccion'}}</td>
                 <td class="px-4 py-2">{{$item["versionApp"]}}</td>

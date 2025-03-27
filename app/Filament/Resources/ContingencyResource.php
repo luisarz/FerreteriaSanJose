@@ -6,6 +6,7 @@ use App\Filament\Resources\ContingencyResource\Pages;
 use App\Filament\Resources\ContingencyResource\RelationManagers;
 use App\Http\Controllers\ContingencyController;
 use App\Models\Contingency;
+use Carbon\Carbon;
 use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
@@ -13,9 +14,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-
 class ContingencyResource extends Resource
 {
     protected static ?string $model = Contingency::class;
@@ -48,6 +46,38 @@ class ContingencyResource extends Resource
                     ->label('Fecha Fin')
                     ->placeholder('Fecha Inicio')
                     ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('duration')
+                    ->label('Duración')
+                    ->formatStateUsing(function ($record) {
+                        // Check if both dates exist
+                        if (empty($record->start_date) || empty($record->end_date)) {
+                            return 'Sin datos';
+                        }
+
+                        try {
+                            $start = Carbon::parse($record->start_date);
+                            $end = Carbon::parse($record->end_date);
+
+                            // Check if start date is after end date
+                            if ($start->greaterThan($end)) {
+                                return 'Fecha inválida';
+                            }
+
+                            $diff = $start->diff($end);
+
+                            // Build the duration string
+                            $parts = [];
+                            if ($diff->d > 0) $parts[] = "{$diff->d} días";
+                            if ($diff->h > 0) $parts[] = "{$diff->h}h";
+                            if ($diff->i > 0) $parts[] = "{$diff->i}m";
+
+                            return empty($parts) ? '0m' : implode(' ', $parts);
+
+                        } catch (\Exception $e) {
+                            return 'Formato inválido';
+                        }
+                    })
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('is_close')
                     ->extraAttributes(['class' => 'text-lg'])  // Cambia el tamaño de la fuente

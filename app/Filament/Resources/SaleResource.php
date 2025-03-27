@@ -462,11 +462,36 @@ class SaleResource extends Resource
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\BadgeColumn::make('is_dte')
-                    ->formatStateUsing(fn($state) => $state ? 'Enviado' : 'Sin transmisión')
-                    ->color(fn($state) => $state ? 'success' : 'danger') // Colores: 'success' para verde, 'danger' para rojo
-                    ->tooltip(fn($state) => $state ? 'Documento transmitido correctamente' : 'Documento pendiente de transmisión')
                     ->label('DTE')
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(function ($state, $record) {
+                        if ($record->is_dte && $record->is_hacienda_send) {
+                            return 'Enviado';
+                        } elseif ($record->is_dte && !$record->is_hacienda_send) {
+                            return 'Procesado (pendiente=> Hacienda)';
+                        } else {
+                            return 'Sin transmisión';
+                        }
+                    })
+                    ->color(function ($state, $record) {
+                        if ($record->is_dte && $record->is_hacienda_send) {
+                            return 'success'; // verde
+                        } elseif ($record->is_dte && !$record->is_hacienda_send) {
+                            return 'warning'; // amarillo
+                        } else {
+                            return 'danger'; // rojo
+                        }
+                    })
+                    ->tooltip(function ($state, $record) {
+                        if ($record->is_dte && $record->is_hacienda_send) {
+                            return 'Documento transmitido correctamente a Hacienda';
+                        } elseif ($record->is_dte && !$record->is_hacienda_send) {
+                            return 'Documento procesado en contingencia, pendiente de enviar a Hacienda';
+                        } else {
+                            return 'Documento pendiente de transmisión';
+                        }
+                    }),
+
 
 //                Tables\Columns\IconColumn::make('is_dte')
 //                    ->boolean()
@@ -492,6 +517,7 @@ class SaleResource extends Resource
                     ->tooltip(fn($state) => $state?->id === 2 ? 'Contingencia' : 'Normal')
                     ->icon(fn($state) => $state?->id === 2 ? 'heroicon-o-clock' : 'heroicon-o-check-circle')
                     ->color(fn($state) => $state?->id === 2 ? 'danger' : 'success')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->formatStateUsing(fn($state) => $state?->id === 2 ? 'Contingencia' : 'Normal'), // Texto del badge
 
 

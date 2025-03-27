@@ -27,6 +27,8 @@ class HistoryDte extends Model
         'descripcionMsg',
         'observaciones',
         'dte',
+        'contingencia',
+        'motivo_contingencia'
     ];
     protected $casts = [
         'dte' => 'array',

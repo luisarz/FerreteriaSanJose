@@ -104,11 +104,14 @@
         <h4>DOCUMENTO TRIBUTARIO ELECTRÓNICO</h4>
         <h5>{{ $datos['tipoDocumento'] }}</h5>
         <b>Código de generación</b> <br>
-        {{ $datos['DTE']['respuestaHacienda']['codigoGeneracion'] }} <br>
+        {{ $datos['DTE']['respuestaHacienda']['codigoGeneracion'] ?? $datos['DTE']['identificacion']['codigoGeneracion'] }}
+
+        <br>
+        <br>
         <b>Número de control</b> <br>
         {{ $datos['DTE']['identificacion']['numeroControl'] }} <br>
         <b>Sello de recepción:</b> <br>
-        {{ $datos['DTE']['respuestaHacienda']['selloRecibido'] }} <br>
+        {{ $datos['DTE']['respuestaHacienda']['selloRecibido']?? 'CONTINGENCIA' }} <br>
         <b>Fecha emisión</b> <br>
         {{ date('d/m/Y', strtotime($datos['DTE']['identificacion']['fecEmi'])) }} {{ $datos['DTE']['identificacion']['horEmi'] }}
     </div>

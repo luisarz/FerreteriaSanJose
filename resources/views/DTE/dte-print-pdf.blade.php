@@ -104,11 +104,14 @@
                 <table>
                     <tr>
                         <td>Código generación:</td>
-                        <td>{{ $datos['DTE']['respuestaHacienda']['codigoGeneracion'] }}</td>
+                        <td>
+                            {{ $datos['DTE']['respuestaHacienda']['codigoGeneracion'] ?? $datos['DTE']['identificacion']['codigoGeneracion'] }}
+
+                        </td>
                     </tr>
                     <tr>
                         <td>Sello de recepción:</td>
-                        <td>{{ $datos['DTE']['respuestaHacienda']['selloRecibido'] }}</td>
+                        <td>{{ $datos['DTE']['respuestaHacienda']['selloRecibido']??'Contingencia' }}</td>
                     </tr>
                     <tr>
                         <td>Número de control:</td>

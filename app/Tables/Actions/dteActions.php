@@ -50,7 +50,7 @@ class dteActions
                         }
                     } else {
                         PageAlert::make()
-                            ->title('Fallo en envío')
+                            ->title($resultado['estado'])
                             ->danger()
                             ->body($resultado["mensaje"])
                             ->send();
@@ -173,7 +173,8 @@ class dteActions
 
                 $print = DteTransmisionWherehouse::where('wherehouse',$idSucursal)->first();
                 $ruta = $print->printer_type == 1 ? 'printDTETicket' : 'printDTEPdf';
-                return route($ruta, ['idVenta' => $record->generationCode]);
+                    return route($ruta, ['idVenta' => isset($record) ? ($record->generationCode ?? 'SN') : 'SN']);
+
 
 
             })
