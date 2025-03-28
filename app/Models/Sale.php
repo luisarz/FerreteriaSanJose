@@ -57,6 +57,10 @@ class Sale extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+public function saleRelated(): BelongsTo
+{
+    return $this->belongsTo(Sale::class, 'document_related_id', 'id');
+}
 
     public function documenttype(): BelongsTo
     {

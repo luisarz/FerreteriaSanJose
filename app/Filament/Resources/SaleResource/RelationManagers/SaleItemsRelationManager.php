@@ -415,6 +415,7 @@ class SaleItemsRelationManager extends RelationManager
     {
         $idSale = $record->sale_id;
         $sale = Sale::where('id', $idSale)->first();
+        $documentType = $sale->document_type_id ?? null;
 
 //        dd($sale);
         if ($sale) {
@@ -428,6 +429,11 @@ class SaleItemsRelationManager extends RelationManager
 //            dd($montoTotal);
                 $neto = $ivaRate > 0 ? $montoTotal / (1 + $ivaRate) : $montoTotal;
                 $iva = $montoTotal - $neto;
+                if($documentType==9 || $documentType==10){
+                    $neto=$neto+$iva;
+                    $iva = 0;
+
+                }
                 $retention = $sale->have_retention ? $neto * 0.1 : 0;
                 $sale->net_amount = round($neto, 2);
                 $sale->taxe = round($iva, 2);

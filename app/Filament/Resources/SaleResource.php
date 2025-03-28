@@ -128,6 +128,7 @@ class SaleResource extends Resource
                                                 if ($openedCashBox > 0) {
                                                     return CashBoxCorrelative::with('document_type')
                                                         ->where('cash_box_id', $openedCashBox)
+                                                        ->whereIn('document_type_id',[1,2,9,10,])
                                                         ->get()
                                                         ->mapWithKeys(function ($item) {
                                                             return [$item->id => $item->document_type->name];

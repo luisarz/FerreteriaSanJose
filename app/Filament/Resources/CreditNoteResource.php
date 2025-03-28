@@ -14,6 +14,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Tribute;
 use App\Service\GetCashBoxOpenedService;
+use App\Tables\Actions\creditNotesActions;
 use App\Tables\Actions\dteActions;
 use Carbon\Carbon;
 use EightyNine\FilamentPageAlerts\PageAlert;
@@ -394,31 +395,31 @@ class CreditNoteResource extends Resource
 
 
                 Tables\Columns\TextColumn::make('seller.name')
-                    ->label('Vendedor')
+                    ->label('Encargado')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Cliente')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('salescondition.name')
-                    ->label('Condición')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('status_sale_credit')
-                    ->label('Credito')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('paymentmethod.name')
-                    ->label('Método de pago')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable(),
+//                Tables\Columns\TextColumn::make('salescondition.name')
+//                    ->label('Condición')
+//                    ->sortable(),
+//                Tables\Columns\TextColumn::make('status_sale_credit')
+//                    ->label('Credito')
+//                    ->toggleable(isToggledHiddenByDefault: true)
+//                    ->sortable(),
+//                Tables\Columns\TextColumn::make('paymentmethod.name')
+//                    ->label('Método de pago')
+//                    ->toggleable(isToggledHiddenByDefault: true)
+//                    ->sortable(),
                 Tables\Columns\TextColumn::make('sales_payment_status')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->label('Pago'),
                 Tables\Columns\BadgeColumn::make('sale_status')
                     ->label('Estado')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->extraAttributes(['class' => 'text-lg'])  // Cambia el tamaño de la fuente
-
                     ->color(fn($record) => $record->sale_status === 'Anulado' ? 'danger' : 'success'),
 
                 Tables\Columns\IconColumn::make('is_taxed')
@@ -462,20 +463,10 @@ class CreditNoteResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('casher.name')
-                    ->label('Cajero')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-//                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+//                Tables\Columns\TextColumn::make('casher.name')
+//                    ->label('Cajero')
+//                    ->toggleable(isToggledHiddenByDefault: true)
+//                    ->sortable(),
             ])
             ->modifyQueryUsing(function ($query) {
                 $query->where('is_invoiced', true)
@@ -501,11 +492,11 @@ class CreditNoteResource extends Resource
 
             ])
             ->actions([
-                dteActions::generarDTE(),
-                dteActions::imprimirDTE(),
-                dteActions::enviarEmailDTE(),
-                dteActions::anularDTE(),
-                dteActions::historialDTE(),
+                creditNotesActions::generarDTE(),
+                creditNotesActions::imprimirDTE(),
+                creditNotesActions::enviarEmailDTE(),
+                creditNotesActions::anularDTE(),
+                creditNotesActions::historialDTE(),
 
             ], position: ActionsPosition::BeforeCells)
             ->bulkActions([
