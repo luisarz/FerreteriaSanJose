@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\SaleResource\RelationManagers;
 
+
+namespace App\Filament\Resources\CreditNoteResource\RelationManagers;
 use App\Models\Distrito;
 use App\Models\Inventory;
 use App\Models\Price;
@@ -24,7 +25,7 @@ use Livewire\Component;
 use Svg\Tag\Image;
 use Symfony\Component\Console\Input\Input;
 
-class SaleItemsRelationManager extends RelationManager
+class CNtemsRelationManager extends RelationManager
 {
     protected static string $relationship = 'saleDetails';
     protected static ?string $title = "Prodúctos agregados";
@@ -171,12 +172,6 @@ class SaleItemsRelationManager extends RelationManager
                                                     $this->calculateTotal($get, $set);
                                                 }
                                             }),
-
-
-
-
-
-
 
 
                                         Forms\Components\TextInput::make('quantity')

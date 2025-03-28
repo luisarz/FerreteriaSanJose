@@ -14,21 +14,24 @@ use Illuminate\Contracts\Support\Htmlable;
 class CreateSale extends CreateRecord
 {
     protected static string $resource = SaleResource::class;
-protected function getCreatedNotificationTitle(): ?string
-{
-    return 'Venta iniciada';
-}
-protected function getCreatedNotification(): ?Notification
-{
-    return Notification::make()
-        ->title('Venta iniciada')
-        ->body('La venta se ha iniciado correctamente')
-        ->success();
-}
+
+    protected function getCreatedNotificationTitle(): ?string
+    {
+        return 'Venta iniciada';
+    }
+
+    protected function getCreatedNotification(): ?Notification
+    {
+        return Notification::make()
+            ->title('Venta iniciada')
+            ->body('La venta se ha iniciado correctamente')
+            ->success();
+    }
+
     public static function getQueryParameterWhitelist(): array
     {
         return ['branch_id'];
-}
+    }
 
     public function getTitle(): string|Htmlable
     {
@@ -41,7 +44,7 @@ protected function getCreatedNotification(): ?Notification
     {
         $data['wherehouse_id'] = auth()->user()->employee->branch_id;
         $data['operation_type'] = "Sale";
-        $data['sales_payment_status']='Pendiente';
+        $data['sales_payment_status'] = 'Pendiente';
         $data['is_invoiced'] = false;
         return $data;
 
@@ -73,7 +76,7 @@ protected function getCreatedNotification(): ?Notification
                         $this->redirect(static::getResource()::getUrl('index'));
                         return;
                     }
-                    if ($this->record->operation_type=="Order") {
+                    if ($this->record->operation_type == "Order") {
                         Notification::make()
                             ->title('Error al anular venta')
                             ->body('No se puede cancelar una orden')

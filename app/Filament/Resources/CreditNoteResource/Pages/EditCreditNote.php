@@ -1,18 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\SaleResource\Pages;
+namespace App\Filament\Resources\CreditNoteResource\Pages;
 
-use App\Filament\Resources\SaleResource;
+use App\Filament\Resources\CreditNoteResource;
 use App\Helpers\KardexHelper;
-use App\Models\CashBox;
 use App\Models\CashBoxCorrelative;
 use App\Models\Contingency;
-use App\Models\Customer;
-use App\Models\DteTransmisionWherehouse;
 use App\Models\Inventory;
 use App\Models\InventoryGrouped;
-use App\Models\Provider;
-use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Service\GetCashBoxOpenedService;
@@ -21,13 +16,12 @@ use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
-use http\Client;
 use Illuminate\Contracts\Support\Htmlable;
 use Livewire\Attributes\On;
 
-class EditSale extends EditRecord
+class EditCreditNote extends EditRecord
 {
-    protected static string $resource = SaleResource::class;
+    protected static string $resource = CreditNoteResource::class;
 
     public function getTitle(): string|Htmlable
     {
@@ -39,13 +33,13 @@ class EditSale extends EditRecord
         return [
             // Acción para finalizar la venta
             Action::make('save')
-                ->label('Finalizar Venta')
+                ->label('Finalizar NC')
                 ->color('success')
                 ->icon('heroicon-o-check')
                 ->requiresConfirmation()
                 ->modalHeading('Confirmación')
-                ->modalSubheading('¿Estás seguro de que deseas Finalizar esta venta?')
-                ->modalButton('Sí, Finalizar venta')
+                ->modalSubheading('¿Estás seguro de que deseas Finalizar esta NC?')
+                ->modalButton('Sí, Finalizar Nota')
                 ->action(function (Actions\EditAction $edit) {
                     if ($this->record->sale_total <= 0) {
                         PageAlert::make('No se puede finalizar la venta')
@@ -69,26 +63,9 @@ class EditSale extends EditRecord
                         return;
                     }
 
-                    $operation_condition_id = $this->data['operation_condition_id'];
-                    if ($operation_condition_id == "") {
-                        PageAlert::make('No se puede finalizar la venta')
-                            ->title('Condición de operación')
-                            ->body('No se puede finalizar la venta, selecciona la condicion de la venta')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
 
-                    $payment_method_id = $this->data['payment_method_id'];
 
-                    if ($payment_method_id == "") {
-                        PageAlert::make('No se puede finalizar la venta')
-                            ->title('Forma de pago')
-                            ->body('No se puede finalizar la venta, selecciona la forma de pago')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
+
 
 
                     $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(false);
@@ -112,26 +89,26 @@ class EditSale extends EditRecord
                         return;
                     }
 
-                    if ($this->data['operation_condition_id'] == 1) {
-                        $sale_total = isset($this->data['sale_total'])
-                            ? doubleval($this->data['sale_total'])
-                            : 0.0;
-                        $cash = isset($this->data['cash'])
-                            ? doubleval($this->data['cash'])
-                            : 0.0;
-
-                        if ($cash < $sale_total) {
-                            PageAlert::make('No se puede finalizar la venta')
-                                ->title('Error al finalizar venta')
-                                ->body('El monto en efectivo es menor al total de la venta')
-                                ->danger()
-                                ->send();
-                            return;
-                        }
-                    } else {
-//                        $salePayment_status='Pendiente';
-                        $status_sale_credit = 1;
-                    }
+//                    if ($this->data['operation_condition_id'] == 1) {
+//                        $sale_total = isset($this->data['sale_total'])
+//                            ? doubleval($this->data['sale_total'])
+//                            : 0.0;
+//                        $cash = isset($this->data['cash'])
+//                            ? doubleval($this->data['cash'])
+//                            : 0.0;
+//
+//                        if ($cash < $sale_total) {
+//                            PageAlert::make('No se puede finalizar la venta')
+//                                ->title('Error al finalizar venta')
+//                                ->body('El monto en efectivo es menor al total de la venta')
+//                                ->danger()
+//                                ->send();
+//                            return;
+//                        }
+//                    } else {
+////                        $salePayment_status='Pendiente';
+//                        $status_sale_credit = 1;
+//                    }
 
                     //Obtenre modeloFacturacion
                     //Obtener tipo de transmision
@@ -173,14 +150,15 @@ class EditSale extends EditRecord
                     $id_sale = $this->record->id; // Obtener el registro de la compra
                     $sale = Sale::with('documenttype', 'customer', 'customer.country')->find($id_sale);
                     $sale->document_type_id = $documentType;
-                    $sale->payment_method_id = $payment_method_id;
-                    $sale->operation_condition_id = $operation_condition_id;
+//                    $sale->payment_method_id = $payment_method_id;
+//                    $sale->operation_condition_id = $operation_condition_id;
                     $sale->billing_model = $billing_model;
                     $sale->transmision_type = $transmision_type;
                     $sale->save();
 
 //                    $document_type_id =$this->record->document_type_id;
                     $document_internal_number_new = 0;
+
                     $lastIssuedDocument = CashBoxCorrelative::where('document_type_id', $documentType)->first();
                     if ($lastIssuedDocument) {
                         $document_internal_number_new = $lastIssuedDocument->current_number + 1;
@@ -340,6 +318,4 @@ class EditSale extends EditRecord
     public function refresh(): void
     {
     }
-
-
 }

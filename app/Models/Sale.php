@@ -49,6 +49,7 @@ class Sale extends Model
         'discount_percentage',
         'discount_money',
         'total_order_after_discount',
+        'document_related_id'
     ];
 
 
