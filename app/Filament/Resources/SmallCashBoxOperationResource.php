@@ -16,6 +16,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 class SmallCashBoxOperationResource extends Resource
 {
@@ -120,34 +121,11 @@ class SmallCashBoxOperationResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-
-                Filter::make('created_at')
-                    ->form([
-                        DatePicker::make('from')
-                            ->label('Desde')
-                            ->default(now()->subMonth()), // Fecha predeterminada hace un mes
-                        DatePicker::make('until')
-                            ->label('Hasta')
-                            ->default(now()), // Fecha predeterminada hoy
-                    ])
-                    ->query(function ($query, array $data) {
-                        if ($data['from'] ?? null) {
-                            $query->whereDate('created_at', '>=', $data['from']);
-                        }
-                        if ($data['until'] ?? null) {
-                            $query->whereDate('created_at', '<=', $data['until']);
-                        }
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-                        if ($data['from'] ?? null) {
-                            $indicators['from'] = 'Procesadas desde ' . Carbon::parse($data['from'])->toFormattedDateString();
-                        }
-                        if ($data['until'] ?? null) {
-                            $indicators['until'] = 'Procesadas hasta ' . Carbon::parse($data['until'])->toFormattedDateString();
-                        }
-                        return $indicators;
-                    }),
+                DateRangeFilter::make('created_at')
+                    ->timePicker24()
+                    ->startDate(\Carbon\Carbon::now())
+                    ->endDate(Carbon::now())
+                    ->label('Fecha de Operación'),
 
 
                 Tables\Filters\SelectFilter::make('operation')

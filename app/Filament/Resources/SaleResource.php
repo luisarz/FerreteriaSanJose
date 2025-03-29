@@ -630,7 +630,7 @@ class SaleResource extends Resource
 
 
                 Tables\Filters\SelectFilter::make('documenttype')
-                    ->label('Sucursal')
+                    ->label('Documento')
 //                    ->multiple()
                     ->preload()
                     ->relationship('documenttype', 'name'),
