@@ -130,10 +130,10 @@ class CreditNoteResource extends Resource
                                                 if ($openedCashBox > 0) {
                                                     return CashBoxCorrelative::with('document_type')
                                                         ->where('cash_box_id', $openedCashBox)
-                                                        ->where('document_type_id', 4)
+                                                        ->whereIn('document_type_id', [5])
                                                         ->get()
                                                         ->mapWithKeys(function ($item) {
-                                                            return [$item->id => $item->document_type->name];
+                                                            return [$item->document_type->id => $item->document_type->name];
                                                         })
                                                         ->toArray(); // Asegúrate de devolver un array
                                                 }
@@ -209,28 +209,30 @@ class CreditNoteResource extends Resource
                                                     return []; // No buscar si el texto es muy corto
                                                 }
                                                 // Buscar órdenes basadas en el cliente
-                                                return Sale::whereHas('customer', function ($customerQuery) use ($searchQuery) {
-                                                    $customerQuery->where('name', 'like', "%{$searchQuery}%")
-                                                        ->orWhere('last_name', 'like', "%{$searchQuery}%")
-                                                        ->orWhere('nrc', 'like', "%{$searchQuery}%")
-                                                        ->orWhere('dui', 'like', "%{$searchQuery}%");
+                                                return Sale::where(function ($query) use ($searchQuery) {
+                                                    $query->whereHas('customer', function ($customerQuery) use ($searchQuery) {
+                                                        $customerQuery->where('name', 'like', "%{$searchQuery}%")
+                                                            ->orWhere('last_name', 'like', "%{$searchQuery}%")
+                                                            ->orWhere('nrc', 'like', "%{$searchQuery}%")
+                                                            ->orWhere('dui', 'like', "%{$searchQuery}%");
+                                                    })
+                                                        ->orWhere('document_internal_number', 'like', "%{$searchQuery}%");
                                                 })
                                                     ->whereIn('operation_type', ['Sale', 'Order', 'Quote'])
-                                                    ->whereIn('document_type_id', ['2', '4'])
-                                                    ->orWhere('document_internal_number', 'like', "%{$searchQuery}%")
+                                                    ->whereIn('document_type_id', [3, 5])
                                                     ->whereIn('sale_status', ['Finalizado', 'Facturada', 'Anulado'])
                                                     ->select(['id', 'document_internal_number', 'document_type_id', 'operation_type', 'customer_id'])
                                                     ->limit(50)
                                                     ->get()
                                                     ->mapWithKeys(function ($sale) {
-                                                        $operationType = $sale->document_type_id === 2 ? 'CCF' : 'NC';
+                                                        $operationType = $sale->document_type_id == 3 ? 'CCF' : 'NC';
                                                         $displayText = "  {$sale->document_internal_number}  - $operationType";
                                                         if ($sale->customer) {
                                                             $displayText .= " - Cliente: {$sale->customer->name}";
                                                         }
-
                                                         return [$sale->id => $displayText];
                                                     });
+
                                             })
                                             ->getOptionLabelUsing(function ($value) {
                                                 // Obtener detalles de la orden seleccionada
@@ -241,7 +243,7 @@ class CreditNoteResource extends Resource
                                             })
                                             ->loadingMessage('Cargando Documentos...')
                                             ->searchingMessage('Buscando documentos...')
-                                           ,
+                                        ,
 
 
                                         Forms\Components\Select::make('sales_payment_status')

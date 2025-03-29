@@ -128,10 +128,10 @@ class SaleResource extends Resource
                                                 if ($openedCashBox > 0) {
                                                     return CashBoxCorrelative::with('document_type')
                                                         ->where('cash_box_id', $openedCashBox)
-                                                        ->whereIn('document_type_id',[1,2,9,10,])
+                                                        ->whereIn('document_type_id',[1,3,11,14])
                                                         ->get()
                                                         ->mapWithKeys(function ($item) {
-                                                            return [$item->id => $item->document_type->name];
+                                                            return [$item->document_type->id => $item->document_type->name];
                                                         })
                                                         ->toArray(); // Asegúrate de devolver un array
                                                 }
@@ -442,12 +442,19 @@ class SaleResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('Interno')
+                    ->numeric()
+                    ->searchable()
+//                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('wherehouse.name')
                     ->label('Sucursal')
                     ->numeric()
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('operation_date')
                     ->label('Fecha')
                     ->date('d/m/Y')
@@ -635,6 +642,20 @@ class SaleResource extends Resource
                 dteActions::enviarEmailDTE(),
                 dteActions::anularDTE(),
                 dteActions::historialDTE(),
+                Tables\Actions\ReplicateAction::make()
+                    ->beforeReplicaSaved(function (Sale $replica, Sale $original) {
+
+                    })
+                    ->afterReplicaSaved(function (Sale $replica, Sale $original) {
+                        $id= $original->id;
+                        $originalPlan = Sale::with('saleDetails')->find($id);
+                        foreach ($originalPlan->saleDetails as $details) {
+                            $newTask = $details->replicate();
+                            $newTask->sale_id = $replica->id; // Set the foreign key to the new plan's id
+                            $newTask->push(); // Save the new task
+
+                        }
+                    }),
 
             ], position: ActionsPosition::BeforeCells)
             ->bulkActions([

@@ -21,7 +21,10 @@ class CreateCashboxOpen extends CreateRecord
     }
 
     protected static bool $canCreateAnother = false;
-
+    protected function getRedirectUrl(): string
+    {
+        return static::getResource()::getUrl('index');
+    }
     public function afterCreate()
     {
         $cashboxOpen = $this->record;

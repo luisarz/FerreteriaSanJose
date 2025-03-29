@@ -9,6 +9,7 @@ use App\Models\Sale;
 use DateTime;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -70,7 +71,7 @@ class DTEController extends Controller
     }
 
 
-    function facturaJson($idVenta): array|false
+    function facturaJson($idVenta):array
     {
         $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
 
@@ -147,11 +148,92 @@ class DTEController extends Controller
 
         return $this->processDTE($dte, $idVenta);
     }
+    function CCFJson($idVenta): array
+    {
+        $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
 
-    function CreditNotesJSON($idVenta): false|\Illuminate\Http\JsonResponse
+
+        $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
+        $conditionCode = trim($factura->salescondition->code);
+        $receptor = [
+            "documentType" => trim($factura->customer->documenttypecustomer->code) ?? null,
+            "documentNum" => trim($factura->customer->nit),
+            "nit" => trim(str_replace("-", '', $factura->customer->nit)) ?? null,
+            "nrc" => trim(str_replace("-", "", $factura->customer->nrc)) ?? null,
+            "name" => trim($factura->customer->name) . " " . trim($factura->customer->last_name) ?? null,
+            "phoneNumber" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->phone ?? '') : null,
+            "email" => trim($factura->customer->email) ?? null,
+            "address" => trim($factura->customer->address) ?? null,
+            "businessName" => null,
+            "codeCity" => trim($factura->customer->departamento->code) ?? null,
+            "codeMunicipality" => trim($factura->customer->distrito->code) ?? null,
+            "economicAtivity" => trim($factura->customer->economicactivity->code ?? null),
+        ];
+        $extencion = [
+            "deliveryName" => trim($factura->seller->name) . " " . trim($factura->seller->last_name) ?? null,
+            "deliveryDoc" => trim(str_replace("-", "", $factura->seller->dui)),
+        ];
+        $items = [];
+        $i = 1;
+        foreach ($factura->saleDetails as $detalle) {
+            $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
+            $tributes = ["20"];
+            $items[] = [
+                "itemNum" => intval($i),
+                "itemType" => 1,
+                "docNum" => null,
+                "code" => $codeProduc,
+                "tributeCode" => null,
+                "description" => trim($detalle->inventory->product->name),
+                "quantity" => doubleval($detalle->quantity),
+                "unit" => 1,
+                "except" => false,
+                "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
+                "discountAmount" => doubleval(number_format(0, 8, '.', '')),
+                "discountPercentage" => doubleval(number_format($detalle->discount, 2, '.', '')),
+                "exemptSale" => doubleval(number_format(0, 8, '.', '')),
+                "tributes" => $tributes,
+                "psv" => doubleval(number_format($detalle->price, 8, '.', '')),
+                "untaxed" => doubleval(number_format(0, 8, '.', '')),
+            ];
+            $i++;
+        }
+        $branchId = auth()->user()->employee->branch_id ?? null;
+        if (!$branchId) {
+            return [
+                'estado' => 'FALLO',
+                'mensaje' => 'No se ha configurado la empresa'
+            ];
+        }
+        $exiteContingencia = Contingency::where('warehouse_id', $branchId)
+            ->where('is_close', 0)->first();
+        $uuidContingencia = null;
+        $transmissionType = 1;
+        if ($exiteContingencia) {
+            $uuidContingencia = $exiteContingencia->uuid_hacienda;
+            $transmissionType = 2;
+        }
+        $dte = [
+            "documentType" => "03",
+            "invoiceId" => intval($factura->id),
+            "transmissionType" => $transmissionType,
+            "contingency" => $uuidContingencia,
+            "establishmentType" => trim($establishmentType),
+            "conditionCode" => trim($conditionCode),
+            "receptor" => $receptor,
+            "extencion" => $extencion,
+            "items" => $items
+        ];
+
+//        return response()->json($dte);
+
+
+        return $this->processDTE($dte, $idVenta);
+    }
+
+    function CreditNotesJSON($idVenta): array
     {
         $factura = Sale::with('saleRelated', 'wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
-//        return response()->json($factura);
 
         $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
         $conditionCode = 1;//trim($factura->salescondition->code);
@@ -212,7 +294,7 @@ class DTEController extends Controller
             $transmissionType = 2;
         }
         $relatedDocuments = [
-            "typeDocument" => "05",//$Nota de Credoito
+            "typeDocument" => "05",//$Nota de Credito
             "typeGeneration" => 1,//$factura->saleRelated->document_internal_number,
             "numDocument" => $factura->saleRelated->document_internal_number,
             "dateEmision" => $factura->saleRelated->operation_date,
@@ -235,9 +317,7 @@ class DTEController extends Controller
 
         return $this->processDTE($dte, $idVenta);
     }
-
-
-    function ExportacionJson($idVenta)
+    function ExportacionJson($idVenta): array
     {
         $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
 
@@ -287,7 +367,10 @@ class DTEController extends Controller
         }
         $branchId = auth()->user()->employee->branch_id ?? null;
         if (!$branchId) {
-            return false;
+            return [
+                'estado' => 'FALLO',
+                'mensaje' => 'No se ha configurado la empresa'
+            ];
         }
         $exiteContingencia = Contingency::where('warehouse_id', $branchId)
             ->where('is_close', 0)->first();
@@ -314,9 +397,7 @@ class DTEController extends Controller
 
         return $this->processDTE($dte, $idVenta);
     }
-
-
-    function sujetoExcluidoJson($idVenta)
+    function sujetoExcluidoJson($idVenta): array
     {
         $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
 
@@ -366,7 +447,10 @@ class DTEController extends Controller
         }
         $branchId = auth()->user()->employee->branch_id ?? null;
         if (!$branchId) {
-            return false;
+            return [
+                'estado' => 'FALLO',
+                'mensaje' => 'No se ha configurado la empresa'
+            ];
         }
         $exiteContingencia = Contingency::where('warehouse_id', $branchId)
             ->where('is_close', 0)->first();
@@ -377,7 +461,7 @@ class DTEController extends Controller
             $transmissionType = 2;
         }
         $dte = [
-            "documentType" => "01",
+            "documentType" => "14",
             "invoiceId" => intval($factura->document_internal_number),
             "establishmentType" => $establishmentType,
             "conditionCode" => $conditionCode,
@@ -390,86 +474,6 @@ class DTEController extends Controller
 
 //        $dteJSON = json_encode($dte, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 //        return response()->json($dte);
-
-        return $this->processDTE($dte, $idVenta);
-    }
-
-    function CCFJson($idVenta)
-    {
-        $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
-
-
-        $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
-        $conditionCode = trim($factura->salescondition->code);
-        $receptor = [
-            "documentType" => trim($factura->customer->documenttypecustomer->code) ?? null,
-            "documentNum" => trim($factura->customer->nit),
-            "nit" => trim(str_replace("-", '', $factura->customer->nit)) ?? null,
-            "nrc" => trim(str_replace("-", "", $factura->customer->nrc)) ?? null,
-            "name" => trim($factura->customer->name) . " " . trim($factura->customer->last_name) ?? null,
-            "phoneNumber" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->phone ?? '') : null,
-            "email" => trim($factura->customer->email) ?? null,
-            "address" => trim($factura->customer->address) ?? null,
-            "businessName" => null,
-            "codeCity" => trim($factura->customer->departamento->code) ?? null,
-            "codeMunicipality" => trim($factura->customer->distrito->code) ?? null,
-            "economicAtivity" => trim($factura->customer->economicactivity->code ?? null),
-        ];
-        $extencion = [
-            "deliveryName" => trim($factura->seller->name) . " " . trim($factura->seller->last_name) ?? null,
-            "deliveryDoc" => trim(str_replace("-", "", $factura->seller->dui)),
-        ];
-        $items = [];
-        $i = 1;
-        foreach ($factura->saleDetails as $detalle) {
-            $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
-            $tributes = ["20"];
-            $items[] = [
-                "itemNum" => intval($i),
-                "itemType" => 1,
-                "docNum" => null,
-                "code" => $codeProduc,
-                "tributeCode" => null,
-                "description" => trim($detalle->inventory->product->name),
-                "quantity" => doubleval($detalle->quantity),
-                "unit" => 1,
-                "except" => false,
-                "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
-                "discountAmount" => doubleval(number_format(0, 8, '.', '')),
-                "discountPercentage" => doubleval(number_format($detalle->discount, 2, '.', '')),
-                "exemptSale" => doubleval(number_format(0, 8, '.', '')),
-                "tributes" => $tributes,
-                "psv" => doubleval(number_format($detalle->price, 8, '.', '')),
-                "untaxed" => doubleval(number_format(0, 8, '.', '')),
-            ];
-            $i++;
-        }
-        $branchId = auth()->user()->employee->branch_id ?? null;
-        if (!$branchId) {
-            return false;
-        }
-        $exiteContingencia = Contingency::where('warehouse_id', $branchId)
-            ->where('is_close', 0)->first();
-        $uuidContingencia = null;
-        $transmissionType = 1;
-        if ($exiteContingencia) {
-            $uuidContingencia = $exiteContingencia->uuid_hacienda;
-            $transmissionType = 2;
-        }
-        $dte = [
-            "documentType" => "03",
-            "invoiceId" => intval($factura->id),
-            "transmissionType" => $transmissionType,
-            "contingency" => $uuidContingencia,
-            "establishmentType" => trim($establishmentType),
-            "conditionCode" => trim($conditionCode),
-            "receptor" => $receptor,
-            "extencion" => $extencion,
-            "items" => $items
-        ];
-
-//        return response()->json($dte);
-
 
         return $this->processDTE($dte, $idVenta);
     }
@@ -570,7 +574,7 @@ class DTEController extends Controller
     }
 
 
-    public function anularDTE($idVenta): array|\Illuminate\Http\JsonResponse
+    public function anularDTE($idVenta): array|JsonResponse
     {
 
 
