@@ -112,9 +112,9 @@ class InventoryResource extends Resource
                                     ->debounce(500) // Espera 500 ms después de que el usuario deje de escribir
                                     ->afterStateUpdated(function ($state, callable $set) use ($iva) {
                                         $costWithoutTaxes = $state ?: 0; // Valor predeterminado en 0 si está vacío
-                                        $costWithTaxes = round($costWithoutTaxes * $iva, 2); // Cálculo del costo con impuestos
+                                        $costWithTaxes = number_format($costWithoutTaxes * $iva, 2,'.',''); // Cálculo del costo con impuestos
                                         $costWithTaxes += $costWithoutTaxes; // Suma el costo sin impuestos
-                                        $set('cost_with_taxes', $costWithTaxes); // Actualiza el campo
+                                        $set('cost_with_taxes',number_format( $costWithTaxes,2,'.','')); // Actualiza el campo
                                     })
                                     ->default(0.00),
                                 Forms\Components\TextInput::make('cost_with_taxes')
