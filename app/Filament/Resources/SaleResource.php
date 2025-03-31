@@ -2,13 +2,16 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\CreateClienteForm;
 use App\Filament\Resources\SaleResource\Pages;
 use App\Filament\Resources\SaleResource\RelationManagers;
 use App\Models\CashBoxCorrelative;
 use App\Models\Customer;
+use App\Models\Distrito;
 use App\Models\Employee;
 use App\Models\HistoryDte;
 use App\Models\Inventory;
+use App\Models\Municipality;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Tribute;
@@ -128,7 +131,7 @@ class SaleResource extends Resource
                                                 if ($openedCashBox > 0) {
                                                     return CashBoxCorrelative::with('document_type')
                                                         ->where('cash_box_id', $openedCashBox)
-                                                        ->whereIn('document_type_id',[1,3,11,14])
+                                                        ->whereIn('document_type_id', [1, 3, 11, 14])
                                                         ->get()
                                                         ->mapWithKeys(function ($item) {
                                                             return [$item->document_type->id => $item->document_type->name];
@@ -177,6 +180,7 @@ class SaleResource extends Resource
                                         Forms\Components\Select::make('customer_id')
                                             ->searchable()
                                             ->debounce(500)
+                                            ->relationship('customer', 'name')
                                             ->preload()
                                             ->columnSpanFull()
                                             ->inlineLabel(false)
@@ -208,31 +212,15 @@ class SaleResource extends Resource
                                                     : 'Cliente no encontrado';
                                             })
                                             ->label('Cliente')
-                                            ->createOptionForm([
-                                                Section::make('Nuevo Cliente')
-                                                    ->schema([
-                                                        Select::make('wherehouse_id')
-                                                            ->label('Sucursal')
-                                                            ->inlineLabel(false)
-                                                            // ->relationship('wherehouse', 'name')
-                                                            ->options(function (callable $get) {
-                                                                $wherehouse = (Auth::user()->employee)->branch_id;
-                                                                if ($wherehouse) {
-                                                                    return \App\Models\Branch::where('id', $wherehouse)->pluck('name', 'id');
-                                                                }
-                                                                return []; // Return an empty array if no wherehouse selected
-                                                            })
-                                                            ->preload()
-                                                            ->default(fn() => optional(Auth::user()->employee)->branch_id)
-                                                            ->columnSpanFull(),
-                                                        Forms\Components\TextInput::make('name')
-                                                            ->required()
-                                                            ->label('Nombre'),
-                                                        Forms\Components\TextInput::make('last_name')
-                                                            ->required()
-                                                            ->label('Apellido'),
-                                                    ])->columns(2),
-                                            ])
+                                            ->createOptionForm(CreateClienteForm::getForm())
+                                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                                                return $action
+                                                    ->label('Crear cliente')
+                                                    ->color('success')
+                                                    ->icon('heroicon-o-plus')
+                                                    ->modalWidth('7xl');
+//                                                    ->size(IconSize::sizeI);
+                                            })
                                             ->createOptionUsing(function ($data) {
                                                 return Customer::create($data)->id; // Guarda y devuelve el ID del nuevo cliente
                                             }),
@@ -615,7 +603,7 @@ class SaleResource extends Resource
             ])
             ->modifyQueryUsing(function ($query) {
                 $query->where('is_invoiced', true)
-                    ->whereIn('operation_type', ['Sale', 'Order','Quote'])
+                    ->whereIn('operation_type', ['Sale', 'Order', 'Quote'])
                     ->orderby('operation_date', 'desc')
                     ->orderby('document_internal_number', 'desc')
                     ->orderby('is_dte', 'desc');
@@ -647,7 +635,7 @@ class SaleResource extends Resource
 
                     })
                     ->afterReplicaSaved(function (Sale $replica, Sale $original) {
-                        $id= $original->id;
+                        $id = $original->id;
                         $originalPlan = Sale::with('saleDetails')->find($id);
                         foreach ($originalPlan->saleDetails as $details) {
                             $newTask = $details->replicate();

@@ -249,7 +249,7 @@
                     <tr style="background-color: #57595B; color: white;">
                         <td>
                             <b>TOTAL A PAGAR:</b></td>
-                        <td> ${{number_format($datos['DTE']['resumen']['totalPagar'], 2)}}
+                        <td> ${{number_format($datos['DTE']['resumen']['totalPagar']??$datos['DTE']['resumen']['montoTotalOperacion'], 2)}}
                         </td>
                     </tr>
                 </table>

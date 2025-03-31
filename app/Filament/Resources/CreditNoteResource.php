@@ -219,7 +219,7 @@ class CreditNoteResource extends Resource
                                                         ->orWhere('document_internal_number', 'like', "%{$searchQuery}%");
                                                 })
                                                     ->whereIn('operation_type', ['Sale', 'Order', 'Quote'])
-                                                    ->whereIn('document_type_id', [3, 5])
+                                                    ->whereIn('document_type_id', [3])
                                                     ->whereIn('sale_status', ['Finalizado', 'Facturada', 'Anulado'])
                                                     ->select(['id', 'document_internal_number', 'document_type_id', 'operation_type', 'customer_id'])
                                                     ->limit(50)
