@@ -57,6 +57,7 @@ class ListContingencies extends ListRecords
                         $dteController = new ContingencyController();
                         $descripcion = $data['description'];
                         $resultado = $dteController->contingencyDTE($descripcion);
+//                        dd($resultado);
                         if($resultado){
                             PageAlert::make()
                                 ->title('Contingencia generada Exitosa')

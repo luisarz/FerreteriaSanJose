@@ -3,10 +3,10 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\CashBoxOpen;
+use App\Models\Contingency;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class CashBoxOpenPolicy
+class ContingencyPolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class CashBoxOpenPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_cashbox::open');
+        return $user->can('view_any_contingency');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, CashBoxOpen $cashBoxOpen): bool
+    public function view(User $user, Contingency $contingency): bool
     {
-        return $user->can('view_cashbox::open');
+        return $user->can('view_contingency');
     }
 
     /**
@@ -31,23 +31,23 @@ class CashBoxOpenPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_cashbox::open');
+        return $user->can('create_contingency');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, CashBoxOpen $cashBoxOpen): bool
+    public function update(User $user, Contingency $contingency): bool
     {
-        return $user->can('update_cashbox::open');
+        return $user->can('update_contingency');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, CashBoxOpen $cashBoxOpen): bool
+    public function delete(User $user, Contingency $contingency): bool
     {
-        return $user->can('delete_cashbox::open');
+        return $user->can('delete_contingency');
     }
 
     /**
@@ -55,15 +55,15 @@ class CashBoxOpenPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_cashbox::open');
+        return $user->can('delete_any_contingency');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, CashBoxOpen $cashBoxOpen): bool
+    public function forceDelete(User $user, Contingency $contingency): bool
     {
-        return $user->can('force_delete_cashbox::open');
+        return $user->can('force_delete_contingency');
     }
 
     /**
@@ -71,15 +71,15 @@ class CashBoxOpenPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_cashbox::open');
+        return $user->can('force_delete_any_contingency');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, CashBoxOpen $cashBoxOpen): bool
+    public function restore(User $user, Contingency $contingency): bool
     {
-        return $user->can('restore_cashbox::open');
+        return $user->can('restore_contingency');
     }
 
     /**
@@ -87,15 +87,15 @@ class CashBoxOpenPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_cashbox::open');
+        return $user->can('restore_any_contingency');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, CashBoxOpen $cashBoxOpen): bool
+    public function replicate(User $user, Contingency $contingency): bool
     {
-        return $user->can('replicate_cashbox::open');
+        return $user->can('replicate_contingency');
     }
 
     /**
@@ -103,6 +103,6 @@ class CashBoxOpenPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_cashbox::open');
+        return $user->can('reorder_contingency');
     }
 }

@@ -27,40 +27,40 @@ class dteActions
             ->requiresConfirmation()
             ->modalHeading('¿Está seguro de generar el DTE?')
             ->color('danger')
-            ->form([
-                Select::make('confirmacion')
-                    ->label('Enviar a Hacienda')
-                    ->options(['si' => 'Sí, deseo enviar', 'no' => 'No, no enviar'])
-                    ->required(),
-            ])
+//            ->form([
+//                Select::make('confirmacion')
+//                    ->label('Enviar a Hacienda')
+//                    ->options(['si' => 'Sí, deseo enviar', 'no' => 'No, no enviar'])
+//                    ->required(),
+//            ])
             ->action(function ($record, array $data) {
 
 
-                if ($data['confirmacion'] === 'si') {
-                    $dteController = new DTEController();
-                    $resultado = $dteController->generarDTE($record->id);
-                    if ($resultado['estado'] === 'EXITO') {
-                        PageAlert::make()
-                            ->title('Envío Exitoso')
-                            ->success()
-                            ->send();
-                        if ($data['confirmacion'] === 'si') {
-                            self::imprimirDTE()->action($record);
-                            self::enviarEmailDTE()->action($record);
-                        }
-                    } else {
-                        PageAlert::make()
-                            ->title($resultado['estado'])
-                            ->danger()
-                            ->body($resultado["mensaje"])
-                            ->send();
-                    }
+//                if ($data['confirmacion'] === 'si') {
+                $dteController = new DTEController();
+                $resultado = $dteController->generarDTE($record->id);
+                if ($resultado['estado'] === 'EXITO') {
+                    PageAlert::make()
+                        ->title('Envío Exitoso')
+                        ->success()
+                        ->send();
+//                    if ($data['confirmacion'] === 'si') {
+                    self::imprimirDTE()->action($record);
+                    self::enviarEmailDTE()->action($record);
+//                    }
                 } else {
                     PageAlert::make()
-                        ->title('Se canceló el envío')
-                        ->warning()
+                        ->title($resultado['estado'])
+                        ->danger()
+                        ->body($resultado["mensaje"])
                         ->send();
                 }
+//                } else {
+//                    PageAlert::make()
+//                        ->title('Se canceló el envío')
+//                        ->warning()
+//                        ->send();
+//                }
             });
     }
 
@@ -93,7 +93,7 @@ class dteActions
                             ->success()
                             ->send();
                     } else {
-                        PageAlert   ::make()
+                        PageAlert::make()
                             ->title('Fallo en anulación')
                             ->danger()
                             ->duration(5000)
@@ -163,6 +163,32 @@ class dteActions
         return Action::make('pdf')
             ->label('') // Etiqueta vacía, si deseas cambiarla, agrega un texto
             ->icon('heroicon-o-printer')
+            ->tooltip('Imprimir PDF')
+            ->iconSize(IconSize::Large)
+            ->color('info')
+            ->visible(fn($record) => $record->is_dte) // Esto asegura que solo se muestre si el registro tiene un DTE
+//
+
+            ->url(function ($record) {
+//                $idSucursal = auth()->user()->employee->branch_id;
+
+//                $print = DteTransmisionWherehouse::where('wherehouse',$idSucursal)->first();
+//                $ruta = $print->printer_type == 1 ? 'printDTETicket' : 'printDTEPdf';
+                return route('printDTEPdf', ['idVenta' => isset($record) ? ($record->generationCode ?? 'SN') : 'SN']);
+
+
+            })
+            ->openUrlInNewTab(); // Esto asegura que se abra en una nueva pestaña
+
+
+    }
+
+    public static function imprimirTicketDTE(): Action
+    {
+        return Action::make('ticket')
+            ->label('') // Etiqueta vacía, si deseas cambiarla, agrega un texto
+            ->icon('heroicon-o-printer')
+            ->tooltip('Imprimir Tikete')
             ->iconSize(IconSize::Large)
             ->color('primary')
             ->visible(fn($record) => $record->is_dte) // Esto asegura que solo se muestre si el registro tiene un DTE
@@ -171,16 +197,15 @@ class dteActions
             ->url(function ($record) {
                 $idSucursal = auth()->user()->employee->branch_id;
 
-                $print = DteTransmisionWherehouse::where('wherehouse',$idSucursal)->first();
-                $ruta = $print->printer_type == 1 ? 'printDTETicket' : 'printDTEPdf';
-                    return route($ruta, ['idVenta' => isset($record) ? ($record->generationCode ?? 'SN') : 'SN']);
-
+//                $print = DteTransmisionWherehouse::where('wherehouse',$idSucursal)->first();
+//                $ruta = $print->printer_type == 1 ? 'printDTETicket' : 'printDTEPdf';
+                return route('printDTETicket', ['idVenta' => isset($record) ? ($record->generationCode ?? 'SN') : 'SN']);
 
 
             })
-
             ->openUrlInNewTab(); // Esto asegura que se abra en una nueva pestaña
 
 
     }
+
 }

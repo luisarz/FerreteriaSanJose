@@ -167,7 +167,6 @@ class CreditNoteResource extends Resource
                                             ->debounce(500)
                                             ->preload()
                                             ->inlineLabel(false)
-//                                            ->columnSpanFull()
                                             ->getSearchResultsUsing(function (string $query) {
                                                 if (strlen($query) < 2) {
                                                     return []; // No buscar si el texto es muy corto

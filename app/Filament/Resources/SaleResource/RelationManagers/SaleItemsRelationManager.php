@@ -17,6 +17,7 @@ use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Table;
 use App\Models\Sale;
 use Illuminate\Support\Facades\Log;
@@ -206,18 +207,18 @@ class SaleItemsRelationManager extends RelationManager
                                                 $this->calculateTotal($get, $set);
                                             }),
 
-                                        Forms\Components\TextInput::make('discount')
-                                            ->label('Descuento')
-                                            ->step(0.01)
-                                            ->prefix('%')
-                                            ->numeric()
-                                            ->live()
-                                            ->columnSpan(1)
-                                            ->required()
-                                            ->debounce(300)
-                                            ->afterStateUpdated(function (callable $get, callable $set) {
-                                                $this->calculateTotal($get, $set);
-                                            }),
+//                                        Forms\Components\TextInput::make('discount')
+//                                            ->label('Descuento')
+//                                            ->step(0.01)
+//                                            ->prefix('%')
+//                                            ->numeric()
+//                                            ->live()
+//                                            ->columnSpan(1)
+//                                            ->required()
+//                                            ->debounce(300)
+//                                            ->afterStateUpdated(function (callable $get, callable $set) {
+//                                                $this->calculateTotal($get, $set);
+//                                            }),
 
                                         Forms\Components\TextInput::make('total')
                                             ->label('Total')
@@ -227,13 +228,13 @@ class SaleItemsRelationManager extends RelationManager
                                             ->columnSpan(1)
                                             ->required(),
 
-                                        Forms\Components\Toggle::make('is_except')
-                                            ->label('Exento de IVA')
-                                            ->columnSpan(1)
-                                            ->live()
-                                            ->afterStateUpdated(function (callable $get, callable $set) {
-                                                $this->calculateTotal($get, $set);
-                                            }),
+//                                        Forms\Components\Toggle::make('is_except')
+//                                            ->label('Exento de IVA')
+//                                            ->columnSpan(1)
+//                                            ->live()
+//                                            ->afterStateUpdated(function (callable $get, callable $set) {
+//                                                $this->calculateTotal($get, $set);
+//                                            }),
                                         // Forms\Components\Toggle::make('is_tarjet')
                                         //     ->label('Con tarjeta')
                                         //     ->columnSpan(1)
@@ -336,6 +337,7 @@ class SaleItemsRelationManager extends RelationManager
                     ->columnSpan(1),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
+                    ->summarize(Sum::make()->label('Total')->money('USD', locale: 'en_US'))
                     ->money('USD', locale: 'en_US')
                     ->columnSpan(1),
             ])

@@ -18,6 +18,7 @@ use App\Models\Tribute;
 use App\Service\GetCashBoxOpenedService;
 use App\Tables\Actions\dteActions;
 use Carbon\Carbon;
+use Doctrine\DBAL\Exception\DatabaseDoesNotExist;
 use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
@@ -41,6 +42,7 @@ use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
 use pxlrbt\FilamentExcel\Columns\Column;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use Filament\Support\Enums\MaxWidth;
 
 function updateTotalSale(mixed $idItem, array $data): void
 {
@@ -94,7 +96,7 @@ class SaleResource extends Resource
     protected static ?string $label = 'Ventas';
     protected static ?string $navigationGroup = 'Facturación';
     protected static bool $softDelete = true;
-
+    protected static ?string $navigationIcon = 'heroicon-s-shopping-cart';
 
     public static function form(Form $form): Form
     {
@@ -126,6 +128,7 @@ class SaleResource extends Resource
                                         Forms\Components\Select::make('document_type_id')
                                             ->label('Comprobante')
 //                                            ->relationship('documenttype', 'name')
+                                            ->default(1)
                                             ->options(function (callable $get) {
                                                 $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(true);
                                                 if ($openedCashBox > 0) {
@@ -181,36 +184,11 @@ class SaleResource extends Resource
                                             ->searchable()
                                             ->debounce(500)
                                             ->relationship('customer', 'name')
+                                            ->getOptionLabelFromRecordUsing(fn($record) => "{$record->name}  {$record->last_name}, dui: {$record->dui}  nit: {$record->nit}  nrc: {$record->nrc}")
                                             ->preload()
+                                            ->required()
                                             ->columnSpanFull()
                                             ->inlineLabel(false)
-                                            ->getSearchResultsUsing(function (string $query) {
-                                                if (strlen($query) < 2) {
-                                                    return []; // No buscar si el texto es muy corto
-                                                }
-
-                                                // Buscar clientes por múltiples criterios
-                                                return (new Customer)->where('name', 'like', "%{$query}%")
-                                                    ->orWhere('last_name', 'like', "%{$query}%")
-                                                    ->orWhere('nrc', 'like', "%{$query}%")
-                                                    ->orWhere('dui', 'like', "%{$query}%")
-                                                    ->orWhere('nit', 'like', "%{$query}%")
-                                                    ->select(['id', 'name', 'last_name', 'nrc', 'dui', 'nit'])
-                                                    ->limit(50)
-                                                    ->get()
-                                                    ->mapWithKeys(function ($customer) {
-                                                        // Formato para mostrar el resultado en el select
-                                                        $displayText = "{$customer->name} {$customer->last_name} - NRC: {$customer->nrc} - DUI: {$customer->dui} - NIT: {$customer->nit}";
-                                                        return [$customer->id => $displayText];
-                                                    });
-                                            })
-                                            ->getOptionLabelUsing(function ($value) {
-                                                // Obtener detalles del cliente seleccionado
-                                                $customer = Customer::find($value); // Buscar el cliente por ID
-                                                return $customer
-                                                    ? "{$customer->name} {$customer->last_name} - NRC: {$customer->nrc} - DUI: {$customer->dui} - NIT: {$customer->nit}"
-                                                    : 'Cliente no encontrado';
-                                            })
                                             ->label('Cliente')
                                             ->createOptionForm(CreateClienteForm::getForm())
                                             ->createOptionAction(function (Forms\Components\Actions\Action $action) {
@@ -434,7 +412,7 @@ class SaleResource extends Resource
                     ->label('Interno')
                     ->numeric()
                     ->searchable()
-//                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('wherehouse.name')
                     ->label('Sucursal')
@@ -521,34 +499,25 @@ class SaleResource extends Resource
                     ->label('Vendedor')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('customer.name')
+                Tables\Columns\TextColumn::make('customer.fullname')
                     ->label('Cliente')
-                    ->searchable()
+                    ->wrap(50)
+                    ->searchable(query: function ($query, $search) {
+                        $query->orWhereHas('customer', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('salescondition.name')
                     ->label('Condición')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('status_sale_credit')
-                    ->label('Credito')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('paymentmethod.name')
-                    ->label('Método de pago')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('sales_payment_status')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->label('Pago'),
+
                 Tables\Columns\BadgeColumn::make('sale_status')
                     ->label('Estado')
                     ->extraAttributes(['class' => 'text-lg'])  // Cambia el tamaño de la fuente
-
                     ->color(fn($record) => $record->sale_status === 'Anulado' ? 'danger' : 'success'),
 
-                Tables\Columns\IconColumn::make('is_taxed')
-                    ->label('Gravado')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->boolean(),
                 Tables\Columns\TextColumn::make('net_amount')
                     ->label('Neto')
                     ->toggleable()
@@ -586,28 +555,14 @@ class SaleResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('casher.name')
-                    ->label('Cajero')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-//                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->modifyQueryUsing(function ($query) {
-                $query->where('is_invoiced', true)
-                    ->whereIn('operation_type', ['Sale', 'Order', 'Quote'])
-                    ->orderby('operation_date', 'desc')
-                    ->orderby('document_internal_number', 'desc')
-                    ->orderby('is_dte', 'desc');
-            })
+            ->modifyQueryUsing(fn($query) => $query
+                ->where('is_invoiced', true)
+                ->whereIn('operation_type', ['Sale', 'Order', 'Quote'])
+                ->orderByDesc('created_at')
+//                ->orderByDesc('document_internal_number')
+//                ->orderByDesc('is_dte')
+            )
             ->recordUrl(null)
             ->filters([
                 DateRangeFilter::make('operation_date')
@@ -624,26 +579,15 @@ class SaleResource extends Resource
                     ->relationship('documenttype', 'name'),
 
             ])
+
             ->actions([
-                dteActions::generarDTE(),
+                dteActions::imprimirTicketDTE(),
                 dteActions::imprimirDTE(),
+                dteActions::generarDTE(),
                 dteActions::enviarEmailDTE(),
                 dteActions::anularDTE(),
                 dteActions::historialDTE(),
-                Tables\Actions\ReplicateAction::make()
-                    ->beforeReplicaSaved(function (Sale $replica, Sale $original) {
 
-                    })
-                    ->afterReplicaSaved(function (Sale $replica, Sale $original) {
-                        $id = $original->id;
-                        $originalPlan = Sale::with('saleDetails')->find($id);
-                        foreach ($originalPlan->saleDetails as $details) {
-                            $newTask = $details->replicate();
-                            $newTask->sale_id = $replica->id; // Set the foreign key to the new plan's id
-                            $newTask->push(); // Save the new task
-
-                        }
-                    }),
 
             ], position: ActionsPosition::BeforeCells)
             ->bulkActions([

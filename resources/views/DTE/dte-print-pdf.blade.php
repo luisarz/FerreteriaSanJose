@@ -138,13 +138,13 @@
         <table>
             <tr>
                 <td>
-                    <p>Razón Social: {{ $datos['DTE']['receptor']['nombre'] }}<br>
+                    <p>Razón Social: {{ $datos['DTE']['receptor']['nombre']??'' }}<br>
                         Documento: {{ $datos['DTE']['receptor']['numDocumento'] ?? '' }}<br>
-                        Actividad: {{ $datos['DTE']['receptor']['codActividad'] }}
-                        - {{ $datos['DTE']['receptor']['descActividad'] }}<br>
-                        Dirección: {{ $datos['DTE']['receptor']['direccion']['complemento'] }}<br>
-                        Teléfono: {{ $datos['DTE']['receptor']['telefono'] }} |
-                        Correo: {{ $datos['DTE']['receptor']['correo'] }}
+                        Actividad: {{ $datos['DTE']['receptor']['codActividad']??'' }}
+                        - {{ $datos['DTE']['receptor']['descActividad']??'' }}<br>
+                        Dirección: {{ $datos['DTE']['receptor']['direccion']['complemento']??'' }}<br>
+                        Teléfono: {{ $datos['DTE']['receptor']['telefono']??'' }} |
+                        Correo: {{ $datos['DTE']['receptor']['correo']??'' }}
                     </p>
                 </td>
                 <td style="align-items: end;">
@@ -170,7 +170,8 @@
         </tr>
         </thead>
         <tbody>
-        @foreach ($datos['DTE']['cuerpo'] as $item)
+
+        @foreach ($datos['DTE']['cuerpo']??$datos['DTE']['cuerpoDocumento'] as $item)
             <tr>
                 <td>{{ $item['numItem'] }}</td>
                 <td>{{ $item['cantidad'] }}</td>
@@ -178,9 +179,9 @@
                 <td>{{ $item['descripcion'] }}</td>
                 <td>${{ number_format($item['precioUni'], 2) }}</td>
                 <td>${{ number_format($item['montoDescu'], 2) }}</td>
-                <td>${{ number_format($item['ventaNoSuj'], 2) }}</td>
-                <td>${{ number_format($item['ventaExenta'], 2) }}</td>
-                <td>${{ number_format($item['ventaGravada'], 2) }}</td>
+                <td>${{ number_format($item['ventaNoSuj']??$item['noGravado']??0, 2) }}</td>
+                <td>${{ number_format($item['ventaExenta']??$item['noGravado']??0, 2) }}</td>
+                <td>${{ number_format($item['ventaGravada']??$item['compra']??0, 2) }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -224,19 +225,19 @@
                 <table style="width: 100%">
                     <tr>
                         <td>Total No Sujeto:</td>
-                        <td>${{ number_format($datos['DTE']['resumen']['totalNoSuj'], 2) }}</td>
+                        <td>${{ number_format($datos['DTE']['resumen']['totalNoSuj']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
                     </tr>
                     <tr>
                         <td>Total Exento:</td>
-                        <td>${{ number_format($datos['DTE']['resumen']['totalExenta'], 2) }}</td>
+                        <td>${{ number_format($datos['DTE']['resumen']['totalExenta']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
                     </tr>
                     <tr>
                         <td>Total Gravadas:</td>
-                        <td>${{ number_format($datos['DTE']['resumen']['totalGravada'], 2) }}</td>
+                        <td>${{ number_format($datos['DTE']['resumen']['totalGravada']??$datos['DTE']['resumen']['totalCompra'], 2) }}</td>
                     </tr>
                     <tr>
                         <td>Subtotal:</td>
-                        <td>${{ number_format($datos['DTE']['resumen']['subTotal'], 2) }}</td>
+                        <td>${{ number_format($datos['DTE']['resumen']['subTotal']??$datos['DTE']['resumen']['totalGravada'], 2) }}</td>
                     </tr>
                     @isset($datos['DTE']['resumen']['tributos'])
                         @foreach($datos['DTE']['resumen']['tributos'] as $tributo)

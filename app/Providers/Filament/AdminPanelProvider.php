@@ -117,7 +117,7 @@ class AdminPanelProvider extends PanelProvider
 
             })
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, function () {
-                return Blade::render('@env(\'local\')<x-login-link />@endenv');
+//                return Blade::render('@env(\'local\')<x-login-link />@endenv');
             })
             ->collapsibleNavigationGroups()
             ->navigationGroups([

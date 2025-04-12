@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Contingency;
 use App\Models\HistoryDte;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ContingencyController extends Controller
@@ -19,11 +20,11 @@ class ContingencyController extends Controller
         }
     }
 
-    public function contingencyDTE($motivo)
+    public function contingencyDTE($motivo):array|jsonResponse|string|bool
     {
         set_time_limit(0);
         try {
-            $urlAPI = 'http://api-fel-sv-dev.olintech.com/api/Contingency/DTE'; // Set the correct API URL
+            $urlAPI = env('DTE_URL') .'/api/Contingency/DTE'; // Set the correct API URL
             $apiKey = $this->getConfiguracion()->api_key; // Assuming you retrieve the API key from your config
 
             $dteData = [
@@ -51,26 +52,30 @@ class ContingencyController extends Controller
 
             $response = curl_exec($curl);
             $data = json_decode($response, true); // Convertir JSON a array
+//            return response()->json($data['data']);
+
+
             $contingency = new Contingency();
             $contingency->warehouse_id = \Auth::user()->employee->branch_id ;
-            $contingency->uuid_hacienda = $data['data']['UUID'];
-            $contingency->start_date = $data['data']['InicioContingencia'];
-            $contingency->contingency_types_id = $data['data']['TipoContiengencia'];
-            $contingency->contingency_motivation = $data['data']['Motivo'];
+            $contingency->uuid_hacienda = $data['data']['uuid'];
+            $contingency->start_date = $data['data']['inicioContingencia'];
+            $contingency->contingency_types_id = $data['data']['tipoContiengencia'];
+            $contingency->contingency_motivation = $data['data']['motivo'];
             $contingency->is_close=false;
             if($contingency->save()){
                 return true;
+            }else{
+                return false;
             }
-            return response()->json($response);
         }catch (\Exception $e){
         return $e->getMessage();
         }
     }
-    public function contingencyCloseDTE($uuid_contingence)
+    public function contingencyCloseDTE($uuid_contingence): true|JsonResponse|string
     {
         set_time_limit(0);
         try {
-            $urlAPI = 'http://api-fel-sv-dev.olintech.com/api/Contingency/Close'; // Set the correct API URL
+            $urlAPI = env('DTE_URL') .'/api/Contingency/Close'; // Set the correct API URL
             $apiKey = $this->getConfiguracion()->api_key; // Assuming you retrieve the API key from your config
 
             $dteData = [
@@ -98,15 +103,15 @@ class ContingencyController extends Controller
 
             $response = curl_exec($curl);
             $data = json_decode($response, true); // Convertir JSON a array
-//            dd($data);
             $contingency=Contingency::where('uuid_hacienda',$uuid_contingence)->first();
-            $contingency->end_date = $data['FinContingencia'];
+            $contingency->end_date = $data['fhProcesamiento']??null;
             $contingency->is_close=true;
 
             if($contingency->save()){
                 return true;
+            }else{
+                return false;
             }
-            return response()->json($response);
         }catch (\Exception $e){
             return $e->getMessage();
         }

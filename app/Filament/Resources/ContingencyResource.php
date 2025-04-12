@@ -74,13 +74,15 @@ class ContingencyResource extends Resource
                     ->placeholder('Sin motivo')
                     ->searchable(),
 
-            ])
+            ])  ->modifyQueryUsing(fn($query) => $query
+                ->orderByDesc('created_at')
+            )
             ->filters([
 
             ])
             ->actions([
 //                Tables\Actions\Action::make()
-                 Tables\Actions\Action::make('close')
+                Tables\Actions\Action::make('close')
                     ->label('Cerrar')
                     ->icon('heroicon-o-plus-circle')
                     ->requiresConfirmation()
@@ -109,6 +111,7 @@ class ContingencyResource extends Resource
                                     ->send();
                             }
                             $resultado = $dteController->contingencyCloseDTE($record->uuid_hacienda);
+                            dd($resultado);
                             if($resultado){
                                 PageAlert::make()
                                     ->title('Contingencia generada Exitosa')

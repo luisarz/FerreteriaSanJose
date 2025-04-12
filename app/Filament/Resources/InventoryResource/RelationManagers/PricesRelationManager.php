@@ -40,7 +40,7 @@ class PricesRelationManager extends RelationManager
                             ->numeric()
                             ->debounce(500)
                             ->afterStateUpdated(function ($state, $record, callable $set, callable $get) {
-                                $inventory = Inventory::find($record->inventory_id);
+                                $inventory = $this->getOwnerRecord();
 
                                 if (!$inventory) {
                                     return;
@@ -58,7 +58,7 @@ class PricesRelationManager extends RelationManager
                                 $set('utilidad', number_format($margenUtilidad, 2));
                             })
                             ->rules(function (?Price $record) {
-                                $inventory = Inventory::find($record->inventory_id ?? null); // Cambia 'inventory_id' al nombre correcto del campo de relación
+                                $inventory = $this->getOwnerRecord();
                                 $cost = $inventory ? $inventory->cost_with_taxes : 0; // Obtén el costo, o 0 si no hay inventario
                                 return [
                                     'required',
