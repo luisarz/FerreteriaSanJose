@@ -34,10 +34,10 @@ trait GetOpenCashBox
             }
             $column = 'total_order_after_discount'; // For order totals
         } else {
-            $query->whereIn('operation_type', ['Sale']);
+            $query->whereIn('operation_type', ['Sale','Order','Quote']);
+            $query->where('is_dte', true);
             $column = 'sale_total'; // For sale totals
         }
-
         return $query->sum($column);
     }
 
