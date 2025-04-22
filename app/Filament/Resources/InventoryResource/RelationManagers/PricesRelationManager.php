@@ -45,7 +45,7 @@ class PricesRelationManager extends RelationManager
                                 if (!$inventory) {
                                     return;
                                 }
-                                $costo = $inventory->cost_with_taxes;
+                                $costo = $inventory->cost_without_taxes;
                                 // Validar si el precio de venta es nulo, vacío o cero
                                 if (empty($state) || $state <= 0) {
                                     $margenUtilidad = 0;
@@ -56,16 +56,8 @@ class PricesRelationManager extends RelationManager
 
                                 $set('cost', $costo);
                                 $set('utilidad', number_format($margenUtilidad, 2));
-                            })
-                            ->rules(function (?Price $record) {
-                                $inventory = $this->getOwnerRecord();
-                                $cost = $inventory ? $inventory->cost_with_taxes : 0; // Obtén el costo, o 0 si no hay inventario
-                                return [
-                                    'required',
-                                    'numeric',
-                                    'gt:' . $cost,
-                                ];
                             }),
+
                         Forms\Components\TextInput::make('utilidad')
                             ->label('Utilidad')
                             ->inlineLabel(false)
@@ -78,28 +70,19 @@ class PricesRelationManager extends RelationManager
                                 if (!$inventory) {
                                     return;
                                 }
-                                $costo = $inventory->cost_with_taxes;
+                                $costo = $inventory->cost_without_taxes;
                                 // Validar si el precio de venta es nulo, vacío o cero
                                 if (empty($state) || $state < 0) {
                                     $precioVenta = 0;
                                 } else {
                                     $divisor = 1 - ($state / 100);
-
                                     // Evitar división por cero
                                     $precioVenta = ($divisor != 0) ? ($costo / $divisor) : 0;
                                 }
 
                                 $set('price', number_format($precioVenta, 2));
-                            })
-                            ->rules(function (?Price $record) {
-                                $inventory = Inventory::find($record->inventory_id ?? null); // Cambia 'inventory_id' al nombre correcto del campo de relación
-                                $cost = $inventory ? $inventory->cost_with_taxes : 0; // Obtén el costo, o 0 si no hay inventario
-                                return [
-                                    'required',
-                                    'numeric',
-                                    'gt:' . $cost,
-                                ];
                             }),
+
 //                        Forms\Components\TextInput::make('cost')
 //                            ->label('Costo')
 //                            ->inlineLabel(false)
@@ -166,6 +149,7 @@ class PricesRelationManager extends RelationManager
                     ->label('Precio'),
                 Tables\Columns\TextColumn::make('utilidad')
                     ->numeric()
+                    ->money('USD', locale: 'en_US')
                     ->suffix('%')
                     ->label('Utilidad (%)'),
                 Tables\Columns\ToggleColumn::make('is_default')
