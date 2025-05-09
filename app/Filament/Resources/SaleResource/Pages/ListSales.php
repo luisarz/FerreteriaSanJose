@@ -47,17 +47,19 @@ class ListSales extends ListRecords
                         ->required(),
                     Select::make('documentType')
                         ->default('fact')
+                        ->label('Documentos')
                         ->options([
-                            'fact' => 'Factura',
-                            'ccf' => 'CCF',
+                            'fact' => 'Ventas',
+//                            'ccf' => 'CCF',
                         ])
                         ->required(),
                     Select::make('fileType')
                         ->required()
+                        ->label('Tipo de archivo')
                         ->default('Libro')
                         ->options([
                             'Libro' => 'Libro',
-                            'Anexo' => 'Anexos',
+//                            'Anexo' => 'Anexos',
                         ])
                 ])->action(function ($record, array $data) {
                     $startDate = $data['desde']; // Asegurar formato correcto
@@ -86,6 +88,53 @@ class ListSales extends ListRecords
                         ->body('Haz clic aquí para ver los resultados.')
                         ->actions([
                             \Filament\Notifications\Actions\Action::make('Ver informe')
+                                ->button()
+                                ->url($ruta, true) // true = abrir en nueva pestaña
+                        ])
+                        ->send();
+
+                })
+                ->openUrlInNewTab(),
+            Actions\Action::make('download')
+                ->label('Descargar DTE')
+                ->tooltip('Descargar DTE')
+                ->icon('heroicon-o-arrow-down-on-square-stack')
+                ->iconSize(IconSize::Large)
+                ->requiresConfirmation()
+                ->modalHeading('Descargar Archivos')
+                ->modalDescription('Complete la información para generar el archivo a descargar')
+                ->modalSubmitActionLabel('Sí, Generar Archivo')
+                ->color('warning')
+                ->form([
+                    DatePicker::make('desde')
+                        ->inlineLabel(true)
+                        ->default(now()->startOfMonth())
+                        ->required(),
+                    DatePicker::make('hasta')
+                        ->inlineLabel(true)
+                        ->default(now()->endOfMonth())
+                        ->required(),
+                    Select::make('documentType')
+                        ->default('json')
+                        ->label('Documentos')
+                        ->options([
+                            'json' => 'JSON',
+                            'pdf' => 'PDF',
+                        ])
+                        ->required(),
+
+                ])->action(function ($record, array $data) {
+                    $startDate = $data['desde']; // Asegurar formato correcto
+                    $endDate = $data['hasta'];   // Asegurar formato correcto
+                    $documentType = $data['documentType'];
+
+                    $ruta = '/sale/'.$documentType.'/' . $startDate . '/' . $endDate;
+
+                    return \Filament\Notifications\Notification::make()
+                        ->title('Reporte preparado.')
+                        ->body('Haz clic aquí para ver los resultados.')
+                        ->actions([
+                            \Filament\Notifications\Actions\Action::make('Descargar Archivo')
                                 ->button()
                                 ->url($ruta, true) // true = abrir en nueva pestaña
                         ])
@@ -123,9 +172,10 @@ class ListSales extends ListRecords
 
     public function getTabs(): array
     {
-        $allCount = Sale::withTrashed()->count();
-        $send = Sale::withTrashed()->where('is_dte', 1)->count();
-        $unSend = Sale::withoutTrashed()->where('is_dte', 0)->count();
+
+        $allCount = Sale::withTrashed()->whereIn('sale_status',['Facturada','Finalizado','Anulado'])->count();
+        $send = Sale::withTrashed()->where('is_dte', 1)->whereIn('sale_status',['Facturada','Finalizado','Anulado'])->count();
+        $unSend = Sale::withoutTrashed()->where('is_dte', 0)->whereIn('sale_status',['Facturada','Finalizado'])->count();
         $deletedCount = Sale::onlyTrashed()->count();
 
         return [
@@ -143,7 +193,7 @@ class ListSales extends ListRecords
                 ->badge($unSend)
                 ->badgeColor('danger')
                 ->icon('heroicon-s-computer-desktop')
-                ->modifyQueryUsing(fn(Builder $query) => $query->withTrashed()->where('is_dte', '=', 0)),
+                ->modifyQueryUsing(fn(Builder $query) => $query->withTrashed()->where('is_dte',  0)->whereIn('sale_status',['Facturada','Finalizado'])),
 
         ];
     }

@@ -184,8 +184,7 @@ class SaleItemsRelationManager extends RelationManager
                                             ->label('Cantidad')
                                             ->step(1)
                                             ->numeric()
-                                            ->live()
-                                            ->debounce(300)
+                                            ->live(onBlur: true)
                                             ->columnSpan(1)
                                             ->required()
                                             ->live()
@@ -200,25 +199,24 @@ class SaleItemsRelationManager extends RelationManager
                                             ->numeric()
                                             ->columnSpan(1)
                                             ->required()
-                                            ->readOnly()
-                                            ->live()
-                                            ->debounce(300)
+//                                            ->readOnly()
+                                            ->live(onBlur: true)
                                             ->afterStateUpdated(function (callable $get, callable $set) {
                                                 $this->calculateTotal($get, $set);
                                             }),
 
-//                                        Forms\Components\TextInput::make('discount')
-//                                            ->label('Descuento')
-//                                            ->step(0.01)
-//                                            ->prefix('%')
-//                                            ->numeric()
-//                                            ->live()
-//                                            ->columnSpan(1)
-//                                            ->required()
-//                                            ->debounce(300)
-//                                            ->afterStateUpdated(function (callable $get, callable $set) {
-//                                                $this->calculateTotal($get, $set);
-//                                            }),
+                                        Forms\Components\TextInput::make('discount')
+                                            ->label('Descuento')
+                                            ->step(0.01)
+                                            ->prefix('%')
+                                            ->numeric()
+                                            ->live()
+                                            ->columnSpan(1)
+                                            ->required()
+                                            ->debounce(300)
+                                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                                $this->calculateTotal($get, $set);
+                                            }),
 
                                         Forms\Components\TextInput::make('total')
                                             ->label('Total')
@@ -275,7 +273,7 @@ class SaleItemsRelationManager extends RelationManager
                                                     ->label('Descripción')
                                                     ->inlineLabel(false)
                                             ]),
-                                        Section::make('Imagen')
+                                        Section::make('')
                                             ->compact()
                                             ->schema([
                                                 Forms\Components\FileUpload::make('product_image')
@@ -333,6 +331,7 @@ class SaleItemsRelationManager extends RelationManager
                     ->columnSpan(1),
                 Tables\Columns\TextColumn::make('discount')
                     ->label('Descuento')
+                    ->suffix('%')
                     ->numeric()
                     ->columnSpan(1),
                 Tables\Columns\TextColumn::make('total')
@@ -449,10 +448,10 @@ class SaleItemsRelationManager extends RelationManager
         }
     }
 
-    public function isReadOnly(): bool
-    {
-        return false;
-    }
+//    public function isReadOnly(): bool
+//    {
+//        return false;
+//    }
 
 
 }

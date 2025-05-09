@@ -18,6 +18,7 @@ use Dompdf\Options;
 
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
+
 class DTEController extends Controller
 {
     public function generarDTE($idVenta): array|JsonResponse
@@ -101,6 +102,7 @@ class DTEController extends Controller
         $i = 1;
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
+            $exent= !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => $i,
                 "itemType" => 1,
@@ -110,7 +112,7 @@ class DTEController extends Controller
                 "description" => $detalle->inventory->product->name,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
-                "except" => false,
+                "except" => $exent,
                 "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
                 "discountPercentage" => doubleval(number_format($detalle->discount, 8, '.', '')),
                 "discountAmount" => doubleval(number_format(0, 8, '.', '')),
@@ -183,6 +185,7 @@ class DTEController extends Controller
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
             $tributes = ["20"];
+            $exent= !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => intval($i),
                 "itemType" => 1,
@@ -192,7 +195,7 @@ class DTEController extends Controller
                 "description" => trim($detalle->inventory->product->name),
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
-                "except" => false,
+                "except" => $exent,
                 "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
                 "discountAmount" => doubleval(number_format(0, 8, '.', '')),
                 "discountPercentage" => doubleval(number_format($detalle->discount, 2, '.', '')),
@@ -268,6 +271,7 @@ class DTEController extends Controller
 
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
+            $exent= !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => $i,
                 "itemType" => 1,
@@ -277,7 +281,7 @@ class DTEController extends Controller
                 "description" => $detalle->inventory->product->name,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
-                "except" => false,
+                "except" =>$exent,
                 "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
                 "discountPercentage" => doubleval(number_format($detalle->discount, 8, '.', '')),
                 "discountAmount" => doubleval(number_format(0, 8, '.', '')),
@@ -366,8 +370,10 @@ class DTEController extends Controller
             "deliveryDoc" => isset($factura->seller) ? str_replace("-", "", $factura->seller->dui ?? '') : null,];
         $items = [];
         $i = 1;
+
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
+            $exent= !$detalle->inventory->product->is_taxed;
             $items[] = ["itemNum" => $i,
                 "itemType" => 0,
                 "docNum" => "",
@@ -376,7 +382,7 @@ class DTEController extends Controller
                 "description" => $detalle->inventory->product->name,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
-                "except" => false,
+                "except" => $exent,
                 "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
                 "discount" => 0,
                 "discountPercentage" => doubleval(number_format($detalle->discount, 8, '.', '')),
@@ -472,6 +478,7 @@ class DTEController extends Controller
         $i = 1;
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
+            $exent= !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => $i,
                 "itemType" => 1,
@@ -481,7 +488,7 @@ class DTEController extends Controller
                 "description" => $detalle->inventory->product->name,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
-                "except" => false,
+                "except" => $exent,
                 "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
                 "discountPercentage" => doubleval(number_format($detalle->discount, 8, '.', '')),
                 "discountAmount" => doubleval(number_format(0, 8, '.', '')),
@@ -868,7 +875,13 @@ class DTEController extends Controller
 
             return $pdf->stream("{$codGeneracion}.pdf");
         } else {
-            return response()->json(['error' => 'El archivo no existe.'], 404); // Retornar error 404
+            $jsonResponse=$this->getDTE($codGeneracion);
+            $this->saveRestoreJson($jsonResponse->original, $codGeneracion);
+            return [
+                'estado' => 'Error',
+                'mensaje' => 'El Archivo no existe, pero fue solicitado a hacienda, por favor intente nuevamente (refresque el navegador)',
+            ];
+
         }
 
 
@@ -937,7 +950,13 @@ class DTEController extends Controller
             $pdf->save($pathPage);
             return $pdf->stream("{$codGeneracion}.pdf"); // El PDF se abre en una nueva pestaña
         } else {
-            return response()->json(['error' => 'El archivo no existe.'], 404); // Retornar error 404
+            $jsonResponse=$this->getDTE($codGeneracion);
+            $this->saveRestoreJson($jsonResponse->original, $codGeneracion);
+            return [
+                'estado' => 'Error',
+                'mensaje' => 'El Archivo no existe, pero fue solicitado a hacienda, por favor intente nuevamente (refresque el navegador)',
+            ];
+
         }
 
 
@@ -946,24 +965,45 @@ class DTEController extends Controller
     public
     function getDTE($codGeneracion)
     {
+        set_time_limit(0);
         try {
-            $dte = Http::asForm()
-                ->withHeaders(['accept' => '*/*', 'apiKey' => 'c561a756-f332-45d1-bff2-9d59022a6eb5',])
-                ->post(env('DTE_URL').'/api/DTE/getDTE',
-                    [
-                        'generationCode' => '490C8111-5056-43BA-8686-602E216A7CDD',
-                    ]);
-            if ($dte) {
-                return json_decode($dte, true);
-            } else {
-                $data = [
-                    'estado' => 'RECHAZADO ',
-                    'mensaje' => "Ocurrio un eror"
-                ];
-                return $data;
-            }
-        } catch (ConnectionException $e) {
-            return $e->getMessage();
+//            echo env(DTE_TEST);
+            $urlAPI = env('DTE_URL_REPORT') .'/api/DTE/json/'.$codGeneracion; // Set the correct API URL
+            $apiKey = trim($this->getConfiguracion()->api_key); // Assuming you retrieve the API key from your config
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => $urlAPI,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'GET',
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/json',
+                    'apiKey: ' . $apiKey
+                ),
+            ));
+
+            $response = curl_exec($curl);
+            curl_close($curl);
+
+
+
+
+
+            $responseData = json_decode($response, true);
+
+            return response()->json($responseData);
+
+
+        } catch (Exception $e) {
+            $data = [
+                'estado' => 'RECHAZADO',
+                'mensaje' => "Ocurrio un eror " . $e
+            ];
+            return $data;
         }
 
 
@@ -1042,4 +1082,11 @@ class DTEController extends Controller
             ];
         }
     }
+    public function saveRestoreJson($responseData, $codGeneracion): void
+    {
+        $fileName = "DTEs/{$codGeneracion}.json";
+        $jsonContent = json_encode($responseData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        Storage::disk('public')->put($fileName, $jsonContent);
+    }
+
 }

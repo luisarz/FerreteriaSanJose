@@ -65,7 +65,7 @@ class PricesRelationManager extends RelationManager
                             ->numeric()
                             ->debounce(500)
                             ->afterStateUpdated(function ($state, $record, callable $set, callable $get) {
-                                $inventory = Inventory::find($record->inventory_id);
+                                $inventory = $this->getOwnerRecord();
 
                                 if (!$inventory) {
                                     return;
