@@ -98,9 +98,13 @@
             </td>
         </tr>
     </table>
-    <div style="text-align: left;">Vendedor: {{ $datos['DTE']['extencion']['nombEntrega']??'S/N' }}</div>
+    @php
+        $ext = $datos['DTE']['extencion'] ?? $datos['DTE']['extension'] ?? null;
+    @endphp
+    <div style="text-align: left;">Vendedor: {{  $ext['nombEntrega']??'S/N' }}</div>
     ---------------------------------------------------------------------------
     <div style="text-align: left">
+        <h4>DOCUMENTO TRIBUTARIO ELECTRÓNICO</h4>
         <h4>DOCUMENTO TRIBUTARIO ELECTRÓNICO</h4>
         <h5>{{ $datos['tipoDocumento'] }}</h5>
         <b>Código de generación</b> <br>

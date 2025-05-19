@@ -205,7 +205,10 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Entregado por:   {{ $datos['DTE']['extencion']['nombEntrega']??'S/N' }}</td>
+                        @php
+                            $ext = $datos['DTE']['extencion'] ?? $datos['DTE']['extension'] ?? null;
+                        @endphp
+                        <td>Entregado por:   {{  $ext['nombEntrega']??'S/N' }}</td>
                         <td>Recibido por:</td>
                     </tr>
                     <tr>

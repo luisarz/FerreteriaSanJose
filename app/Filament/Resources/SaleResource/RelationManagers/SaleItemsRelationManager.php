@@ -54,7 +54,7 @@ class SaleItemsRelationManager extends RelationManager
                                             ->label('Producto')
                                             ->searchable()
                                             ->preload(true)
-                                            ->live()
+//                                            ->live()
                                             ->debounce(300)
                                             ->columnSpanFull()
                                             ->inlineLabel(false)
@@ -65,7 +65,8 @@ class SaleItemsRelationManager extends RelationManager
                                                     return []; // No buscar si el texto es muy corto
                                                 }
                                                 // Dividir el texto ingresado en palabras clave
-                                                $keywords = explode(' ', $query);
+//                                                $keywords = explode(' ', $query);
+                                                $keywords = $query;
 
                                                 return Inventory::with([
                                                     'product:id,name,sku,bar_code,aplications',
@@ -79,11 +80,11 @@ class SaleItemsRelationManager extends RelationManager
                                                     })
                                                     ->whereHas('product', function ($q) use ($aplications, $keywords) {
                                                         $q->where(function ($queryBuilder) use ($keywords) {
-                                                            foreach ($keywords as $word) {
-                                                                $queryBuilder->where('name', 'like', "%{$word}%")
-                                                                    ->orWhere('sku', 'like', "%{$word}%")
-                                                                    ->orWhere('bar_code', 'like', "%{$word}%");
-                                                            }
+//                                                            foreach ($keywords as $word) {
+                                                            $queryBuilder->where('name', 'like', "%$keywords%")
+                                                                ->orWhere('sku', 'like', "%$keywords%")
+                                                                ->orWhere('bar_code', 'like', "%$keywords%");
+//                                                            }
                                                         });
 
                                                         if (!empty($aplications)) {
@@ -95,7 +96,7 @@ class SaleItemsRelationManager extends RelationManager
                                                     ->get()
                                                     ->mapWithKeys(function ($inventory) {
                                                         $price = optional($inventory->prices->first())->price; // Obtén el precio predeterminado
-                                                        $displayText = "{$inventory->product->name} - Cod: {$inventory->product->bar_code} - STOCK: {$inventory->stock} - $ {$price}";
+                                                        $displayText = "{$inventory->product->name} - Cod: {$inventory->product->sku} - STOCK: {$inventory->stock} - $ {$price}";
                                                         return [$inventory->id => $displayText];
                                                     });
                                             })
