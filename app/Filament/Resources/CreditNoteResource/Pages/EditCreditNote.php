@@ -43,8 +43,8 @@ class EditCreditNote extends EditRecord
                 ->action(function (Actions\EditAction $edit) {
                     if ($this->record->sale_total <= 0) {
                         PageAlert::make('No se puede finalizar la venta')
-                            ->title('Error al finalizar venta')
-                            ->body('El monto total de la venta debe ser mayor a 0')
+                            ->title('Error al finalizar Nota')
+                            ->body('El monto total de la Nota debe ser mayor a 0')
                             ->danger()
                             ->send();
 
@@ -64,53 +64,17 @@ class EditCreditNote extends EditRecord
                     }
 
 
-
-
-
-
-                    $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(false);
-                    if (!$openedCashBox) {
-                        PageAlert::make('No se puede finalizar la venta')
-                            ->title('Caja cerrada')
-                            ->body('No se puede finalizar la venta porque no hay caja abierta')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
-
-
-                    if ($this->record->sale_total <= 0) {
-                        PageAlert::make('No se puede finalizar la venta')
-                            ->title('Error al finalizar venta')
-                            ->body('El monto total de la venta debe ser mayor a 0')
-                            ->danger()
-                            ->send();
-
-                        return;
-                    }
-
-//                    if ($this->data['operation_condition_id'] == 1) {
-//                        $sale_total = isset($this->data['sale_total'])
-//                            ? doubleval($this->data['sale_total'])
-//                            : 0.0;
-//                        $cash = isset($this->data['cash'])
-//                            ? doubleval($this->data['cash'])
-//                            : 0.0;
-//
-//                        if ($cash < $sale_total) {
-//                            PageAlert::make('No se puede finalizar la venta')
-//                                ->title('Error al finalizar venta')
-//                                ->body('El monto en efectivo es menor al total de la venta')
-//                                ->danger()
-//                                ->send();
-//                            return;
-//                        }
-//                    } else {
-////                        $salePayment_status='Pendiente';
-//                        $status_sale_credit = 1;
+//                    $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBox(false);
+//                    if (!$openedCashBox) {
+//                        PageAlert::make('No se puede finalizar la venta')
+//                            ->title('Caja cerrada')
+//                            ->body('No se puede finalizar la NOTA porque no hay caja abierta')
+//                            ->danger()
+//                            ->send();
+//                        return;
 //                    }
 
-                    //Obtenre modeloFacturacion
+
                     //Obtener tipo de transmision
                     $wherehouse_id = $this->record->wherehouse_id;
                     $exiteContingencia = Contingency::where('warehouse_id', $wherehouse_id)
@@ -123,46 +87,17 @@ class EditCreditNote extends EditRecord
                         $billing_model = 2;
                     }
 
-
-//                    $wherehouse_id = $this->record->wherehouse_id;
-//                    $modeloFacturacion = DteTransmisionWherehouse::where('wherehouse', $wherehouse_id)->first();
-//                    $billing_model = $modeloFacturacion->billing_model;
-//                    $transmision_type = $modeloFacturacion->transmision_type;
-//                    if ($billing_model == null || $billing_model == "") {
-//                        PageAlert::make('No se puede finalizar la venta')
-//                            ->title('Error al finalizar venta')
-//                            ->body('No se puede finalizar la venta, Sin definir el modelo de facturacion')
-//                            ->danger()
-//                            ->send();
-//                        return;
-//                    }
-
-
-//                    if ($transmision_type == null || $transmision_type == "") {
-//                        PageAlert::make('No se puede finalizar la venta')
-//                            ->title('Error al finalizar venta')
-//                            ->body('No se puede finalizar la venta, Sin definir el tipo de transmision')
-//                            ->danger()
-//                            ->send();
-//                        return;
-//                    }
-
                     $id_sale = $this->record->id; // Obtener el registro de la compra
                     $sale = Sale::with('documenttype', 'customer', 'customer.country')->find($id_sale);
                     $sale->document_type_id = $documentType;
-//                    $sale->payment_method_id = $payment_method_id;
-//                    $sale->operation_condition_id = $operation_condition_id;
                     $sale->billing_model = $billing_model;
                     $sale->transmision_type = $transmision_type;
                     $sale->save();
-
-//                    $document_type_id =$this->record->document_type_id;
                     $document_internal_number_new = 0;
-
-                    $lastIssuedDocument = CashBoxCorrelative::where('document_type_id', $documentType)->first();
-                    if ($lastIssuedDocument) {
-                        $document_internal_number_new = $lastIssuedDocument->current_number + 1;
-                    }
+//                    $lastIssuedDocument = CashBoxCorrelative::where('document_type_id', $documentType)->first();
+//                    if ($lastIssuedDocument) {
+//                        $document_internal_number_new = $lastIssuedDocument->current_number + 1;
+//                    }
 
 
                     $salesItem = SaleItem::where('sale_id', $sale->id)->get();
@@ -172,105 +107,102 @@ class EditCreditNote extends EditRecord
                     $entity = ($client->name ?? 'Varios') . ' ' . ($client->last_name ?? '');
 
                     $pais = $client->country->name ?? 'Salvadoreña';
-                    foreach ($salesItem as $item) {
-                        $inventory = Inventory::with('product')->find($item->inventory_id);
-                        //Buscar si producto compuiesto y descar los inventarios que tenga
-                        //inventoriasGourped;
-//                        foreach ($inventory as $item) {
-//                            //descar los inventario internos
-//                        }
+                    if ($sale->document_type_id == 5) {//Toca el inventario solo si es Nota de credito
+                        foreach ($salesItem as $item) {
+                            $inventory = Inventory::with('product')->find($item->inventory_id);
 
-                        // Verifica si el inventario existe
-                        if (!$inventory) {
-                            \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
-                            continue; // Si no se encuentra el inventario, continua con el siguiente item
-                        }
-                        // Actualiza el stock del inventario
+                            // Verifica si el inventario existe
+                            if (!$inventory) {
+                                \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                                continue; // Si no se encuentra el inventario, continua con el siguiente item
+                            }
+                            // Actualiza el stock del inventario
 
-                        //verificar si es un producto compuesto
-                        $is_grouped = $inventory->product->is_grouped;
-                        if ($is_grouped) {
-                            //si es compuesto traemos todos los inventario que lo componen
-                            $inventoriesGrouped = InventoryGrouped::with('inventoryChild.product')->where('inventory_grouped_id', $item->inventory_id)->get();
-                            foreach ($inventoriesGrouped as $inventarioHijo) {
+                            //verificar si es un producto compuesto
+                            $is_grouped = $inventory->product->is_grouped;
+                            if ($is_grouped) {
+                                //si es compuesto traemos todos los inventario que lo componen
+                                $inventoriesGrouped = InventoryGrouped::with('inventoryChild.product')->where('inventory_grouped_id', $item->inventory_id)->get();
+                                foreach ($inventoriesGrouped as $inventarioHijo) {
 //                                dd($inventoryGrouped->inventoryChild);
+                                    $kardex = KardexHelper::createKardexFromInventory(
+                                        $inventarioHijo->inventoryChild->branch_id, // Se pasa solo el valor de branch_id (entero)
+                                        $sale->created_at, // date
+                                        'Nota de Crédito', // operation_type
+                                        $sale->id, // operation_id
+                                        $item->id, // operation_detail_id
+                                        $documnetType, // document_type
+                                        $document_internal_number_new, // document_number
+                                        $entity, // entity
+                                        $pais, // nationality
+                                        $inventarioHijo->inventory_child_id, // inventory_id
+                                        $inventarioHijo->inventoryChild->stock ?? 0 - $inventarioHijo->quantity ?? 0, // previous_stock
+                                        $inventarioHijo->quantity, // stock_in
+                                        0, // stock_out
+                                        $inventarioHijo->inventoryChild->stock ?? 0 + $inventarioHijo->quantity ?? 0, // stock_actual
+                                        $inventarioHijo->quantity ?? 0 * $inventarioHijo->sale_price ?? 0, // money_in
+                                        0, // money_out
+                                        $inventarioHijo->inventoryChild->stock ?? 0 * $inventarioHijo->sale_price ?? 0, // money_actual
+                                        $inventarioHijo->sale_price ?? 0, // sale_price
+                                        $inventarioHijo->inventoryChild->cost_without_taxes ?? 0 // purchase_price
+                                    );
+                                    if (!$kardex) {
+                                        \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                                    }
+                                }
+                            } else {
+                                $newStock = $inventory->stock + $item->quantity;
+                                $inventory->update(['stock' => $newStock]);
                                 $kardex = KardexHelper::createKardexFromInventory(
-                                    $inventarioHijo->inventoryChild->branch_id, // Se pasa solo el valor de branch_id (entero)
+                                    $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
                                     $sale->created_at, // date
-                                    'Venta', // operation_type
+                                    'Nota de Crédito', // operation_type
                                     $sale->id, // operation_id
                                     $item->id, // operation_detail_id
                                     $documnetType, // document_type
                                     $document_internal_number_new, // document_number
                                     $entity, // entity
                                     $pais, // nationality
-                                    $inventarioHijo->inventory_child_id, // inventory_id
-                                    $inventarioHijo->inventoryChild->stock ?? 0 + $inventarioHijo->quantity ?? 0, // previous_stock
-                                    0, // stock_in
-                                    $inventarioHijo->quantity, // stock_out
-                                    $inventarioHijo->inventoryChild->stock ?? 0 - $inventarioHijo->quantity ?? 0, // stock_actual
-                                    0, // money_in
-                                    $inventarioHijo->quantity ?? 0 * $inventarioHijo->sale_price ?? 0, // money_out
-                                    $inventarioHijo->inventoryChild->stock ?? 0 * $inventarioHijo->sale_price ?? 0, // money_actual
-                                    $inventarioHijo->sale_price ?? 0, // sale_price
-                                    $inventarioHijo->inventoryChild->cost_without_taxes ?? 0 // purchase_price
+                                    $inventory->id, // inventory_id
+                                    $inventory->stock - $item->quantity, // previous_stock
+                                    $item->quantity, // stock_in
+                                    0, // stock_out
+                                    $newStock, // stock_actual
+                                    $item->quantity * $item->price, // money_in
+                                    0, // money_out
+                                    $inventory->stock * $item->price, // money_actual
+                                    $item->price, // sale_price
+                                    $inventory->cost_without_taxes // purchase_price
                                 );
+                                if (!$kardex) {
+                                    \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                                }
                             }
-                        } else {
-                            $newStock = $inventory->stock - $item->quantity;
-                            $inventory->update(['stock' => $newStock]);
-                            $kardex = KardexHelper::createKardexFromInventory(
-                                $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
-                                $sale->created_at, // date
-                                'Venta', // operation_type
-                                $sale->id, // operation_id
-                                $item->id, // operation_detail_id
-                                $documnetType, // document_type
-                                $document_internal_number_new, // document_number
-                                $entity, // entity
-                                $pais, // nationality
-                                $inventory->id, // inventory_id
-                                $inventory->stock + $item->quantity, // previous_stock
-                                0, // stock_in
-                                $item->quantity, // stock_out
-                                $newStock, // stock_actual
-                                0, // money_in
-                                $item->quantity * $item->price, // money_out
-                                $inventory->stock * $item->price, // money_actual
-                                $item->price, // sale_price
-                                0 // purchase_price
-                            );
-                        }
-
-
-                        // Crear el Kardex
-
-
-                        // Verifica si la creación del Kardex fue exitosa
-                        if (!$kardex) {
-                            \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                            // Verifica si la creación del Kardex fue exitosa
                         }
                     }
 
 
                     $sale->update([
-                        'cashbox_open_id' => $openedCashBox,
+//                        'cashbox_open_id' => $openedCashBox,
+                        'cashbox_open_id' => 0,
                         'is_invoiced' => true,
                         'sales_payment_status' => $salePayment_status,
                         'sale_status' => 'Facturada',
                         'status_sale_credit' => $status_sale_credit,
                         'operation_date' => $this->data['operation_date'],
-                        'document_internal_number' => $document_internal_number_new
+                        'document_internal_number' => 0
+//                        'document_internal_number' => $document_internal_number_new
                     ]);
 
                     //obtener id de la caja y buscar la caja
-                    $idCajaAbierta = (new GetCashBoxOpenedService())->getOpenCashBoxId(true);
-                    $correlativo = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $documentType)->first();
-                    $correlativo->current_number = $document_internal_number_new;
-                    $correlativo->save();
+//                    $idCajaAbierta = (new GetCashBoxOpenedService())->getOpenCashBox(true);
+//                    $correlativo = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $documentType)->first();
+//                    $correlativo->current_number = $document_internal_number_new;
+//                    $correlativo->save();
                     PageAlert::make()
-                        ->title('Venta Finalizada')
-                        ->body('Venta finalizada con éxito. # Comprobante **' . $document_internal_number_new . '**')
+                        ->title('Nota Finalizada')
+                        ->body('Nota finalizada con éxito. # Comprobante **' . $document_internal_number_new . '**')
                         ->success()
                         ->send();
 

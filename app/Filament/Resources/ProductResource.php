@@ -16,8 +16,13 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\ImageColumn;
+use Illuminate\Support\HtmlString;
+
 
 class ProductResource extends Resource
 {
@@ -69,10 +74,15 @@ class ProductResource extends Resource
 
                         Forms\Components\Select::make('category_id')
                             ->label('Categoría')
-                            ->relationship('category', 'name')
+                            ->relationship(
+                                name: 'category',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn ($query) => $query->whereNotNull('parent_id')
+                            )
                             ->preload()
                             ->searchable()
                             ->required(),
+
                         Forms\Components\Select::make('marca_id')
                             ->label('Marca')
                             ->preload()
@@ -125,89 +135,92 @@ class ProductResource extends Resource
         return $table
             ->columns([
 
-                Tables\Columns\Layout\Grid::make()
-                    ->columns(1)
-                    ->schema([
-                        Tables\Columns\Layout\Split::make([
-                            Tables\Columns\Layout\Grid::make()
-                                ->columns(1)
-                                ->schema([
+//                Tables\Columns\Layout\Grid::make()
+//                    ->columns(1)
+//                    ->schema([
+//                        Tables\Columns\Layout\Split::make([
+//                            Tables\Columns\Layout\Grid::make()
+//                                ->columns(1)
+//                                ->schema([
                                     Tables\Columns\ImageColumn::make('images')
                                         ->placeholder('Sin imagen')
-                                        ->defaultImageUrl(url('storage/products/noimage.jpg'))
+                                        ->defaultImageUrl(url('storage/products/noimage.png'))
                                         ->openUrlInNewTab()
-                                        ->height(150)
-                                        ->square()
-                                        ->width(150)
-                                        ->extraAttributes([
-                                            'class' => 'rounded-md',
-                                            'loading' => 'lazy'
-                                        ])
-
-                                ])->grow(false),
-                            Tables\Columns\Layout\Stack::make([
-                                Tables\Columns\TextColumn::make('name')
-                                    ->label('Producto')
-                                    ->weight(FontWeight::SemiBold)
-                                    ->sortable()
-                                    ->icon('heroicon-s-cube')
-                                    ->wrap()
-                                    ->formatStateUsing(fn($state, $record) => $record->deleted_at ? "<span style='text-decoration: line-through; color: red;'>$state</span>" : $state)
-                                    ->html()
-                                    ->searchable(),
-                                Tables\Columns\TextColumn::make('aplications')
-                                    ->label('Aplicaicones')
-                                    ->badge()
-                                    ->icon('heroicon-s-cog')
-                                    ->sortable()
-                                    ->separator(';')
-                                    ->searchable(),
-                                Tables\Columns\TextColumn::make('sku')
-                                    ->label('SKU')
-                                    ->copyable()
-                                    ->icon('heroicon-s-qr-code')
-                                    ->copyMessage('SKU  copied')
-                                    ->searchable(),
-                                Tables\Columns\BooleanColumn::make('is_grouped')
-                                    ->label('Servicio')
-                                    ->trueIcon('heroicon-o-server-stack')
-                                    ->falseIcon('heroicon-o-server')
-                                    ->sortable(),
+                                        ->square(),
 
 
-                                Tables\Columns\TextColumn::make('bar_code')
-                                    ->icon('heroicon-s-code-bracket-square')
-                                    ->label('C. Barras')
-                                    ->toggleable(isToggledHiddenByDefault: true)
-                                    ->searchable(),
-                                Tables\Columns\TextColumn::make('category.name')
-                                    ->label('Linea')
-                                    ->icon('heroicon-s-wrench-screwdriver')
-                                    ->sortable(),
-                                Tables\Columns\TextColumn::make('marca.nombre')
-                                    ->icon('heroicon-s-check-badge')
-                                    ->sortable(),
-                                Tables\Columns\TextColumn::make('unitMeasurement.description')
-                                    ->label('Presentación')
-                                    ->icon('heroicon-s-scale')
-                                    ->sortable(),
+//                                ])->grow(false),
+//                            Tables\Columns\Layout\Stack::make([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('Codigo')
+                    ->sortable()
+                    ->wrap()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Producto')
+//                                    ->weight(FontWeight::SemiBold)
+                    ->sortable()
+//                                    ->icon('heroicon-s-cube')
+                    ->wrap()
+//                                    ->formatStateUsing(fn($state, $record) => $record->deleted_at ? "<span style='text-decoration: line-through; color: red;'>$state</span>" : $state)
+                    ->html()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('unitMeasurement.description')
+                    ->label('Presentación')
+//                    ->icon('heroicon-s-scale')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Linea')
+//                    ->icon('heroicon-s-wrench-screwdriver')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('marca.nombre')
+//                    ->icon('heroicon-s-check-badge')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('aplications')
+                    ->label('Aplicaicones')
+                    ->badge()
+//                    ->icon('heroicon-s-cog')
+                    ->sortable()
+                    ->separator(';')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('sku')
+                    ->label('SKU')
+                    ->copyable()
+//                                    ->icon('heroicon-s-qr-code')
+                    ->copyMessage('SKU  copied')
+                    ->searchable(),
+                Tables\Columns\BooleanColumn::make('is_grouped')
+                    ->label('Servicio')
+                    ->trueIcon('heroicon-o-server-stack')
+                    ->falseIcon('heroicon-o-server')
+                    ->sortable(),
 
-                            ])->extraAttributes([
-                                'class' => 'space-y-2'
-                            ])
-                                ->grow(),
+
+                Tables\Columns\TextColumn::make('bar_code')
+//                    ->icon('heroicon-s-code-bracket-square')
+                    ->label('C. Barras')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->searchable(),
 
 
-                        ]),
 
-                    ]),
+
+//                            ])->extraAttributes([
+//                                'class' => 'space-y-2'
+//                            ])
+//                                ->grow(),
+
+
+//                        ]),
+
+//                    ]),
 
 
             ])
-            ->contentGrid([
-                'md' => 3,
-                'xs' => 4,
-            ])
+//            ->contentGrid([
+//                'md' => 3,
+//                'xs' => 4,
+//            ])
             ->paginationPageOptions([
                 5, 10, 25, 50, 100 // Define your specific pagination limits here
             ])
@@ -232,15 +245,16 @@ class ProductResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label('')->iconSize(IconSize::Large),
-                Tables\Actions\EditAction::make()->label('')->iconSize(IconSize::Large)->color('warning'),
-                Tables\Actions\ReplicateAction::make()->label('')->iconSize(IconSize::Large),
-                Tables\Actions\DeleteAction::make()->label('')->iconSize(IconSize::Large)->color('danger'),
-                Tables\Actions\RestoreAction::make()->label('')->iconSize(IconSize::Large)->color('success'),
+
                 Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make()->label('Ver')->iconSize(IconSize::Large),
+                    Tables\Actions\EditAction::make()->label('Modificar')->iconSize(IconSize::Large)->color('warning'),
+                    Tables\Actions\ReplicateAction::make()->label('Replicar')->iconSize(IconSize::Large),
+                    Tables\Actions\DeleteAction::make()->label('Eliminar')->iconSize(IconSize::Large)->color('danger'),
+                    Tables\Actions\RestoreAction::make()->label('Restaurar')->iconSize(IconSize::Large)->color('success'),
                 ])->link()
                     ->label('Acciones'),
-            ], position: Tables\Enums\ActionsPosition::AfterContent)
+            ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

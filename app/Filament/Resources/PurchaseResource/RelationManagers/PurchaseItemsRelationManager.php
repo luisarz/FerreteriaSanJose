@@ -148,7 +148,15 @@ class PurchaseItemsRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('inventory.product.name')
                     ->wrap()
-                    ->label('Producto'),
+                    ->label('Producto') ->formatStateUsing(function ($record) {
+                        $productName = $record->inventory->product->name ?? '';
+                        $category = $record->inventory->product->category->name ?? '';
+                        $sku = $record->inventory->product->sku ?? '';
+                        $description = $record->description ?? '';
+                        return "{$productName} <b>{$sku}</b>";
+                    })
+                    ->html(),
+
 
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Cantidad')

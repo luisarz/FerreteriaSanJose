@@ -2,10 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\KardexHelper;
+use App\Models\Branch;
+use App\Models\CashBoxCorrelative;
 use App\Models\Company;
 use App\Models\Contingency;
 use App\Models\HistoryDte;
+use App\Models\Inventory;
+use App\Models\InventoryGrouped;
 use App\Models\Sale;
+use App\Models\SaleItem;
+use App\Service\GetCashBoxOpenedService;
+use Aws\History;
 use DateTime;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
@@ -40,7 +48,9 @@ class DTEController extends Controller
         $documentTypes = [
             '01' => 'facturaJson',
             '03' => 'CCFJson',
+            '04' => 'RemisionNotesJSON',
             '05' => 'CreditNotesJSON',
+            '06' => 'DebitNotesJSON',
             '11' => 'ExportacionJson',
             '14' => 'sujetoExcluidoJson',
         ];
@@ -71,10 +81,39 @@ class DTEController extends Controller
         }
     }
 
+    public function warehouse($wareHauseId)
+    {
+        return Branch::find($wareHauseId);
+    }
+
 
     function facturaJson($idVenta): array|jsonResponse
     {
         $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
+
+        if ($factura->document_internal_number == 0 || $factura->document_internal_number == null) {
+            $document_internal_number_new = 0;
+            $document_type_id = $factura->document_type_id;
+            $aperturaCaja = (new GetCashBoxOpenedService())->getOpenCashBox();
+            if (!$aperturaCaja['status']) {
+                return [
+                    'estado' => 'FALLO',
+                    'mensaje' => 'No hay caja aperturada para generar el documento'
+                ];
+            }
+            $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $aperturaCaja['id_caja'])->where('document_type_id', $document_type_id)->first();
+            if ($CashBoxCOrrelativeOpen) {
+                $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+            }
+            $factura->update([
+                'cashbox_open_id' => $aperturaCaja['id_apertura_caja'],
+                'document_internal_number' => $document_internal_number_new,
+                'operation_date' => now(),
+            ]);
+            $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+            $CashBoxCOrrelativeOpen->save();
+        }
+
 
         $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
         $conditionCode = trim($factura->salescondition->code);
@@ -84,7 +123,6 @@ class DTEController extends Controller
             "nit" => null,
             "nrc" => null,
             "name" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
-//            "phoneNumber" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->phone ?? null) : null,
             "phoneNumber" => ($number = preg_replace('/\D/', '', $factura->customer?->phone ?? '')) && strlen($number) >= 8 ? $number : null,
 
             "email" => isset($factura->customer) ? trim($factura->customer->email ?? null) : null,
@@ -102,14 +140,14 @@ class DTEController extends Controller
         $i = 1;
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
-            $exent= !$detalle->inventory->product->is_taxed;
+            $exent = !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => $i,
                 "itemType" => 1,
                 "docNum" => null,
                 "code" => $codeProduc,
                 "tributeCode" => null,
-                "description" => $detalle->inventory->product->name,
+                "description" => $detalle->inventory->product->name . " " . $detalle->description,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
                 "except" => $exent,
@@ -125,7 +163,10 @@ class DTEController extends Controller
         }
         $branchId = auth()->user()->employee->branch_id ?? null;
         if (!$branchId) {
-            return false;
+            return [
+                'estado' => 'FALLO',
+                'mensaje' => 'No hay datos de la sucursal o empresa configurados'
+            ];
         }
         $exiteContingencia = Contingency::where('warehouse_id', $branchId)
             ->where('is_close', 0)->first();
@@ -135,6 +176,7 @@ class DTEController extends Controller
             $uuidContingencia = $exiteContingencia->uuid_hacienda;
             $transmissionType = 2;
         }
+        $sucursal = $this->warehouse($factura->wherehouse_id);
         $dte = [
             "documentType" => "01",
             "invoiceId" => intval($factura->document_internal_number),
@@ -142,6 +184,11 @@ class DTEController extends Controller
             "conditionCode" => $conditionCode,
             "transmissionType" => $transmissionType,
             "contingency" => $uuidContingencia,
+            "codeEstablishmentType" => trim($sucursal->establishment_type_code) ?? null,
+            "codePosTerminal" => trim($sucursal->pos_terminal_code) ?? null,
+            "economicAtivity" => trim($sucursal->economicactivity->code) ?? null,
+            "emisorPhone" => trim($sucursal->phone) ?? null,
+            "emisorAddress" => trim($sucursal->address) ?? null,
             "receptor" => $receptor,
             "extencion" => $extencion,
             "items" => $items
@@ -156,7 +203,28 @@ class DTEController extends Controller
     function CCFJson($idVenta): array|JsonResponse
     {
         $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
-
+        if ($factura->document_internal_number == 0 || $factura->document_internal_number == null) {
+            $document_internal_number_new = 0;
+            $document_type_id = $factura->document_type_id;
+            $aperturaCaja = (new GetCashBoxOpenedService())->getOpenCashBox();
+            if (!$aperturaCaja['status']) {
+                return [
+                    'estado' => 'FALLO',
+                    'mensaje' => 'No hay caja aperturada para generar el documento'
+                ];
+            }
+            $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $aperturaCaja['id_caja'])->where('document_type_id', $document_type_id)->first();
+            if ($CashBoxCOrrelativeOpen) {
+                $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+            }
+            $factura->update([
+                'cashbox_open_id' => $aperturaCaja['id_apertura_caja'],
+                'document_internal_number' => $document_internal_number_new,
+                'operation_date' => now(),
+            ]);
+            $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+            $CashBoxCOrrelativeOpen->save();
+        }
 
         $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
         $conditionCode = trim($factura->salescondition->code);
@@ -166,9 +234,7 @@ class DTEController extends Controller
             "nit" => trim(str_replace("-", '', $factura->customer->nit)) ?? null,
             "nrc" => trim(str_replace("-", "", $factura->customer->nrc)) ?? null,
             "name" => trim($factura->customer->name) . " " . trim($factura->customer->last_name) ?? null,
-//            "phoneNumber" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->phone ?? '') : null,
             "phoneNumber" => ($number = preg_replace('/\D/', '', $factura->customer?->phone ?? '')) && strlen($number) >= 8 ? $number : null,
-
             "email" => trim($factura->customer->email) ?? null,
             "address" => trim($factura->customer->address) ?? null,
             "businessName" => null,
@@ -185,14 +251,14 @@ class DTEController extends Controller
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
             $tributes = ["20"];
-            $exent= !$detalle->inventory->product->is_taxed;
+            $exent = !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => intval($i),
                 "itemType" => 1,
                 "docNum" => null,
                 "code" => $codeProduc,
                 "tributeCode" => null,
-                "description" => trim($detalle->inventory->product->name),
+                "description" => $detalle->inventory->product->name . " " . $detalle->description,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
                 "except" => $exent,
@@ -213,20 +279,26 @@ class DTEController extends Controller
                 'mensaje' => 'No se ha configurado la empresa'
             ];
         }
-        $exiteContingencia = Contingency::where('warehouse_id', $branchId)
-            ->where('is_close', 0)->first();
+        $exiteContingencia = Contingency::where('warehouse_id', $branchId)->where('is_close', 0)->first();
         $uuidContingencia = null;
         $transmissionType = 1;
         if ($exiteContingencia) {
             $uuidContingencia = $exiteContingencia->uuid_hacienda;
             $transmissionType = 2;
         }
+        $sucursal = $this->warehouse($factura->wherehouse_id);
+
         $dte = [
             "documentType" => "03",
             "invoiceId" => intval($factura->document_internal_number),
             "transmissionType" => $transmissionType,
             "contingency" => $uuidContingencia,
             "establishmentType" => trim($establishmentType),
+            "codeEstablishmentType" => trim($sucursal->establishment_type_code) ?? null,
+            "codePosTerminal" => trim($sucursal->pos_terminal_code) ?? null,
+            "economicAtivity" => trim($sucursal->economicactivity->code) ?? null,
+            "emisorPhone" => trim($sucursal->phone) ?? null,
+            "emisorAddress" => trim($sucursal->address) ?? null,
             "conditionCode" => trim($conditionCode),
             "receptor" => $receptor,
             "extencion" => $extencion,
@@ -242,7 +314,28 @@ class DTEController extends Controller
     function CreditNotesJSON($idVenta): array|JsonResponse
     {
         $factura = Sale::with('saleRelated', 'wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
-
+        if ($factura->document_internal_number == 0 || $factura->document_internal_number == null) {
+            $document_internal_number_new = 0;
+            $document_type_id = $factura->document_type_id;
+            $aperturaCaja = (new GetCashBoxOpenedService())->getOpenCashBox();
+            if (!$aperturaCaja['status']) {
+                return [
+                    'estado' => 'FALLO',
+                    'mensaje' => 'No hay caja aperturada para generar el documento'
+                ];
+            }
+            $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $aperturaCaja['id_caja'])->where('document_type_id', $document_type_id)->first();
+            if ($CashBoxCOrrelativeOpen) {
+                $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+            }
+            $factura->update([
+                'cashbox_open_id' => $aperturaCaja['id_apertura_caja'],
+                'document_internal_number' => $document_internal_number_new,
+                'operation_date' => now(),
+            ]);
+            $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+            $CashBoxCOrrelativeOpen->save();
+        }
         $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
         $conditionCode = 1;//trim($factura->salescondition->code);
         $receptor = [
@@ -271,17 +364,17 @@ class DTEController extends Controller
 
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
-            $exent= !$detalle->inventory->product->is_taxed;
+            $exent = !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => $i,
                 "itemType" => 1,
                 "docNum" => $factura->saleRelated->document_internal_number,
                 "code" => $codeProduc,
                 "tributeCode" => null,
-                "description" => $detalle->inventory->product->name,
+                "description" => $detalle->inventory->product->name . " " . $detalle->description,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
-                "except" =>$exent,
+                "except" => $exent,
                 "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
                 "discountPercentage" => doubleval(number_format($detalle->discount, 8, '.', '')),
                 "discountAmount" => doubleval(number_format(0, 8, '.', '')),
@@ -294,7 +387,10 @@ class DTEController extends Controller
         }
         $branchId = auth()->user()->employee->branch_id ?? null;
         if (!$branchId) {
-            return false;
+            return [
+                'estado' => 'FALLO',
+                'mensaje' => 'No hay datos de la sucursal o empresa configurados'
+            ];
         }
         $exiteContingencia = Contingency::where('warehouse_id', $branchId)
             ->where('is_close', 0)->first();
@@ -310,6 +406,8 @@ class DTEController extends Controller
             "numDocument" => $factura->saleRelated->document_internal_number,
             "dateEmision" => $factura->saleRelated->operation_date,
         ];
+        $sucursal = $this->warehouse($factura->wherehouse_id);
+
         $dte = [
             "documentType" => "05",
             "invoiceId" => intval($factura->document_internal_number),
@@ -318,6 +416,11 @@ class DTEController extends Controller
             "transmissionType" => $transmissionType,
             "contingency" => $uuidContingencia,
             "relatedDocuments" => $relatedDocuments,
+            "codeEstablishmentType" => trim($sucursal->establishment_type_code) ?? null,
+            "codePosTerminal" => trim($sucursal->pos_terminal_code) ?? null,
+            "economicAtivity" => trim($sucursal->economicactivity->code) ?? null,
+            "emisorPhone" => trim($sucursal->phone) ?? null,
+            "emisorAddress" => trim($sucursal->address) ?? null,
             "receptor" => $receptor,
             "extencion" => $extencion,
             "items" => $items
@@ -329,10 +432,270 @@ class DTEController extends Controller
         return $this->processDTE($dte, $idVenta);
     }
 
+    function DebitNotesJSON($idVenta): array|JsonResponse
+    {
+        $factura = Sale::with('saleRelated', 'wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
+        if ($factura->document_internal_number == 0 || $factura->document_internal_number == null) {
+            $document_internal_number_new = 0;
+            $document_type_id = $factura->document_type_id;
+            $aperturaCaja = (new GetCashBoxOpenedService())->getOpenCashBox();
+            if (!$aperturaCaja['status']) {
+                return [
+                    'estado' => 'FALLO',
+                    'mensaje' => 'No hay caja aperturada para generar el documento'
+                ];
+            }
+            $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $aperturaCaja['id_caja'])->where('document_type_id', $document_type_id)->first();
+            if ($CashBoxCOrrelativeOpen) {
+                $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+            }
+            $factura->update([
+                'cashbox_open_id' => $aperturaCaja['id_apertura_caja'],
+                'document_internal_number' => $document_internal_number_new,
+                'operation_date' => now(),
+            ]);
+            $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+            $CashBoxCOrrelativeOpen->save();
+        }
+        $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
+        $conditionCode = 1;//trim($factura->salescondition->code);
+        $receptor = [
+            "documentType" => $factura->customer->documenttypecustomer->code ?? null,
+            "documentNum" => $factura->customer->dui,
+//            "nit" => $factura->customer->nit,
+            "nit" => trim(str_replace("-", '', $factura->customer->nit)) ?? null,
+            "nrc" => trim(str_replace("-", '', $factura->customer->nrc)) ?? null,
+//            "nrc" => $factura->customer->nrc,
+            "name" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
+            "phoneNumber" => ($number = preg_replace('/\D/', '', $factura->customer?->phone ?? '')) && strlen($number) >= 8 ? $number : null,
+            "email" => isset($factura->customer) ? trim($factura->customer->email ?? '') : null,
+            "businessName" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
+            "economicAtivity" => isset($factura->customer->economicactivity) ? trim($factura->customer->economicactivity->code ?? '') : null,
+            "address" => isset($factura->customer) ? trim($factura->customer->address ?? '') : null,
+            "codeCity" => isset($factura->customer->departamento) ? trim($factura->customer->departamento->code ?? '') : null,
+            "codeMunicipality" => isset($factura->customer->distrito) ? trim($factura->customer->distrito->code ?? '') : null,
+        ];
+        $extencion = [
+            "deliveryName" => isset($factura->seller) ? trim($factura->seller->name ?? '') . " " . trim($factura->seller->last_name ?? '') : null,
+            "deliveryDoc" => isset($factura->seller) ? str_replace("-", "", $factura->seller->dui ?? '') : null,
+        ];
+        $items = [];
+        $i = 1;
+        $tributes = ["20"];
+
+        foreach ($factura->saleDetails as $detalle) {
+            $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
+            $exent = !$detalle->inventory->product->is_taxed;
+            $items[] = [
+                "itemNum" => $i,
+                "itemType" => 1,
+                "docNum" => $factura->saleRelated->document_internal_number,
+                "code" => $codeProduc,
+                "tributeCode" => null,
+                "description" => $detalle->inventory->product->name . " " . $detalle->description,
+                "quantity" => doubleval($detalle->quantity),
+                "unit" => 1,
+                "except" => $exent,
+                "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
+                "discountPercentage" => doubleval(number_format($detalle->discount, 8, '.', '')),
+                "discountAmount" => doubleval(number_format(0, 8, '.', '')),
+                "exemptSale" => doubleval(number_format(0, 8, '.', '')),
+                "tributes" => $tributes,
+                "psv" => doubleval(number_format($detalle->price, 8, '.', '')),
+                "untaxed" => doubleval(number_format(0, 8, '.', '')),
+            ];
+            $i++;
+        }
+        $branchId = auth()->user()->employee->branch_id ?? null;
+        if (!$branchId) {
+            return [
+                'estado' => 'FALLO',
+                'mensaje' => 'No hay datos de la sucursal o empresa configurados'
+            ];
+        }
+        $exiteContingencia = Contingency::where('warehouse_id', $branchId)
+            ->where('is_close', 0)->first();
+        $uuidContingencia = null;
+        $transmissionType = 1;
+        if ($exiteContingencia) {
+            $uuidContingencia = $exiteContingencia->uuid_hacienda;
+            $transmissionType = 2;
+        }
+        $relatedDocuments[] = [
+            "typeDocument" => "03",//$Nota de Credito
+            "typeGeneration" => "1",//$factura->saleRelated->document_internal_number,
+            "numDocument" => $factura->saleRelated->document_internal_number,
+            "dateEmision" => $factura->saleRelated->operation_date,
+        ];
+        $sucursal = $this->warehouse($factura->wherehouse_id);
+        $dte = [
+            "documentType" => "06",
+            "invoiceId" => intval($factura->document_internal_number),
+            "establishmentType" => "02",//$establishmentType,
+            "conditionCode" => $conditionCode,
+            "transmissionType" => $transmissionType,
+            "contingency" => $uuidContingencia,
+            "relatedDocuments" => $relatedDocuments,
+            "codeEstablishmentType" => trim($sucursal->establishment_type_code) ?? null,
+            "codePosTerminal" => trim($sucursal->pos_terminal_code) ?? null,
+            "economicAtivity" => trim($sucursal->economicactivity->code) ?? null,
+            "emisorPhone" => trim($sucursal->phone) ?? null,
+            "emisorAddress" => trim($sucursal->address) ?? null,
+            "receptor" => $receptor,
+            "extencion" => $extencion,
+            "items" => $items
+        ];
+
+//        $dteJSON = json_encode($dte, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+//        return response()->json($dte);
+
+        return $this->processDTE($dte, $idVenta);
+    }
+
+    function RemisionNotesJSON($idVenta): array|JsonResponse
+    {
+        $factura = Sale::with('saleRelated', 'wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
+        if ($factura->document_internal_number == 0 || $factura->document_internal_number == null) {
+            $document_internal_number_new = 0;
+            $document_type_id = $factura->document_type_id;
+            $aperturaCaja = (new GetCashBoxOpenedService())->getOpenCashBox();
+            if (!$aperturaCaja['status']) {
+                return [
+                    'estado' => 'FALLO',
+                    'mensaje' => 'No hay caja aperturada para generar el documento'
+                ];
+            }
+            $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $aperturaCaja['id_caja'])->where('document_type_id', $document_type_id)->first();
+            if ($CashBoxCOrrelativeOpen) {
+                $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+            }
+            $factura->update([
+                'cashbox_open_id' => $aperturaCaja['id_apertura_caja'],
+                'document_internal_number' => $document_internal_number_new,
+                'operation_date' => now(),
+            ]);
+            $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+            $CashBoxCOrrelativeOpen->save();
+        }
+        $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
+        $conditionCode = 1;//trim($factura->salescondition->code);
+        $receptor = [
+            "documentType" => $factura->customer->documenttypecustomer->code ?? null,
+            "documentNum" => $factura->customer->dui,
+            "nit" => trim(str_replace("-", '', $factura->customer->nit)) ?? null,
+            "nrc" => null,
+            "name" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
+            "phoneNumber" => ($number = preg_replace('/\D/', '', $factura->customer?->phone ?? '')) && strlen($number) >= 8 ? $number : null,
+            "email" => isset($factura->customer) ? trim($factura->customer->email ?? '') : null,
+            "businessName" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
+            "economicAtivity" => isset($factura->customer->economicactivity) ? trim($factura->customer->economicactivity->code ?? '') : null,
+            "address" => isset($factura->customer) ? trim($factura->customer->address ?? '') : null,
+            "codeCity" => isset($factura->customer->departamento) ? trim($factura->customer->departamento->code ?? '') : null,
+            "codeMunicipality" => isset($factura->customer->distrito) ? trim($factura->customer->distrito->code ?? '') : null,
+        ];
+        $extencion = [
+            "deliveryName" => isset($factura->seller) ? trim($factura->seller->name ?? '') . " " . trim($factura->seller->last_name ?? '') : null,
+            "deliveryDoc" => isset($factura->seller) ? str_replace("-", "", $factura->seller->dui ?? '') : null,
+        ];
+        $items = [];
+        $i = 1;
+        $tributes = ["20"];
+
+        foreach ($factura->saleDetails as $detalle) {
+            $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
+            $exent = !$detalle->inventory->product->is_taxed;
+            $items[] = [
+                "itemNum" => $i,
+                "itemType" => 1,
+                "docNum" => $factura->saleRelated->document_internal_number ?? null,
+                "code" => $codeProduc,
+                "tributeCode" => null,
+                "description" => $detalle->inventory->product->name . " " . $detalle->description,
+                "quantity" => doubleval($detalle->quantity),
+                "unit" => 1,
+                "except" => $exent,
+                "unitPrice" => doubleval(number_format($detalle->price, 8, '.', '')),
+                "discountPercentage" => doubleval(number_format($detalle->discount, 8, '.', '')),
+                "discountAmount" => doubleval(number_format(0, 8, '.', '')),
+                "exemptSale" => doubleval(number_format(0, 8, '.', '')),
+                "tributes" => $tributes,
+                "psv" => doubleval(number_format($detalle->price, 8, '.', '')),
+                "untaxed" => doubleval(number_format(0, 8, '.', '')),
+            ];
+            $i++;
+        }
+        $branchId = auth()->user()->employee->branch_id ?? null;
+        if (!$branchId) {
+            return [
+                'estado' => 'FALLO',
+                'mensaje' => 'No hay datos de la sucursal o empresa configurados'
+            ];
+        }
+        $exiteContingencia = Contingency::where('warehouse_id', $branchId)
+            ->where('is_close', 0)->first();
+        $uuidContingencia = null;
+        $transmissionType = 1;
+        if ($exiteContingencia) {
+            $uuidContingencia = $exiteContingencia->uuid_hacienda;
+            $transmissionType = 2;
+        }
+        $relatedDocuments[] = [
+            "typeDocument" => "03",//CCF
+            "typeGeneration" => "1",//$factura->saleRelated->document_internal_number,
+            "numDocument" => $factura->saleRelated->document_internal_number ?? null,
+            "dateEmision" => $factura->saleRelated->operation_date ?? null,
+        ];
+        $sucursal = $this->warehouse($factura->wherehouse_id);
+        $dte = [
+            "documentType" => "04",
+            "invoiceId" => intval($factura->document_internal_number),
+            "establishmentType" => "02",//$establishmentType,
+            "conditionCode" => $conditionCode,
+            "transmissionType" => $transmissionType,
+            "contingency" => $uuidContingencia,
+            "relatedDocuments" => $relatedDocuments,
+            "codeEstablishmentType" => trim($sucursal->establishment_type_code) ?? null,
+            "codePosTerminal" => trim($sucursal->pos_terminal_code) ?? null,
+            "economicAtivity" => trim($sucursal->economicactivity->code) ?? null,
+            "emisorPhone" => trim($sucursal->phone) ?? null,
+            "emisorAddress" => trim($sucursal->address) ?? null,
+            "receptor" => $receptor,
+            "extencion" => $extencion,
+            "items" => $items,
+            "assetTitle" => $receptor['name'] ?? 'SN'
+        ];
+
+//        $dteJSON = json_encode($dte, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+//        return response()->json($dte);
+
+        return $this->processDTE($dte, $idVenta);
+    }
+
     function ExportacionJson($idVenta): array|jsonResponse
     {
         $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
-
+        if ($factura->document_internal_number == 0 || $factura->document_internal_number == null) {
+            $document_internal_number_new = 0;
+            $document_type_id = $factura->document_type_id;
+            $aperturaCaja = (new GetCashBoxOpenedService())->getOpenCashBox();
+            if (!$aperturaCaja['status']) {
+                return [
+                    'estado' => 'FALLO',
+                    'mensaje' => 'No hay caja aperturada para generar el documento'
+                ];
+            }
+            $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $aperturaCaja['id_caja'])->where('document_type_id', $document_type_id)->first();
+            if ($CashBoxCOrrelativeOpen) {
+                $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+            }
+            $factura->update([
+                'cashbox_open_id' => $aperturaCaja['id_apertura_caja'],
+                'document_internal_number' => $document_internal_number_new,
+                'operation_date' => now(),
+            ]);
+            $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+            $CashBoxCOrrelativeOpen->save();
+        }
         $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
         $conditionCode = 1;//trim($factura->salescondition->code);
         $receptor = [
@@ -373,13 +736,13 @@ class DTEController extends Controller
 
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
-            $exent= !$detalle->inventory->product->is_taxed;
+            $exent = !$detalle->inventory->product->is_taxed;
             $items[] = ["itemNum" => $i,
                 "itemType" => 0,
                 "docNum" => "",
                 "code" => $codeProduc,
 //                "tributeCode" => null,
-                "description" => $detalle->inventory->product->name,
+                "description" => $detalle->inventory->product->name . " " . $detalle->description,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
                 "except" => $exent,
@@ -398,7 +761,7 @@ class DTEController extends Controller
         if (!$branchId) {
             return [
                 'estado' => 'FALLO',
-                'mensaje' => 'No se ha configurado la empresa'
+                'mensaje' => 'No hay datos de la sucursal o empresa configurados'
             ];
         }
         $exiteContingencia = Contingency::where('warehouse_id', $branchId)
@@ -409,17 +772,7 @@ class DTEController extends Controller
             $uuidContingencia = $exiteContingencia->uuid_hacienda;
             $transmissionType = 2;
         }
-        $foot = [
-            "fiscalPrecinct" => null,
-            "regimen" => null,
-            "itemExportype" => 2,
-            "incoterms" => null,
-            "description" => "string",
-            "freight" => null,
-            "insurance" => null,
-            "relatedDocuments" => null,
-            "transmissionType" => 1
-        ];
+        $sucursal = $this->warehouse($factura->wherehouse_id);
         $dte = [
             "documentType" => "11",//Factura de exportacion
             "invoiceId" => intval($factura->document_internal_number),
@@ -427,6 +780,11 @@ class DTEController extends Controller
             "conditionCode" => $conditionCode,
             "transmissionType" => $transmissionType,
             "contingency" => $uuidContingencia,
+            "codeEstablishmentType" => trim($sucursal->establishment_type_code) ?? null,
+            "codePosTerminal" => trim($sucursal->pos_terminal_code) ?? null,
+            "economicAtivity" => trim($sucursal->economicactivity->code) ?? null,
+            "emisorPhone" => trim($sucursal->phone) ?? null,
+            "emisorAddress" => trim($sucursal->address) ?? null,
             "receptor" => $receptor,
             "extencion" => $extencion,
             "items" => $items,
@@ -438,7 +796,6 @@ class DTEController extends Controller
             "freight" => 0,
             "insurance" => 0,
             "relatedDocuments" => null,
-            "transmissionType" => 1
         ];
 
 //        $dteJSON = json_encode($dte, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -450,19 +807,38 @@ class DTEController extends Controller
     function sujetoExcluidoJson($idVenta): array|jsonResponse
     {
         $factura = Sale::with('wherehouse.stablishmenttype', 'documenttype', 'seller', 'customer', 'customer.economicactivity', 'customer.departamento', 'customer.documenttypecustomer', 'salescondition', 'paymentmethod', 'saleDetails', 'saleDetails.inventory.product')->find($idVenta);
-
+      if ($factura->document_internal_number == 0 || $factura->document_internal_number == null) {
+            $document_internal_number_new = 0;
+            $document_type_id = $factura->document_type_id;
+            $aperturaCaja = (new GetCashBoxOpenedService())->getOpenCashBox();
+          if (!$aperturaCaja['status']) {
+                return [
+                    'estado' => 'FALLO',
+                    'mensaje' => 'No hay caja aperturada para generar el documento'
+                ];
+            }
+            $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $aperturaCaja['id_caja'])->where('document_type_id', $document_type_id)->first();
+            if ($CashBoxCOrrelativeOpen) {
+                $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+            }
+            $factura->update([
+                'cashbox_open_id' => $aperturaCaja['id_apertura_caja'],
+                'document_internal_number' => $document_internal_number_new,
+                'operation_date' => now(),
+            ]);
+            $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+            $CashBoxCOrrelativeOpen->save();
+        }
         $establishmentType = trim($factura->wherehouse->stablishmenttype->code);
         $conditionCode = (int)trim($factura->salescondition->code ?? 1);
 
         $receptor = [
             "documentType" => $factura->customer->documenttypecustomer->code ?? null,
             "documentNum" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->nit ?? '') : null,
-            "nit" => $factura->customer->nit??null,
+            "nit" => $factura->customer->nit ?? null,
             "nrc" => $factura->customer->nrc ?? null,
             "name" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
-//            "phoneNumber" => isset($factura->customer) ? str_replace(["(", ")", "-", " "], "", $factura->customer->phone ?? '') : null,
             "phoneNumber" => ($number = preg_replace('/\D/', '', $factura->customer?->phone ?? '')) && strlen($number) >= 8 ? $number : null,
-
             "email" => isset($factura->customer) ? trim($factura->customer->email ?? '') : null,
             "businessName" => isset($factura->customer) ? trim($factura->customer->name ?? '') . " " . trim($factura->customer->last_name ?? '') : null,
             "economicAtivity" => isset($factura->customer->economicactivity) ? trim($factura->customer->economicactivity->code ?? '') : null,
@@ -478,14 +854,14 @@ class DTEController extends Controller
         $i = 1;
         foreach ($factura->saleDetails as $detalle) {
             $codeProduc = str_pad($detalle->inventory_id, 10, '0', STR_PAD_LEFT);
-            $exent= !$detalle->inventory->product->is_taxed;
+            $exent = !$detalle->inventory->product->is_taxed;
             $items[] = [
                 "itemNum" => $i,
                 "itemType" => 1,
                 "docNum" => null,
                 "code" => $codeProduc,
                 "tributeCode" => null,
-                "description" => $detalle->inventory->product->name,
+                "description" => $detalle->inventory->product->name . " " . $detalle->description,
                 "quantity" => doubleval($detalle->quantity),
                 "unit" => 1,
                 "except" => $exent,
@@ -503,7 +879,7 @@ class DTEController extends Controller
         if (!$branchId) {
             return [
                 'estado' => 'FALLO',
-                'mensaje' => 'No se ha configurado la empresa'
+                'mensaje' => 'No hay datos de la sucursal o empresa configurados'
             ];
         }
         $exiteContingencia = Contingency::where('warehouse_id', $branchId)
@@ -517,7 +893,7 @@ class DTEController extends Controller
         $dte = [
             "documentType" => "14",
             "invoiceId" => intval($factura->document_internal_number),
-            "establishmentType" => "02",//$establishmentType,
+            "establishmentType" => $establishmentType,
             "conditionCode" => $conditionCode,
 //            "transmissionType" => $transmissionType,
             "contingency" => $uuidContingencia,
@@ -546,7 +922,7 @@ class DTEController extends Controller
         set_time_limit(0);
         try {
 //            echo env(DTE_TEST);
-            $urlAPI = env('DTE_URL') .'/api/DTE/generateDTE'; // Set the correct API URL
+            $urlAPI = env('DTE_URL') . '/api/DTE/generateDTE'; // Set the correct API URL
             $apiKey = trim($this->getConfiguracion()->api_key); // Assuming you retrieve the API key from your config
             // Convert data to JSON format
             $dteJSON = json_encode($dteData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -715,6 +1091,90 @@ class DTEController extends Controller
             $venta = Sale::find($idVenta);
             $venta->sale_status = "Anulado";
             $venta->save();
+            //regresar el inventario
+            $excluded = [4, 6];//[4]-NOta de debito y [6]-NOta de Remision
+            if (!in_array($venta->document_type_id, $excluded)) {
+                $salesItem = SaleItem::where('sale_id', $venta->id)->get();
+                $client = $venta->customer;
+                $documnetType = $venta->documenttype->name ?? 'S/N';
+//                    $entity = $client->name??'' . ' ' . $client->last_name??'';
+                $entity = ($client->name ?? 'Varios') . ' ' . ($client->last_name ?? '');
+
+                $pais = $client->country->name ?? 'Salvadoreña';
+                foreach ($salesItem as $item) {
+                    $inventory = Inventory::with('product')->find($item->inventory_id);
+                    // Verifica si el inventario existe
+                    if (!$inventory) {
+                        \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                        continue; // Si no se encuentra el inventario, continua con el siguiente item
+                    }
+                    // Actualiza el stock del inventario
+
+                    //verificar si es un producto compuesto
+                    $is_grouped = $inventory->product->is_grouped;
+                    if ($is_grouped) {
+                        //si es compuesto traemos todos los inventario que lo componen
+                        $inventoriesGrouped = InventoryGrouped::with('inventoryChild.product')->where('inventory_grouped_id', $item->inventory_id)->get();
+
+                        foreach ($inventoriesGrouped as $inventarioHijo) {
+                            $newStock = $inventarioHijo->stock + $item->quantity;
+                            $inventarioHijo->update(['stock' => $newStock]);
+                            $kardex = KardexHelper::createKardexFromInventory(
+                                $inventarioHijo->inventoryChild->branch_id, // Se pasa solo el valor de branch_id (entero)
+                                now(), // date
+                                'Anulacion Venta', // operation_type
+                                $venta->id, // operation_id
+                                $item->id, // operation_detail_id
+                                $documnetType, // document_type
+                                $venta->document_internal_number, // document_number
+                                $entity, // entity
+                                $pais, // nationality
+                                $inventarioHijo->inventory_child_id, // inventory_id
+                                $inventarioHijo->inventoryChild->stock ?? 0 - $inventarioHijo->quantity ?? 0, // previous_stock
+                                $inventarioHijo->quantity, // stock_in
+                                0, // stock_out
+                                $inventarioHijo->inventoryChild->stock ?? 0 - $inventarioHijo->quantity ?? 0, // stock_actual
+                                $inventarioHijo->quantity ?? 0 * $inventarioHijo->sale_price ?? 0, // money_in
+                                0, // money_out
+                                $inventarioHijo->inventoryChild->stock ?? 0 * $inventarioHijo->sale_price ?? 0, // money_actual
+                                $inventarioHijo->sale_price ?? 0, // sale_price
+                                $inventarioHijo->inventoryChild->cost_without_taxes ?? 0 // purchase_price
+                            );
+                        }
+                    } else {
+                        $newStock = $inventory->stock + $item->quantity;
+                        $inventory->update(['stock' => $newStock]);
+                        $kardex = KardexHelper::createKardexFromInventory(
+                            $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
+                            now(), // date
+                            'Anulacion Venta', // operation_type
+                            $venta->id, // operation_id
+                            $item->id, // operation_detail_id
+                            $documnetType, // document_type
+                            $venta->document_internal_number, // document_number
+                            $entity, // entity
+                            $pais, // nationality
+                            $inventory->id, // inventory_id
+                            $inventory->stock - $item->quantity, // previous_stock
+                            $item->quantity, // stock_in
+                            0, // stock_out
+                            $newStock, // stock_actual
+                            $item->quantity * $item->price, // money_in
+                            0, // money_out
+                            $inventory->stock * $item->price, // money_actual
+                            $item->price, // sale_price
+                            $inventory->cost_without_taxes // purchase_price
+                        );
+                    }
+
+
+                    // Verifica si la creación del Kardex fue exitosa
+                    if (!$kardex) {
+                        \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                    }
+                }
+            }
+
             return [
                 'estado' => 'EXITO',
                 'mensaje' => 'DTE ANULADO correctamente',
@@ -725,7 +1185,7 @@ class DTEController extends Controller
     function SendAnularDTE($dteData, $idVenta) // Assuming $dteData is the data you need to send
     {
         try {
-            $urlAPI = env('DTE_URL').'/api/DTE/cancellationDTE'; // Set the correct API URL
+            $urlAPI = env('DTE_URL') . '/api/DTE/cancellationDTE'; // Set the correct API URL
             $apiKey = $this->getConfiguracion()->api_key; // Assuming you retrieve the API key from your config
 
             // Convert data to JSON format
@@ -827,7 +1287,7 @@ class DTEController extends Controller
                 '14' => 'SUJETO EXCLUIDO'
             ];
             $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
-            $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=".env('DTE_AMBIENTE_QR')."&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
+            $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
             $datos = [
                 'empresa' => $DTE["emisor"], // O la función correspondiente para cargar datos globales de la empresa.
@@ -875,8 +1335,8 @@ class DTEController extends Controller
 
             return $pdf->stream("{$codGeneracion}.pdf");
         } else {
-            $jsonResponse=$this->getDTE($codGeneracion);
-            $this->saveRestoreJson($jsonResponse->original, $codGeneracion);
+            $jsonResponse = $this->getDTE($codGeneracion);
+            $this->saveRestoreJson($jsonResponse->original['dte'], $codGeneracion);
             return [
                 'estado' => 'Error',
                 'mensaje' => 'El Archivo no existe, pero fue solicitado a hacienda, por favor intente nuevamente (refresque el navegador)',
@@ -912,7 +1372,7 @@ class DTEController extends Controller
                 '15' => 'COMPROBANTE DE DONACION'
             ];
             $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
-            $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=".env('DTE_AMBIENTE_QR')."&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
+            $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
             $datos = [
                 'empresa' => $DTE["emisor"], // O la función correspondiente para cargar datos globales de la empresa.
@@ -950,8 +1410,8 @@ class DTEController extends Controller
             $pdf->save($pathPage);
             return $pdf->stream("{$codGeneracion}.pdf"); // El PDF se abre en una nueva pestaña
         } else {
-            $jsonResponse=$this->getDTE($codGeneracion);
-            $this->saveRestoreJson($jsonResponse->original, $codGeneracion);
+            $jsonResponse = $this->getDTE($codGeneracion);
+            $this->saveRestoreJson($jsonResponse->original['dte'], $codGeneracion);
             return [
                 'estado' => 'Error',
                 'mensaje' => 'El Archivo no existe, pero fue solicitado a hacienda, por favor intente nuevamente (refresque el navegador)',
@@ -968,33 +1428,34 @@ class DTEController extends Controller
         set_time_limit(0);
         try {
 //            echo env(DTE_TEST);
-            $urlAPI = env('DTE_URL_REPORT') .'/api/DTE/json/'.$codGeneracion; // Set the correct API URL
-            $apiKey = trim($this->getConfiguracion()->api_key); // Assuming you retrieve the API key from your config
-            $curl = curl_init();
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => $urlAPI,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'GET',
-                CURLOPT_HTTPHEADER => array(
-                    'Content-Type: application/json',
-                    'apiKey: ' . $apiKey
-                ),
-            ));
+//            $urlAPI = env('DTE_URL_REPORT') .'/api/DTE/json/'.$codGeneracion; // Set the correct API URL
+//            $apiKey = trim($this->getConfiguracion()->api_key); // Assuming you retrieve the API key from your config
+//            $curl = curl_init();
+//            curl_setopt_array($curl, array(
+//                CURLOPT_URL => $urlAPI,
+//                CURLOPT_RETURNTRANSFER => true,
+//                CURLOPT_ENCODING => '',
+//                CURLOPT_MAXREDIRS => 10,
+//                CURLOPT_TIMEOUT => 0,
+//                CURLOPT_FOLLOWLOCATION => true,
+//                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+//                CURLOPT_CUSTOMREQUEST => 'GET',
+//                CURLOPT_HTTPHEADER => array(
+//                    'Content-Type: application/json',
+//                    'apiKey: ' . $apiKey
+//                ),
+//            ));
+//
+//            $response = curl_exec($curl);
+//            curl_close($curl);
+//
+//            $response = curl_exec($curl);
+//            curl_close($curl);
 
-            $response = curl_exec($curl);
-            curl_close($curl);
+            $history = HistoryDte::where('codigoGeneracion', '=', $codGeneracion)->first();
 
 
-
-
-
-            $responseData = json_decode($response, true);
-
+            $responseData = json_decode($history, true);
             return response()->json($responseData);
 
 
@@ -1082,7 +1543,9 @@ class DTEController extends Controller
             ];
         }
     }
-    public function saveRestoreJson($responseData, $codGeneracion): void
+
+    public
+    function saveRestoreJson($responseData, $codGeneracion): void
     {
         $fileName = "DTEs/{$codGeneracion}.json";
         $jsonContent = json_encode($responseData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

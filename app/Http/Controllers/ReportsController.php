@@ -16,14 +16,16 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportsController extends Controller
 {
-    public function saleReportFact($startDate, $endDate): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function saleReportFact($doctype,$startDate, $endDate): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
+        $documentType = intval($doctype);
+
 
 
         return Excel::download(
-            new SalesExportFac('sales', $startDate, $endDate),
+            new SalesExportFac($documentType, $startDate, $endDate),
             "ventas-{$startDate->format('Y-m-d')}-{$endDate->format('Y-m-d')}.xlsx"
         );
     }

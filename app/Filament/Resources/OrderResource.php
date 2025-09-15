@@ -10,6 +10,7 @@ use App\Models\Employee;
 use App\Models\Sale;
 use App\Tables\Actions\dteActions;
 use App\Tables\Actions\orderActions;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -18,6 +19,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\IconSize;
 use Filament\Tables;
+use Filament\Tables\Columns\Summarizers\Sum;
+use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Enums\ActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -28,6 +31,7 @@ use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\EditAction;
 use Filament\Infolists\Components\IconEntry;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 
 class OrderResource extends Resource
 {
@@ -73,14 +77,13 @@ class OrderResource extends Resource
                                                 return []; // Return an empty array if no wherehouse selected
                                             })
                                             ->default(fn() => optional(Auth::user()->employee)->id)
-
                                             ->required()
                                             ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
                                         Forms\Components\Select::make('customer_id')
                                             ->searchable()
                                             ->live()
-                                            ->inlineLabel(false)
-                                            ->columnSpanFull()
+//                                            ->inlineLabel(false)
+//                                            ->columnSpanFull()
                                             ->preload()
                                             ->getSearchResultsUsing(function (string $query) {
                                                 if (strlen($query) < 2) {
@@ -109,14 +112,13 @@ class OrderResource extends Resource
                                                     ? "{$customer->name} {$customer->last_name} - NRC: {$customer->nrc} - DUI: {$customer->dui} - NIT: {$customer->nit}"
                                                     : 'Cliente no encontrado';
                                             })
-
                                             ->label('Cliente')
                                             ->createOptionForm([
                                                 Section::make('Nuevo Cliente')
                                                     ->schema([
                                                         Select::make('wherehouse_id')
                                                             ->label('Sucursal')
-                                                           ->inlineLabel(false)
+                                                            ->inlineLabel(false)
                                                             ->options(function (callable $get) {
                                                                 $wherehouse = (Auth::user()->employee)->branch_id;
                                                                 if ($wherehouse) {
@@ -140,23 +142,23 @@ class OrderResource extends Resource
                                             })
                                         ,
 
-                                      
-                                        // Forms\Components\Select::make('mechanic_id')
-                                        //     ->label('Mecanico')
-                                        //     ->preload()
-                                        //     ->searchable()
-                                        //     ->live()
-                                        //     ->options(function (callable $get) {
-                                        //         $wherehouse = $get('wherehouse_id');
-                                        //         if ($wherehouse) {
-                                        //             return Employee::where('branch_id', $wherehouse)
-                                        //                 ->where('job_title_id',4)
-                                        //                 ->where('is_active',true)
-                                        //                 ->pluck('name', 'id');
-                                        //         }
-                                        //         return []; // Return an empty array if no wherehouse selected
-                                        //     })
-                                        //     ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
+
+                                        Forms\Components\Select::make('mechanic_id')
+                                            ->label('Mecanico')
+                                            ->preload()
+                                            ->searchable()
+                                            ->live()
+                                            ->options(function (callable $get) {
+                                                $wherehouse = $get('wherehouse_id');
+                                                if ($wherehouse) {
+                                                    return Employee::where('branch_id', $wherehouse)
+                                                        ->where('job_title_id', 4)
+                                                        ->where('is_active', true)
+                                                        ->pluck('name', 'id');
+                                                }
+                                                return []; // Return an empty array if no wherehouse selected
+                                            })
+                                            ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
 
                                         Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
@@ -168,7 +170,7 @@ class OrderResource extends Resource
                                             ->disabled(),
 
                                     ])->columnSpan(9)
-                                    ->extraAttributes([ 'class' => 'bg-blue-100 border border-blue-500 rounded-md p-2'])
+                                    ->extraAttributes(['class' => 'bg-blue-100 border border-blue-500 rounded-md p-2'])
                                     ->columns(2),
 
 //                                Section::make('Orden Total' . ($this->getOrderNumber() ?? 'Sin número'))
@@ -223,7 +225,6 @@ class OrderResource extends Resource
                     ->label('Sucursal')
                     ->numeric()
                     ->searchable()
-//                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 Tables\columns\TextColumn::make('operation_date')
                     ->label('Fecha')
@@ -248,11 +249,11 @@ class OrderResource extends Resource
                     ->label('Vendedor')
                     ->searchable()
                     ->sortable(),
-//                Tables\Columns\TextColumn::make('mechanic.name')
-//                    ->label('Mecánico')
-//                    ->searchable()
-//                    ->placeholder('No asignado')
-//                    ->sortable(),
+                Tables\Columns\TextColumn::make('mechanic.name')
+                    ->label('Mecánico')
+                    ->searchable()
+                    ->placeholder('No asignado')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Cliente')
@@ -261,12 +262,16 @@ class OrderResource extends Resource
 
                 Tables\Columns\TextColumn::make('sale_status')
                     ->badge()
-                    ->colors([
-                        'success' => 'Finalizado',
-                        'danger' => 'Anulado',
-                        'warning' => 'Pendiente',
-                        'info' => 'En proceso',
-                    ])
+                    ->searchable()
+                    ->sortable()
+                    ->formatStateUsing(fn ($state, $record) => $record->deleted_at ? 'Eliminado' : $state)
+                    ->color(fn ($state) => match ($state) {
+                        'Nueva', 'En proceso' => 'info',
+                        'Finalizado' => 'success',
+                        'Pendiente' => 'warning',
+                        'Anulado', 'Eliminado','Cancelada' => 'danger',
+                        default => null, // Sin color
+                    })
                     ->label('Estado'),
 
 
@@ -279,19 +284,29 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('sale_total')
                     ->label('Total')
                     ->money('USD', locale: 'en_US')
+                    ->summarize(Sum::make()->label('Total')->money('USD', locale: 'en_US'))
+//                    ->summarize(
+//                        Sum::make()
+//                            ->using(fn (Summarizer $summarizer) => $summarizer
+//                                ->query(fn ($query) => $query->where('sale_status', '!=', 'Anulado','Eliminado') // Exclude canceled or deleted orders)
+//                                )
+//                            )
+//                            ->label('Total')
+//                            ->money('USD', locale: 'en_US')
+//                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('discount_percentage')
                     ->label('Descuento')
                     ->suffix('%')
-                 ->toggleable(isToggledHiddenByDefault: true)
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
-//                Tables\Columns\TextColumn::make('discount_money')
-//                    ->label('Taller')
-//                    ->money('USD', locale: 'en_US')
-//                    ->sortable(),
+                Tables\Columns\TextColumn::make('discount_money')
+                    ->label('Taller')
+                    ->money('USD', locale: 'en_US')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('total_order_after_discount')
                     ->label('Total - Descuento')
-                    ->toggleable(isToggledHiddenByDefault: true)
+//                    ->toggleable(isToggledHiddenByDefault: true)
                     ->money('USD', locale: 'en_US')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('cash')
@@ -312,40 +327,40 @@ class OrderResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Modificación')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+//                    ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->modifyQueryUsing(function ($query) {
-                $query->where('operation_type', "Order")->orderby('operation_date', 'desc')->orderBy('order_number', 'desc');
-            })
+            ->defaultSort('updated_at', 'desc')
+
             ->recordUrl(null)
             ->filters([
-                DateRangeFilter::make('created_at')->timePicker24()
-                    ->label('Fecha de venta')
-                    ->default([
-                        'start' => now()->subDays(30)->format('Y-m-d'),
-                        'end' => now()->format('Y-m-d'),
-                    ]),
+                DateRangeFilter::make('operation_date')
+                    ->timePicker24()
+                    ->startDate(Carbon::now())
+                    ->endDate(Carbon::now()),
+                Tables\Filters\TrashedFilter::make('eliminados')
+                    ->label('Eliminados')
+                    ->query(fn ($query) => $query->withoutGlobalScope(SoftDeletingScope::class))
+                    ->default(true),
 
             ])
+            ->persistFiltersInSession()
             ->actions([
                 orderActions::printOrder(),
                 Tables\Actions\EditAction::make()->label('')->iconSize(IconSize::Large)->color('warning')
-//                    ->visible(function ($record) {
-//                        return $record->sale_status != 'Finalizado' && $record->sale_status != 'Anulado';
-//                    })
-            ->visible(function ($record) {
-                return $record->sale_status != 'Finalizado' && $record->is_invoiced == false;
-            }),
+                    ->visible(fn($record) =>
+                        $record->sale_status == 'Nueva' && $record->deleted_at == null
+                    ),
                 orderActions::closeOrder(),
                 orderActions::billingOrden(),
-//                Tables\Actions\DeleteAction::make()->label('')->iconSize(IconSize::Large)->color('danger'),
                 orderActions::cancelOrder(),
                 Tables\Actions\RestoreAction::make()->label('')->iconSize(IconSize::Large)->color('success'),
             ], position: ActionsPosition::BeforeCells)
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    ExportBulkAction::make('Exportar'),
                 ]),
             ]);
     }

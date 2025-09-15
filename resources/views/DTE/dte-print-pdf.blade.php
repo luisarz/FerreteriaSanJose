@@ -140,6 +140,7 @@
                 <td>
                     <p>Razón Social: {{ $datos['DTE']['receptor']['nombre']??'' }}<br>
                         Documento: {{ $datos['DTE']['receptor']['numDocumento'] ?? '' }}<br>
+                        NRC: {{ $datos['DTE']['receptor']['nrc']??'' }}<br>
                         Actividad: {{ $datos['DTE']['receptor']['codActividad']??'' }}
                         - {{ $datos['DTE']['receptor']['descActividad']??'' }}<br>
                         Dirección: {{ $datos['DTE']['receptor']['direccion']['complemento']??'' }}<br>
@@ -193,7 +194,7 @@
 
     <table>
         <tr>
-            <td style="width: 85%">
+            <td style="width: 50%">
                 <table style="width: 100%">
                     <tr>
                         <td colspan="2"><b>VALOR EN LETRAS:</b> {{ $datos["DTE"]['resumen']['totalLetras'] }} DOLARES
@@ -217,14 +218,23 @@
                     </tr>
                     <tr>
                         <td>Condicion Operación</td>
-                        <td>{{$datos["DTE"]['resumen']['condicionOperacion']}}</td>
+{{--                        <td>{{$datos["DTE"]['resumen']['condicionOperacion']}}</td>--}}
+                        <td>
+                            @if(isset($datos['DTE']['resumen']['totalPagar']))
+                                ${{ number_format($datos['DTE']['resumen']['totalPagar'], 2) }}
+                            @elseif(isset($datos['DTE']['resumen']['montoTotalOperacion']))
+                                ${{ number_format($datos['DTE']['resumen']['montoTotalOperacion'], 2) }}
+                            @elseif(isset($datos['DTE']['resumen']['totalLetras']))
+                                {{ $datos['DTE']['resumen']['totalLetras'] }}
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <td colspan="2">Observaciones:</td>
                     </tr>
                 </table>
             </td>
-            <td style="width: 10%">Total Operaciones:
+            <td style="width: 20%">Total Operaciones:
                 <table style="width: 100%">
                     <tr>
                         <td>Total No Sujeto:</td>

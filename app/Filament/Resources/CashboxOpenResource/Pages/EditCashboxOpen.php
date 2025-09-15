@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CashboxOpenResource\Pages;
 use App\Filament\Resources\CashboxOpenResource;
 use App\Models\CashBox;
 use App\Service\GetCashBoxOpenedService;
+use App\Services\CashBoxResumenService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
@@ -22,24 +23,34 @@ class EditCashboxOpen extends EditRecord
     public function afterSave(): void
     {
         $record = $this->record->id;
+        $resumen = new CashBoxResumenService();
 
         $cashboxOpen = CashboxOpenResource::getModel()::find($record);
 
-        $totalIngresos = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
-        $totalEgresos = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Egreso');
-        $totalSale = (new GetCashBoxOpenedService())->getTotal(false);
-        $totalOrder = (new GetCashBoxOpenedService())->getTotal(true, true);
-        $montoApertura = $cashboxOpen->open_amount;
-        $totalClose = ($montoApertura + $totalIngresos + $totalOrder + $totalSale) - $totalEgresos;
 
-        $cashboxOpen->closed_at = now();
+        $montoApertura = $cashboxOpen->open_amount;
 //        $cashboxOpen->close_employee_id = auth()->user()->employee->id;
         $cashboxOpen->status = 'closed';
-        $cashboxOpen->saled_amount = $totalSale;
-        $cashboxOpen->ordered_amount = $totalOrder;
-        $cashboxOpen->out_cash_amount = $totalEgresos;
-        $cashboxOpen->in_cash_amount = $totalIngresos;
-        $cashboxOpen->closed_amount = $totalClose;
+        $cashboxOpen->ingreso_factura = $resumen->ingreso_factura;
+        $cashboxOpen->ingreso_ccf = $resumen->ingreso_ccf;
+        $cashboxOpen->ingreso_ordenes = $resumen->ingreso_ordenes;
+        $cashboxOpen->ingreso_taller = $resumen->ingreso_taller;
+        $cashboxOpen->ingreso_caja_chica = $resumen->ingreso_caja_chica;
+        $cashboxOpen->ingreso_totales = $resumen->ingreso_total;
+        $cashboxOpen->egreso_caja_chica = $resumen->egreso_caja_chica;
+        $cashboxOpen->egreso_nc = $resumen->egreso_nc;
+        $cashboxOpen->egresos_totales = $resumen->egreso_total;
+        $cashboxOpen->saldo_efectivo_ventas = $resumen->saldo_efectivo_ventas;
+        $cashboxOpen->saldo_tarjeta = $resumen->saldo_tarjeta;
+        $cashboxOpen->saldo_cheque = $resumen->saldo_cheques;
+        $cashboxOpen->saldo_efectivo_ordenes = $resumen->saldo_efectivo_ordenes;
+        $cashboxOpen->saldo_caja_chica = $resumen->saldo_caja_chica;
+        $cashboxOpen->saldo_egresos_totales = $resumen->egreso_total;
+        $cashboxOpen->saldo_total_operaciones = $resumen->saldo_total + $montoApertura;
+        $cashboxOpen->closed_at = now();
+
+
+
         $cashboxOpen->save();
 
         $cashbox = CashBox::find($cashboxOpen->cashbox_id);

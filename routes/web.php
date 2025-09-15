@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdjustementInventory;
 use App\Http\Controllers\ContingencyController;
 use App\Http\Controllers\DTEController;
 use App\Http\Controllers\EmployeesController;
@@ -38,8 +39,11 @@ Route::get('/printQuote/{idVenta}', [QuoteController::class, 'printQuote'])->nam
 //Traslados
 Route::get('/printTransfer/{idTransfer}', [TransferController::class, 'printTransfer'])->middleware(['auth'])->name('printTransfer');
 Route::get('/employee/sales/{id_employee}/{star_date}/{end_date}', [EmployeesController::class, 'sales'])->middleware(['auth'])->name('employee.sales');
+Route::get('/employee/sales-work/{id_employee}/{star_date}/{end_date}', [EmployeesController::class, 'salesWork'])->middleware(['auth'])->name('employee.sales-work');
+Route::get('/employee/test/{id_employee}/{star_date}/{end_date}', [EmployeesController::class, 'dataEmployee'])->middleware(['auth'])->name('employee.sales-test');
 
 //Libros de excel
+Route::get('/sale/iva/{doctype}/{starDate}/{endDate}',[ReportsController::class,'saleReportFact']);
 Route::get('/sale/iva/libro/fact/{starDate}/{endDate}',[ReportsController::class,'saleReportFact']);
 Route::get('/sale/iva/libro/ccf/{starDate}/{endDate}',[ReportsController::class,'saleReportCCF']);
 Route::get('/sale/iva/libro/ccf/{startDate}/{endDate}', [ReportsController::class, 'saleReportCCF'])->name('sale.iva.libro.ccf');
@@ -48,6 +52,8 @@ Route::get('/contingency_close/{uuid_contingence}',[ContingencyController::class
 //ZIP
 Route::get('/sale/json/{starDate}/{endDate}',[ReportsController::class,'downloadJson']);
 Route::get('/sale/pdf/{starDate}/{endDate}',[ReportsController::class,'downloadPdf']);
-
+//Entrada Salia
+//Route::get('/printSalida/{idsalida}', [DTEController::class, 'printDTETicket'])->middleware(['auth'])->name('printSalida');
+Route::get('/salidaPrintTicket/{id}', [AdjustementInventory::class, 'salidaPrintTicket'])->middleware(['auth'])->name('salidaPrintTicket');
 
 require __DIR__ . '/auth.php';

@@ -43,11 +43,15 @@
       0 => 'BladeUI\\Icons\\BladeIconsServiceProvider',
     ),
   ),
-  'charrafimed/global-search-modal' => 
+  'devonab/filament-easy-footer' => 
   array (
+    'aliases' => 
+    array (
+      'FilamentEasyFooter' => 'Devonab\\FilamentEasyFooter\\Facades\\EasyFooter',
+    ),
     'providers' => 
     array (
-      0 => 'CharrafiMed\\GlobalSearchModal\\GlobalSearchModalServiceProvider',
+      0 => 'Devonab\\FilamentEasyFooter\\EasyFooterServiceProvider',
     ),
   ),
   'eightynine/filament-page-alerts' => 
@@ -265,13 +269,6 @@
     'providers' => 
     array (
       0 => 'Spatie\\Activitylog\\ActivitylogServiceProvider',
-    ),
-  ),
-  'spatie/laravel-login-link' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Spatie\\LoginLink\\LoginLinkServiceProvider',
     ),
   ),
   'spatie/laravel-permission' => 

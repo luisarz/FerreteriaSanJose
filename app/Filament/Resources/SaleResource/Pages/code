@@ -1,0 +1,29 @@
+  $document_internal_number_new = 0;
+                        $idCajaAbierta = (new GetCashBoxOpenedService())->getOpenCashBox(true);
+//                        $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('document_type_id', $documentType)->first();
+                        $CashBoxCOrrelativeOpen = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $documentType)->first();
+                        if ($CashBoxCOrrelativeOpen) {
+                            $document_internal_number_new = $CashBoxCOrrelativeOpen->current_number + 1;
+                        }
+
+                         $sale->update([
+                                                    'cashbox_open_id' => $openedCashBox,
+                                                    'is_invoiced' => true,
+                                                    'sales_payment_status' => $salePayment_status,
+                                                    'sale_status' => 'Facturada',
+                                                    'status_sale_credit' => $status_sale_credit,
+                                                    'operation_date' => $this->data['operation_date'],
+                        //                            'document_internal_number' => $document_internal_number_new
+                                                    'document_internal_number' => 0
+                                                ]);
+
+                                                      $CashBoxCOrrelativeOpen->current_number = $document_internal_number_new;
+                                                                        $CashBoxCOrrelativeOpen->save();
+
+
+
+                                                                         "codeEstablishmentType" => trim($sucusal->establishment_type_code) ?? null,
+                                                                                    "codePosTerminal" => trim($sucusal->pos_terminal_code) ?? null,
+                                                                                    "economicAtivity" => trim($sucusal->economicactivity->code) ?? null,
+                                                                                    "emisorPhone" => trim($sucusal->phone) ?? null,
+                                                                                    "emisorAddress" => trim($sucusal->address) ?? null,

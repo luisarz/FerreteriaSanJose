@@ -19,6 +19,7 @@ class Purchase extends Model
         'employee_id',
         'wherehouse_id',
         'purchase_date',
+        'process_document_type',
         'document_type',
         'document_number',
         'pruchase_condition',

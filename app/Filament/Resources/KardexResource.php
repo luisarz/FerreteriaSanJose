@@ -104,32 +104,44 @@ class KardexResource extends Resource
                     ->label('ID')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('date')
+                    ->label('Fecha')
+                    ->date('d-m-Y')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('document_number')
+                    ->label('N° Comprobante')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('document_type')
+                    ->label('T. Comprobante')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('entity')
+                    ->label('Razon Social')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('nationality')
+                    ->label('Nacionalidad del proveedor')
+                    ->searchable(),
+
+//                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('whereHouse.name')
                     ->label('Sucursal')
-                    ->sortable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('inventory.product.name')
                     ->label('Producto')
 //                    ->wrap(50)
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('date')
-                    ->label('Fecha')
-                    ->date()
+                Tables\Columns\TextColumn::make('inventory.product.unitmeasurement.description')
+                    ->label('Unidad de Medida')
+//                    ->wrap(50)
+                    ->searchable()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('operation_type')
                     ->label('Operación')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
-                Tables\Columns\TextColumn::make('document_type')
-                    ->label('T. Documento')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('document_number')
-                    ->label('N° Documento')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('entity')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+
 
                 Tables\Columns\TextColumn::make('previous_stock')
                     ->label('S. Anterior')
@@ -161,31 +173,31 @@ class KardexResource extends Resource
                 ]),
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->money('USD', locale: 'USD')
-                    ->label('Costo')
+                    ->label('Precio Compra')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('promedio_costo')
+                Tables\Columns\TextColumn::make('promedial_cost')
                     ->money('USD', locale: 'USD')
-                    ->label('Promedio')
+                    ->label('Costo Promedio')
                     ->sortable(),
                 ColumnGroup::make('IMPORTE MONETARIO / PC', [
 
                     Tables\Columns\TextColumn::make('money_in')
-                        ->label('DEBE')
+                        ->label('ENTRADA')
                         ->money('USD', locale: 'USD')
                         ->sortable(),
                     Tables\Columns\TextColumn::make('money_out')
-                        ->label('HABER')
+                        ->label('SALIDA')
                         ->money('USD', locale: 'USD')
                         ->sortable(),
                     Tables\Columns\TextColumn::make('money_actual')
-                        ->label('SALDO')
+                        ->label('EXISTENCIA')
                         ->money('USD', locale: 'USD')
                         ->sortable(),
                 ]),
-                Tables\Columns\TextColumn::make('sale_price')
-                    ->money('USD', locale: 'USD')
-                    ->label('Precio')
-                    ->sortable(),
+//                Tables\Columns\TextColumn::make('sale_price')
+//                    ->money('USD', locale: 'USD')
+//                    ->label('Precio')
+//                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -208,7 +220,7 @@ class KardexResource extends Resource
                 DateRangeFilter::make('date')->timePicker24()
                     ->label('Fecha de venta')
                     ->startDate(Carbon::now())
-                ->endDate(Carbon::now())
+                    ->endDate(Carbon::now())
 
             ])
             ->actions([

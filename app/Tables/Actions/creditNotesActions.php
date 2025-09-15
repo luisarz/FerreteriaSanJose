@@ -96,7 +96,6 @@ class creditNotesActions
                         PageAlert   ::make()
                             ->title('Fallo en anulación')
                             ->danger()
-                            ->duration(5000)
                             ->body($resultado["mensaje"])
                             ->send();
                     }

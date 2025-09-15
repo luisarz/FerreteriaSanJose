@@ -44,6 +44,7 @@ use pxlrbt\FilamentExcel\Columns\Column;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use Filament\Support\Enums\MaxWidth;
+use function Filament\Support\format_number;
 
 function updateTotalSale(mixed $idItem, array $data): void
 {
@@ -97,7 +98,6 @@ class SaleResource extends Resource
     protected static ?string $label = 'Ventas';
     protected static ?string $navigationGroup = 'Facturación';
     protected static bool $softDelete = true;
-    protected static ?string $navigationIcon = 'heroicon-s-shopping-cart';
 
     public static function form(Form $form): Form
     {
@@ -131,10 +131,10 @@ class SaleResource extends Resource
 //                                            ->relationship('documenttype', 'name')
                                             ->default(1)
                                             ->options(function (callable $get) {
-                                                $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(true);
-                                                if ($openedCashBox > 0) {
+                                                $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBox();
+                                                if ($openedCashBox['status']) {
                                                     return CashBoxCorrelative::with('document_type')
-                                                        ->where('cash_box_id', $openedCashBox)
+                                                        ->where('cash_box_id', $openedCashBox['id_caja'])
                                                         ->whereIn('document_type_id', [1, 3, 11, 14])
                                                         ->get()
                                                         ->mapWithKeys(function ($item) {
@@ -185,24 +185,35 @@ class SaleResource extends Resource
                                             ->searchable()
                                             ->debounce(500)
                                             ->relationship('customer', 'name')
-                                            ->getOptionLabelFromRecordUsing(fn($record) => "{$record->name}  {$record->last_name}, dui: {$record->dui}  nit: {$record->nit}  nrc: {$record->nrc}")
+                                            ->getOptionLabelFromRecordUsing(fn($record) => "{$record->name} {$record->last_name}, dui: {$record->dui}  nit: {$record->nit}  nrc: {$record->nrc}")
+                                            ->getSearchResultsUsing(function (string $search) {
+                                                return Customer::query()
+                                                    ->where('name', 'like', "%{$search}%")
+                                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                                    ->orWhere('dui', 'like', "%{$search}%")
+                                                    ->orWhere('nit', 'like', "%{$search}%")
+                                                    ->limit(50)
+                                                    ->get()
+                                                    ->mapWithKeys(function ($customer) {
+                                                        return [
+                                                            $customer->id => "{$customer->name} {$customer->last_name}, dui: {$customer->dui}  nit: {$customer->nit}  nrc: {$customer->nrc}",
+                                                        ];
+                                                    });
+                                            })
                                             ->preload()
                                             ->required()
                                             ->columnSpanFull()
                                             ->inlineLabel(false)
                                             ->label('Cliente')
                                             ->createOptionForm(CreateClienteForm::getForm())
-                                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
-                                                return $action
-                                                    ->label('Crear cliente')
-                                                    ->color('success')
-                                                    ->icon('heroicon-o-plus')
-                                                    ->modalWidth('7xl');
-//                                                    ->size(IconSize::sizeI);
-                                            })
-                                            ->createOptionUsing(function ($data) {
-                                                return Customer::create($data)->id; // Guarda y devuelve el ID del nuevo cliente
-                                            }),
+                                            ->createOptionAction(fn(Forms\Components\Actions\Action $action) =>
+                                            $action
+                                                ->label('Crear cliente')
+                                                ->color('success')
+                                                ->icon('heroicon-o-plus')
+                                                ->modalWidth('7xl')
+                                            )
+                                            ->createOptionUsing(fn($data) => \App\Models\Customer::create($data)->id),
 
 
                                         Forms\Components\Select::make('sales_payment_status')
@@ -346,7 +357,7 @@ class SaleResource extends Resource
                                             ->default(1),
                                         Forms\Components\TextInput::make('cash')
                                             ->label('Efectivo')
-                                            ->required()
+//                                            ->required()
                                             ->numeric()
                                             ->default(0.00)
                                             ->live(true)
@@ -378,7 +389,7 @@ class SaleResource extends Resource
                                             }),
                                         Forms\Components\TextInput::make('change')
                                             ->label('Cambio')
-                                            ->required()
+//                                            ->required()
                                             ->readOnly()
                                             ->extraAttributes(['class' => 'bg-gray-100 border border-gray-500 rounded-md '])
                                             ->numeric()
@@ -433,7 +444,7 @@ class SaleResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('document_internal_number')
                     ->label('#')
-                    ->numeric()
+                    ->formatStateUsing(fn ($state) => number_format($state,'0','')) // Formatea el número
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('generationCode')
@@ -607,7 +618,8 @@ class SaleResource extends Resource
                     ->sortable(),
             ])
             ->modifyQueryUsing(fn($query) => $query
-                ->where('is_invoiced', true)
+                ->where('is_invoiced', 1)
+                ->whereIn('sale_status', ['Facturada','Finalizado','Anulado'])
                 ->whereIn('operation_type', ['Sale', 'Order', 'Quote'])
                 ->orderByDesc('created_at')
 //                ->orderByDesc('document_internal_number')
@@ -644,19 +656,19 @@ class SaleResource extends Resource
                 dteActions::anularDTE(),
                 dteActions::historialDTE(),
 
-                Tables\Actions\DeleteAction::make()
-                    ->label('Borrar')
-                    ->iconSize(IconSize::Large)
-                    ->hidden(function ($record) {
-                        return $record->is_dte || $record->deleted_at;
-                    }),
+//                Tables\Actions\DeleteAction::make()
+//                    ->label('Borrar')
+//                    ->iconSize(IconSize::Large)
+//                    ->hidden(function ($record) {
+//                        return $record->is_dte || $record->deleted_at;
+//                    }),
 
-                Tables\Actions\ForceDeleteAction::make('wipe')
-                    ->label('Forzar')
-                    ->iconSize(IconSize::Large)
-                    ->hidden(function ($record) {
-                        return !$record->deleted_at;
-                    }),
+//                Tables\Actions\ForceDeleteAction::make('wipe')
+//                    ->label('Forzar')
+//                    ->iconSize(IconSize::Large)
+//                    ->hidden(function ($record) {
+//                        return !$record->deleted_at;
+//                    }),
 
 
 

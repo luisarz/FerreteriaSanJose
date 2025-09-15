@@ -78,7 +78,6 @@
     </table>
 
 
-
 </div>
 <div class="header">
     <table style="text-align: left; border: black solid 0px; border-radius: 10px;">
@@ -104,7 +103,6 @@
     <div style="text-align: left;">Vendedor: {{  $ext['nombEntrega']??'S/N' }}</div>
     ---------------------------------------------------------------------------
     <div style="text-align: left">
-        <h4>DOCUMENTO TRIBUTARIO ELECTRÓNICO</h4>
         <h4>DOCUMENTO TRIBUTARIO ELECTRÓNICO</h4>
         <h5>{{ $datos['tipoDocumento'] }}</h5>
         <b>Código de generación</b> <br>
@@ -141,11 +139,13 @@
                 <td>
                     <p>Razón Social: {{ $datos['DTE']['receptor']['nombre'] }}<br>
                         Documento: {{ $datos['DTE']['receptor']['numDocumento'] ?? '' }}<br>
+                        NRC: {{ $datos['DTE']['receptor']['nrc']??'' }}<br>
                         Actividad: {{ $datos['DTE']['receptor']['codActividad']??'' }}
                         - {{ $datos['DTE']['receptor']['descActividad']??'' }}<br>
-                        {{--                        Dirección: {{ $datos['DTE']['receptor']['direccion']['complemento']??'' }}<br>--}}
+                        Dirección: {{ $datos['DTE']['receptor']['direccion']['complemento']??'' }}<br>
                         Teléfono: {{ $datos['DTE']['receptor']['telefono']??'' }} <br>
-                        Correo: {{ $datos['DTE']['receptor']['correo']??'' }}
+                        Correo: {{ $datos['DTE']['receptor']['correo']??'' }} <br>
+
                     </p>
                 </td>
 
@@ -168,7 +168,7 @@
                 <td></td>
                 <td>${{ number_format($item['precioUni'], 2) }}</td>
                 <td>Desc. ${{ number_format($item['montoDescu'], 2) }}</td>
-{{--                <td>${{ number_format($item['ventaGravada'], 2) }}</td>--}}
+                {{--                <td>${{ number_format($item['ventaGravada'], 2) }}</td>--}}
                 <td>${{ number_format($item['ventaGravada']??$item['compra']??0, 2) }}</td>
             </tr>
         @endforeach
@@ -179,7 +179,7 @@
 
 <!-- Footer fijo -->
 <div class="footer">
-    Condicion Operación {{$datos["DTE"]['resumen']['condicionOperacion']}}
+    Condicion Operación {{$datos["DTE"]['resumen']['condicionOperacion']??''}}
     <table>
         <tr>
             <td style="width: 100%">Total Operaciones:
@@ -188,15 +188,17 @@
         </tr>
         <tr>
             <td>Total No Sujeto:</td>
-            <td>${{ number_format($datos['DTE']['resumen']['totalNoSuj']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
+            <td>
+                ${{ number_format($datos['DTE']['resumen']['totalNoSuj']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
 
-{{--            <td>${{ number_format($datos['DTE']['resumen']['totalNoSuj']??$datos['DTE']['resumen']['totalNoGravado'], 2) }}</td>--}}
+            {{--            <td>${{ number_format($datos['DTE']['resumen']['totalNoSuj']??$datos['DTE']['resumen']['totalNoGravado'], 2) }}</td>--}}
         </tr>
         <tr>
             <td>Total Exento:</td>
-            <td>${{ number_format($datos['DTE']['resumen']['totalExenta']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
+            <td>
+                ${{ number_format($datos['DTE']['resumen']['totalExenta']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
 
-{{--            <td>${{ number_format($datos['DTE']['resumen']['totalExenta']??$datos['DTE']['resumen']['totalNoGravado'], 2) }}</td>--}}
+            {{--            <td>${{ number_format($datos['DTE']['resumen']['totalExenta']??$datos['DTE']['resumen']['totalNoGravado'], 2) }}</td>--}}
         </tr>
         <tr>
             <td>Total Gravadas:</td>
@@ -205,7 +207,8 @@
         </tr>
         <tr>
             <td>Subtotal:</td>
-            <td>${{ number_format($datos['DTE']['resumen']['subTotal']??$datos['DTE']['resumen']['totalGravada'], 2) }}</td>
+            <td>
+                ${{ number_format($datos['DTE']['resumen']['subTotal']??$datos['DTE']['resumen']['totalGravada'], 2) }}</td>
         </tr>
         @isset($datos['DTE']['resumen']['tributos'])
             @foreach($datos['DTE']['resumen']['tributos'] as $tributo)
@@ -218,7 +221,17 @@
         <tr>
             <td>
                 <b>TOTAL A PAGAR:</b></td>
-            <td> ${{number_format($datos['DTE']['resumen']['totalPagar']??$datos['DTE']['resumen']['montoTotalOperacion'], 2)}}
+            {{--            <td> ${{number_format($datos['DTE']['resumen']['totalPagar']??$datos['DTE']['resumen']['montoTotalOperacion'], 2)}}--}}
+            {{--            </td>--}}
+
+            <td>
+                @if(isset($datos['DTE']['resumen']['totalPagar']))
+                    ${{ number_format($datos['DTE']['resumen']['totalPagar'], 2) }}
+                @elseif(isset($datos['DTE']['resumen']['montoTotalOperacion']))
+                    ${{ number_format($datos['DTE']['resumen']['montoTotalOperacion'], 2) }}
+                @elseif(isset($datos['DTE']['resumen']['totalLetras']))
+                    {{ $datos['DTE']['resumen']['totalLetras'] }}
+                @endif
             </td>
         </tr>
         </td>

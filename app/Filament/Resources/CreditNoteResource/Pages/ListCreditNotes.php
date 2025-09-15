@@ -15,7 +15,7 @@ class ListCreditNotes extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Nueva Venta')
+                ->label('Nueva Nota')
                 ->icon('heroicon-o-shopping-cart')
                 ->color('success')
                 ->visible(function () {

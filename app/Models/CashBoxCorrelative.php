@@ -25,11 +25,11 @@ class CashBoxCorrelative extends Model
     }
    public function cashBox()
    {
-       return $this->belongsTo(CashBox::class);
+       return $this->belongsTo(CashBox::class,'cash_box_id','id');
    }
    public function document_type()
    {
-         return $this->belongsTo(DocumentType::class);
+         return $this->belongsTo(DocumentType::class,'document_type_id', 'id');
 
    }
 }

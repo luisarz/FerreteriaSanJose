@@ -90,7 +90,7 @@ class CreditNoteResource extends Resource
 {
     protected static ?string $model = Sale::class;
 
-    protected static ?string $label = 'Notas de Credito';
+    protected static ?string $label = 'Notas';
     protected static ?string $navigationGroup = 'Facturación';
     protected static bool $softDelete = true;
 
@@ -125,12 +125,13 @@ class CreditNoteResource extends Resource
                                         Forms\Components\Select::make('document_type_id')
                                             ->label('Comprobante')
                                             ->default(4)
+                                            ->reactive()
                                             ->options(function (callable $get) {
-                                                $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(true);
+                                                $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBox();
                                                 if ($openedCashBox > 0) {
                                                     return CashBoxCorrelative::with('document_type')
-                                                        ->where('cash_box_id', $openedCashBox)
-                                                        ->whereIn('document_type_id', [5])
+                                                        ->where('cash_box_id', $openedCashBox['id_caja'])
+                                                        ->whereIn('document_type_id', [4,5,6])
                                                         ->get()
                                                         ->mapWithKeys(function ($item) {
                                                             return [$item->document_type->id => $item->document_type->name];
@@ -166,6 +167,7 @@ class CreditNoteResource extends Resource
                                             ->searchable()
                                             ->debounce(500)
                                             ->preload()
+                                            ->required()
                                             ->inlineLabel(false)
                                             ->getSearchResultsUsing(function (string $query) {
                                                 if (strlen($query) < 2) {
@@ -198,10 +200,12 @@ class CreditNoteResource extends Resource
                                         Select::make('document_related_id')
                                             ->label('V. relacionacionada')
                                             ->searchable()
-                                            ->required()
+//                                            ->required()
                                             ->inlineLabel(false)
                                             ->placeholder('Venta #')
                                             ->preload()
+                                            ->required(fn (callable $get) => in_array($get('document_type_id'), [5,6])) // requerido si es Nota de crédito o débito
+
                                             ->debounce(500)
                                             ->getSearchResultsUsing(function (string $searchQuery) {
                                                 if (strlen($searchQuery) < 1) {
@@ -471,7 +475,7 @@ class CreditNoteResource extends Resource
             ])
             ->modifyQueryUsing(function ($query) {
                 $query->where('is_invoiced', true)
-                    ->whereIn('operation_type', ['NC'])
+                    ->whereIn('operation_type', ['NC','ND','NR'])
                     ->orderby('operation_date', 'desc')
                     ->orderby('document_internal_number', 'desc')
                     ->orderby('is_dte', 'desc');

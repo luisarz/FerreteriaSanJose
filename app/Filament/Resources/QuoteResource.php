@@ -40,7 +40,10 @@ class QuoteResource extends Resource
     protected static ?string $navigationGroup = 'Facturación';
 
     protected static bool $softDelete = true;
-
+//    public static function getGloballySearchableAttributes(): array
+//    {
+//        return ['operation_type'];
+//    }
 
     public static function form(Form $form): Form
     {

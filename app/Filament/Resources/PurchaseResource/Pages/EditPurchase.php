@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PurchaseResource\Pages;
 use App\Filament\Resources\PurchaseResource;
 use App\Helpers\KardexHelper;
 use App\Models\Inventory;
+use App\Models\InventoryCostoHistory;
 use App\Models\Provider;
 use App\Models\PurchaseItem;
 use Filament\Actions;
@@ -54,7 +55,15 @@ class EditPurchase extends EditRecord
 
                 // Actualiza el stock del inventario
                 $newStock = $inventory->stock + $item->quantity;
-                $inventory->update(['stock' => $newStock]);
+                $costoAnterior=$inventory->cost_without_taxes??0;
+                $inventory->update(['stock' => $newStock,"cost_without_taxes"=>$item->price]);
+
+                $historyCost=new InventoryCostoHistory();
+                $historyCost->inventory_id=$item->inventory_id;
+                $historyCost->fecha=now();
+                $historyCost->costo_anterior=$costoAnterior;
+                $historyCost->costo_actual=$item->price;
+                $historyCost->save();
 
                 // Crear el Kardex
                 $kardex = KardexHelper::createKardexFromInventory(
@@ -68,7 +77,7 @@ class EditPurchase extends EditRecord
                     $entity, // entity
                     $pais, // nationality
                     $inventory->id, // inventory_id
-                    $inventory->stock - $item->quantity, // previous_stock
+                    $newStock - $item->quantity, // previous_stock
                     $item->quantity, // stock_in
                     0, // stock_out
                     $inventory->stock, // stock_actual
@@ -76,7 +85,7 @@ class EditPurchase extends EditRecord
                     0, // money_out
                     $inventory->stock * $item->price, // money_actual
                     0, // sale_price
-                    $item->price // purchase_price
+                    $item->price, // purchase_price,
                 );
 
                 // Verifica si la creación del Kardex fue exitosa

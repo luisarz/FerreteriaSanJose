@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Models\InventoryCostoHistory;
 use App\Models\Kardex;
 use App\Models\Inventory;
 use PhpParser\Node\Scalar\String_;
@@ -27,9 +28,28 @@ class KardexHelper
         float  $money_out,
         float  $money_actual,
         float  $sale_price,
-        float  $purchase_price
+        float  $purchase_price,
     )
     {
+        $promedial_cost = 0;
+
+        if ($stock_in > 0) {
+            $inventory = Inventory::find($inventory_id);
+            // Obtenemos el penúltimo registro
+            $penultimoRegistro = InventoryCostoHistory::orderByDesc('id')->skip(1)->first();
+            // Si no hay penúltimo registro, usamos 0 como costo anterior
+            $costo_anterior = $penultimoRegistro->costo_actual ?? 0;
+            $stockAnterior = $inventory->stock - $stock_in; // Corrige 'soctk' si era typo
+            // Evitar división por cero
+            $totalCantidad = $stockAnterior + $stock_in;
+            if ($totalCantidad > 0) {
+                $promedial_cost = (($stockAnterior * $costo_anterior) + ($stock_in * $purchase_price)) / $totalCantidad;
+            }
+        }
+
+
+
+
         $kardex = Kardex::create([
             'branch_id' => $branch_id,
             'date' => $date,
@@ -50,9 +70,10 @@ class KardexHelper
             'money_actual' => $money_actual,
             'sale_price' => $sale_price,
             'purchase_price' => $purchase_price,
+            'promedial_cost' => $promedial_cost
         ]);
 
-        return (bool) $kardex;
+        return (bool)$kardex;
     }
 
 

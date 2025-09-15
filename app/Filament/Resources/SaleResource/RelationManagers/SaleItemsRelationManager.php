@@ -25,6 +25,7 @@ use Livewire\Component;
 use Svg\Tag\Image;
 use Symfony\Component\Console\Input\Input;
 
+
 class SaleItemsRelationManager extends RelationManager
 {
     protected static string $relationship = 'saleDetails';
@@ -49,24 +50,35 @@ class SaleItemsRelationManager extends RelationManager
                                     ->compact()
                                     ->schema([
 
-
+                                        Select::make('search_type')
+                                            ->label('Buscar por')
+                                            ->options([
+                                                'name' => 'Descripción',
+                                                'sku' => 'Código',
+                                            ])
+                                            ->inlineLabel(false)
+                                            ->default(
+                                                'name' // Valor por defecto
+                                            ),
                                         Select::make('inventory_id')
                                             ->label('Producto')
                                             ->searchable()
-                                            ->preload(true)
-//                                            ->live()
-                                            ->debounce(300)
-                                            ->columnSpanFull()
                                             ->inlineLabel(false)
+                                            ->preload(true)
+                                            ->debounce(300)
                                             ->getSearchResultsUsing(function (string $query, callable $get) {
                                                 $whereHouse = \Auth::user()->employee->branch_id; // Sucursal del usuario
                                                 $aplications = $get('aplications');
+                                                $searchType = $get('search_type');
                                                 if (strlen($query) < 2) {
                                                     return []; // No buscar si el texto es muy corto
                                                 }
-                                                // Dividir el texto ingresado en palabras clave
-//                                                $keywords = explode(' ', $query);
+                                                if (str_ends_with($query, '-')) {
+                                                    return [];
+                                                }
                                                 $keywords = $query;
+//                                                $keywords = explode(' ', $query); // Convertir string a array
+
 
                                                 return Inventory::with([
                                                     'product:id,name,sku,bar_code,aplications',
@@ -78,20 +90,36 @@ class SaleItemsRelationManager extends RelationManager
                                                     ->whereHas('prices', function ($q) {
                                                         $q->where('is_default', 1); // Verifica que tenga un precio predeterminado
                                                     })
-                                                    ->whereHas('product', function ($q) use ($aplications, $keywords) {
-                                                        $q->where(function ($queryBuilder) use ($keywords) {
-//                                                            foreach ($keywords as $word) {
-                                                            $queryBuilder->where('name', 'like', "%$keywords%")
-                                                                ->orWhere('sku', 'like', "%$keywords%")
-                                                                ->orWhere('bar_code', 'like', "%$keywords%");
-//                                                            }
+                                                    ->whereHas('product', function ($q) use ($aplications, $keywords, $searchType) {
+                                                        // Unir todas las palabras en una sola cadena
+                                                        $searchTerm = $keywords;//trim(implode(' ', $keywords));
+
+                                                        $q->where(function ($queryBuilder) use ($searchTerm, $searchType) {
+                                                            if (strlen($searchTerm) >= 2) {
+                                                                switch ($searchType) {
+                                                                    case 'name':
+                                                                        $queryBuilder->where('name', 'like', "%{$searchTerm}%");
+                                                                        break;
+
+                                                                    case 'sku':
+                                                                        $queryBuilder->where('sku', 'like', "%{$searchTerm}%");
+                                                                        break;
+
+                                                                    default:
+                                                                        $queryBuilder->where('name', 'like', "%{$searchTerm}%")
+                                                                            ->orWhere('sku', 'like', "%{$searchTerm}%");
+                                                                        break;
+                                                                }
+                                                            }
                                                         });
 
                                                         if (!empty($aplications)) {
-                                                            $q->where('aplications', 'like', "%{$aplications}%");
+                                                            $q->where('aplications', 'like', "{$aplications}%");
                                                         }
                                                     })
-                                                    ->select(['id', 'branch_id', 'product_id', 'stock']) // Selecciona solo las columnas necesarias
+
+
+                                                ->select(['id', 'branch_id', 'product_id', 'stock']) // Selecciona solo las columnas necesarias
                                                     ->limit(50) // Limita el número de resultados
                                                     ->get()
                                                     ->mapWithKeys(function ($inventory) {
@@ -107,7 +135,7 @@ class SaleItemsRelationManager extends RelationManager
                                                     : 'Producto no encontrado';
                                             })
                                             ->extraAttributes([
-//                                                'class' => 'text-sm text-gray-700 font-semibold bg-gray-100 rounded-md', // Estilo de TailwindCSS
+                                                //                                                'class' => 'text-sm text-gray-700 font-semibold bg-gray-100 rounded-md', // Estilo de TailwindCSS
                                             ])
                                             ->required()
                                             ->afterStateUpdated(function (callable $get, callable $set) {
@@ -128,7 +156,7 @@ class SaleItemsRelationManager extends RelationManager
                                                     $this->calculateTotal($get, $set);
                                                 }
 
-//
+                                                //
                                                 $images = is_array($price->inventory->product->images ?? null)
                                                     ? $price->inventory->product->images
                                                     : [$price->inventory->product->images ?? null];
@@ -142,7 +170,7 @@ class SaleItemsRelationManager extends RelationManager
                                             }),
                                         Forms\Components\TextInput::make('aplications')
                                             ->inlineLabel(false)
-//                                            ->columnSpanFull()
+                                            //                                            ->columnSpanFull()
                                             ->label('Aplicaciones'),
                                         Select::make('priceList')
                                             ->label('Precios')
@@ -175,12 +203,6 @@ class SaleItemsRelationManager extends RelationManager
                                             }),
 
 
-
-
-
-
-
-
                                         Forms\Components\TextInput::make('quantity')
                                             ->label('Cantidad')
                                             ->step(1)
@@ -188,7 +210,6 @@ class SaleItemsRelationManager extends RelationManager
                                             ->live(onBlur: true)
                                             ->columnSpan(1)
                                             ->required()
-                                            ->live()
                                             ->extraAttributes(['onkeyup' => 'this.dispatchEvent(new Event("input"))'])
                                             ->afterStateUpdated(function (callable $get, callable $set) {
                                                 $this->calculateTotal($get, $set);
@@ -200,7 +221,6 @@ class SaleItemsRelationManager extends RelationManager
                                             ->numeric()
                                             ->columnSpan(1)
                                             ->required()
-//                                            ->readOnly()
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function (callable $get, callable $set) {
                                                 $this->calculateTotal($get, $set);
@@ -211,7 +231,7 @@ class SaleItemsRelationManager extends RelationManager
                                             ->step(0.01)
                                             ->prefix('%')
                                             ->numeric()
-                                            ->live()
+                                            ->live(onBlur: true)
                                             ->columnSpan(1)
                                             ->required()
                                             ->debounce(300)
@@ -223,30 +243,33 @@ class SaleItemsRelationManager extends RelationManager
                                             ->label('Total')
                                             ->step(0.01)
                                             ->readOnly()
-                                            ->readOnly()
                                             ->columnSpan(1)
                                             ->required(),
 
-//                                        Forms\Components\Toggle::make('is_except')
-//                                            ->label('Exento de IVA')
-//                                            ->columnSpan(1)
-//                                            ->live()
-//                                            ->afterStateUpdated(function (callable $get, callable $set) {
-//                                                $this->calculateTotal($get, $set);
-//                                            }),
-                                        // Forms\Components\Toggle::make('is_tarjet')
-                                        //     ->label('Con tarjeta')
-                                        //     ->columnSpan(1)
-                                        //     ->live()
-                                        //     ->afterStateUpdated(function (callable $get, callable $set) {
-                                        //         $price = $get('price'); // Obtener el precio actual
-                                        //         if ($get('is_tarjet')) {
-                                        //             $set('price', $price * 1.05);
-                                        //         } else {
-                                        //             $set('price', $price * 0.95);
-                                        //         }
-                                        //         $this->calculateTotal($get, $set);
-                                        //     }),
+                                        //                                        Forms\Components\Toggle::make('is_except')
+                                        //                                            ->label('Exento de IVA')
+                                        //                                            ->columnSpan(1)
+                                        //                                            ->live()
+                                        //                                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                        //                                                $this->calculateTotal($get, $set);
+                                        //                                            }),
+                                        Forms\Components\Toggle::make('is_tarjet')
+                                            ->label('Con Tarjeta')
+                                            ->columnSpan(1)
+                                            ->live()
+                                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                                $price = $get('price'); // Obtener el precio actual
+                                                if ($get('is_tarjet')) {
+//                                                    $neto=round($price /1.13, 2);
+                                                    $neto = round($price, 2);
+                                                    $recargoTarjeta = round($neto * 0.05, 2); // Calcular el 5% del neto
+                                                    $newprice = $price + $recargoTarjeta; // Sumar el 5% al precio
+                                                    $set('price', $newprice);
+                                                } else {
+                                                    $set('price', $price * 0.95);
+                                                }
+                                                $this->calculateTotal($get, $set);
+                                            }),
 
                                         Forms\Components\TextInput::make('minprice')
                                             ->label('Tributos')
@@ -291,7 +314,7 @@ class SaleItemsRelationManager extends RelationManager
 
                                     ])
                                     ->extraAttributes([
-//                                        'class' => 'bg-blue-100 border border-blue-500 rounded-md p-2',
+                                        //                                        'class' => 'bg-blue-100 border border-blue-500 rounded-md p-2',
                                     ])
                                     ->columnSpan(3)->columns(1),
                             ]),
@@ -306,11 +329,18 @@ class SaleItemsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('Sales Item')
             ->columns([
-                Tables\Columns\TextColumn::make('inventory.product.name')
+                Tables\Columns\TextColumn::make('inventory')
                     ->wrap()
-                    ->formatStateUsing(fn($record) => $record->inventory->product->name . '</br> ' . $record->description)
+                    ->formatStateUsing(function ($record) {
+                        $productName = $record->inventory->product->name ?? '';
+                        $category = $record->inventory->product->category->name ?? '';
+                        $description = $record->description ?? '';
+
+                        return "{$productName} ({$category})<br>{$description}";
+                    })
                     ->html()
                     ->label('Producto'),
+
 
                 Tables\Columns\BooleanColumn::make('inventory.product.is_service')
                     ->label('Producto/Servicio')
@@ -329,6 +359,7 @@ class SaleItemsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('price')
                     ->label('Precio')
                     ->money('USD', locale: 'en_US')
+                    ->formatStateUsing(fn($state) => number_format($state, 4))
                     ->columnSpan(1),
                 Tables\Columns\TextColumn::make('discount')
                     ->label('Descuento')
@@ -337,6 +368,7 @@ class SaleItemsRelationManager extends RelationManager
                     ->columnSpan(1),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
+                    ->formatStateUsing(fn($state) => number_format($state, 4))
                     ->summarize(Sum::make()->label('Total')->money('USD', locale: 'en_US'))
                     ->money('USD', locale: 'en_US')
                     ->columnSpan(1),
@@ -352,14 +384,14 @@ class SaleItemsRelationManager extends RelationManager
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
+                Tables\Actions\EditAction::make('edit')
                     ->modalWidth('7xl')
                     ->after(function (SaleItem $record, Component $livewire) {
                         $this->updateTotalSale($record);
                         $livewire->dispatch('refreshSale');
 
                     }),
-                Tables\Actions\DeleteAction::make()
+                Tables\Actions\DeleteAction::make('delete')
                     ->label('Quitar')
                     ->after(function (SaleItem $record, Component $livewire) {
                         $this->updateTotalSale($record);
@@ -393,16 +425,29 @@ class SaleItemsRelationManager extends RelationManager
 
             $total = $quantity * $price;
 
+            //            if ($discount > 0) {
+            //                $neto = $price / 1.13;
+            //                $descuento = ($neto * $discount) * $quantity;
+            //                $iva= $neto * 0.13;
+            //                $total -= (($quantity*$neto)-$descuento)+$iva;
+
             if ($discount > 0) {
-                $total -= $total * $discount;
+                $netoUnidad = $price / 1.13; // Precio sin IVA por unidad
+                $subtotal = $netoUnidad * $quantity; // Total neto
+                $descuento = $subtotal * $discount; // Descuento total
+                $netoConDescuento = $subtotal - $descuento; // Neto tras descuento
+                $iva = $netoConDescuento * 0.13; // IVA sobre nuevo neto
+                $total = $netoConDescuento + $iva; // Total final con IVA
             }
+
+
             if ($is_except) {
                 $total -= ($total * 0.13);
             }
 
             // Formatear precio y total a dos decimales
-            $price = round($price, 2);
-            $total = round($total, 2);
+            $price = round($price, 4);
+            $total = round($total, 4);
 
             $set('price', $price);
             $set('total', $total);
@@ -419,7 +464,7 @@ class SaleItemsRelationManager extends RelationManager
         $sale = Sale::where('id', $idSale)->first();
         $documentType = $sale->document_type_id ?? null;
 
-//        dd($sale);
+        //        dd($sale);
         if ($sale) {
             try {
                 $ivaRate = Tribute::where('code', 20)->value('rate') ?? 0;
@@ -428,17 +473,17 @@ class SaleItemsRelationManager extends RelationManager
                 $ivaRate = is_numeric($ivaRate) ? $ivaRate / 100 : 0;
                 $isrRate = is_numeric($isrRate) ? $isrRate / 100 : 0;
                 $montoTotal = SaleItem::where('sale_id', $sale->id)->sum('total') ?? 0;
-//            dd($montoTotal);
+                //            dd($montoTotal);
                 $neto = $ivaRate > 0 ? $montoTotal / (1 + $ivaRate) : $montoTotal;
                 $iva = $montoTotal - $neto;
-                if($documentType==11 || $documentType==14){
-                    $neto=$neto+$iva;
+                if ($documentType == 11 || $documentType == 14) {
+                    $neto = $neto + $iva;
                     $iva = 0;
                 }
                 $retention = $sale->have_retention ? $neto * 0.1 : 0;
-                $sale->net_amount = round($neto, 2);
-                $sale->taxe = round($iva, 2);
-                $sale->retention = round($retention, 2);
+                $sale->net_amount = round($neto, 4);
+                $sale->taxe = round($iva, 4);
+                $sale->retention = round($retention, 4);
                 $sale->sale_total = round($montoTotal - $retention, 2);
                 $sale->save();
             } catch (\Exception $e) {
@@ -448,11 +493,6 @@ class SaleItemsRelationManager extends RelationManager
 
         }
     }
-
-//    public function isReadOnly(): bool
-//    {
-//        return false;
-//    }
 
 
 }

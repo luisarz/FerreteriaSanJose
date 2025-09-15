@@ -21,7 +21,8 @@ class CreateCreditNote extends CreateRecord
     public function mutateFormDataBeforeCreate(array $data): array
     {
         $data['wherehouse_id'] = auth()->user()->employee->branch_id;
-        $data['operation_type'] = "NC";
+//        dd($data);
+        $data['operation_type'] = $data['document_type_id']=="6"?'ND':'NC';
         $data['is_invoiced'] = false;
         $data['sales_payment_status'] = 'Pendiente';
         $data['is_invoiced'] = false;

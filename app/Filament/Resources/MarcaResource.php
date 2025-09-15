@@ -21,13 +21,14 @@ class MarcaResource extends Resource
 
     protected static bool $softDelete = true;
     protected static ?string $navigationGroup = "Almacén";
+    protected static ?string $label="Marcas";
     protected static ?string $recordTitleAttribute = 'nombre';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Información de Marca de prodúctos')
+                Forms\Components\Section::make('')
                     ->schema([
                         Forms\Components\TextInput::make('nombre')
                             ->required()
@@ -46,7 +47,7 @@ class MarcaResource extends Resource
                             ->label('Activo')
                             ->default(true)
                             ->required(),
-                    ])->columns(1),
+                    ])->columns(2),
             ]);
     }
 
@@ -54,12 +55,14 @@ class MarcaResource extends Resource
     {
         return $table
             ->columns([
+
                 Tables\Columns\TextColumn::make('id')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nombre')
                     ->sortable()
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('descripcion')
                     ->searchable(),
                 Tables\Columns\ImageColumn::make('imagen')
@@ -94,7 +97,7 @@ class MarcaResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ProductosRelationManagerRelationManager::class
         ];
     }
 
@@ -102,8 +105,8 @@ class MarcaResource extends Resource
     {
         return [
             'index' => Pages\ListMarcas::route('/'),
-//            'create' => Pages\CreateMarca::route('/create'),
-//            'edit' => Pages\EditMarca::route('/{record}/edit'),
+            'create' => Pages\CreateMarca::route('/create'),
+            'edit' => Pages\EditMarca::route('/{record}/edit'),
         ];
     }
 }

@@ -119,11 +119,11 @@ class QuoteAction
             ->modalHeading('Confirmación')
             ->modalSubheading('¿Estás seguro de que deseas cerrar esta orden? Esta acción no se puede deshacer.')
             ->action(function ($record, array $data) {
-                $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBoxId(false);
-                if ($openedCashBox == 0) {
+                $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBox(false);
+                if (!$openedCashBox['status'] ) {
                     return Notification::make('')
-                        ->title('Error al procesar Orden')
-                        ->body('No hay ninguna caja aperturada. Por favor aperturar una caja para procesar la orden.')
+                        ->title('Error al procesar Cotizacion')
+                        ->body('No hay ninguna caja aperturada. Por favor aperturar una caja para procesar la cotizacion.')
                         ->danger()
                         ->send();
                 }
@@ -142,7 +142,7 @@ class QuoteAction
                     $discountMoney = number_format($saleTotal - $discountedTotal, 2, '.', '');
 
                     $order=Sale::find($record->id);
-                    $order->cashbox_open_id = $openedCashBox;
+//                    $order->cashbox_open_id = $openedCashBox;
                     $order->operation_type = 'Order';
                     $order->is_order_closed_without_invoiced = true;
                     $order->sale_status = 'Finalizado';

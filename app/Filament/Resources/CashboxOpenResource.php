@@ -8,6 +8,7 @@ use App\Models\CashBoxOpen;
 use App\Models\Employee;
 use App\Models\Sale;
 use App\Service\GetCashBoxOpenedService;
+use App\Services\CashBoxResumenService;
 use App\Traits\Traits\GetOpenCashBox;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
@@ -28,8 +29,13 @@ class CashboxOpenResource extends Resource
     public static ?string $label = "Apertura de Cajas";
     public static ?string $navigationGroup = 'Facturación';
 
+
     public static function form(Form $form): Form
     {
+
+        $resumen = new CashBoxResumenService();
+
+
         return $form
             ->schema([
                 Forms\Components\Section::make('')
@@ -99,43 +105,122 @@ class CashboxOpenResource extends Resource
                             })
                             ->schema([
                                 Forms\Components\Section::make('Ingresos')
-                                    ->extraAttributes(['class' => 'border-r border-gray-200'])
                                     ->schema([
-                                        Forms\Components\Placeholder::make('saled_amount')
-                                            ->label('Facturación')
+                                        Forms\Components\Placeholder::make('ingreso_factura')
+                                            ->label('Factura')
                                             ->inlineLabel(true)
-                                            ->content(function () {
-                                                $openedCashBox = (new GetCashBoxOpenedService())->getTotal(false);
-                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($openedCashBox, 2) . '</span>');
+                                            ->content(function () use ($resumen) {
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_factura, 2) . '</span>');
                                             }),
-                                        Forms\Components\Placeholder::make('ordered_amount')
+                                        Forms\Components\Placeholder::make('ingreso_ccf')
+                                            ->label('CCF')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_ccf, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('ingreso_ordenes')
                                             ->label('Ordenes')
                                             ->inlineLabel(true)
-                                            ->content(function () {
-                                                $openedCashBox = (new GetCashBoxOpenedService())->getTotal(true, true);
-                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($openedCashBox, 2) . '</span>');
+                                            ->content(function () use ($resumen) {
+//                                                $ingreso_ordenes = (new GetCashBoxOpenedService())->getTotal(true, true);
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_ordenes, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('ingreso_taller')
+                                            ->label('Taller')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+//                                                $ingreso_ordenes = (new GetCashBoxOpenedService())->getTotal(true, true);
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_taller, 2) . '</span>');
                                             }),
 
-                                        Forms\Components\Placeholder::make('in_cash_amount')
+                                        Forms\Components\Placeholder::make('ingreso_caja_chica')
                                             ->label('Caja Chica')
                                             ->inlineLabel(true)
-                                            ->content(function () {
-                                                $smalCashBoxIngresoTotal = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
-                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($smalCashBoxIngresoTotal, 2) . '</span>');
+                                            ->content(function () use ($resumen) {
+//                                                $ingreso_caja_chica = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_caja_chica, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('ingreso_totales')
+                                            ->label('INGRESOS TOTALES')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px; border-top: #1e2c2e solid 1px;">$ ' . number_format($resumen->ingreso_total, 2) . '</span>');
                                             }),
                                     ])->columnSpan(1),
                                 Forms\Components\Section::make('Egresos')
                                     ->schema([
-                                        Forms\Components\Placeholder::make('out_cash_amount')
+                                        Forms\Components\Placeholder::make('egreso_caja_chica')
                                             ->label('Caja Chica')
                                             ->inlineLabel(true)
-                                            ->content(function () {
-                                                $smalCashBoxEgresoTotal = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Egreso');
-                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($smalCashBoxEgresoTotal, 2) . '</span>');
+                                            ->content(function () use ($resumen) {
+//                                                $smalCashBoxEgresoTotal = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Egreso');
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->egreso_caja_chica, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('egreso_nc')
+                                            ->label('Notas de Crédito')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+//                                                $smalCashBoxEgresoTotal = (new GetCashBoxOpenedService())->getTotal(false, false, 5);
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->egreso_nc, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('egresos_totales')
+                                            ->label('EGRESOS TOTALES')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+                                                return new HtmlString('<span style="font-weight: bold; color:red; font-size: 15px; border-top: #1e2c2e solid 1px;">-   $ ' . number_format($resumen->egreso_total, 2) . '</span>');
                                             }),
                                     ])->columnSpan(1),
+                                Forms\Components\Section::make('Saldos')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('saldo_efectivo_ventas')
+                                            ->label('Efectivo Ventas')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+//                                                $smalCashBoxEgresoTotal = (new GetCashBoxOpenedService())->getTotal(false, false, null, [1]);
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->saldo_efectivo_ventas, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('saldo_tarjeta')
+                                            ->label('Tarjeta')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+//                                                $smalCashBoxEgresoTotal = (new GetCashBoxOpenedService())->getTotal(false, false, null, [2, 3]);
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->saldo_tarjeta, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('saldo_cheque')
+                                            ->label('Cheques')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+//                                                $smalCashBoxEgresoTotal = (new GetCashBoxOpenedService())->getTotal(false, false, null, [4, 5]);
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->saldo_cheques, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('saldo_efectivo_ordenes')
+                                            ->label('Efectivo Ordenes')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+//                                                $smalCashBoxEgresoTotal = $openedCashBox = (new GetCashBoxOpenedService())->getTotal(true, true);;
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->saldo_efectivo_ordenes, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('saldo_caja_chica')
+                                            ->label('Caja Chica')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+//                                                $smalCashBoxIngresoTotal = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
+                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->saldo_caja_chica, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('saldo_egresos_totales')
+                                            ->label('-EGRESOS TOTALES')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
 
-
+                                                return new HtmlString('<span style="font-weight: bold; color:red; font-size: 15px;">-$ ' . number_format($resumen->egreso_total, 2) . '</span>');
+                                            }),
+                                        Forms\Components\Placeholder::make('saldo_total_operaciones')
+                                            ->label('SALDOS OPERACIONES')
+                                            ->inlineLabel(true)
+                                            ->content(function () use ($resumen) {
+                                                return new HtmlString('<span style=" border-top: #1e2c2e solid 1px; color:green; font-weight:  bold; font-size: 15px;">$ ' . number_format($resumen->saldo_total, 2) . '</span>');
+                                            }),
+                                    ])->columnSpan(1),
 
 
                             ])->columns(2)
@@ -146,54 +231,61 @@ class CashboxOpenResource extends Resource
                                     return true;
                                 }
                             })
-                        ->schema([
-                            Forms\Components\DateTimePicker::make('closed_at')
-                                ->label('Fecha de cierre')
-                                ->required()
-                                ->default(now())
-                                ->hidden(function (?CashBoxOpen $record = null) {
-                                    return $record === null;
-                                })
-                                ->inlineLabel(true),
+                            ->schema([
+                                Forms\Components\DateTimePicker::make('closed_at')
+                                    ->label('Fecha de cierre')
+                                    ->required()
+                                    ->default(now())
+                                    ->hidden(function (?CashBoxOpen $record = null) {
+                                        return $record === null;
+                                    })
+                                    ->inlineLabel(true),
 
-                            Forms\Components\Placeholder::make('closed_amount')
-                                ->label('Monto Cierre')
-                                ->inlineLabel(true)
-                                ->content(function (callable $get) {
-                                    $totalInresos = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
-                                    $totalEgresos = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Egreso');
-                                    $totalSale = (new GetCashBoxOpenedService())->getTotal(false);
-                                    $totalOrder = (new GetCashBoxOpenedService())->getTotal(true, true);
-                                    $montoApertura = $get('open_amount') ?? 0;
-                                    $totalInCash = ($montoApertura + $totalInresos + $totalOrder + $totalSale) - $totalEgresos;
-                                    return new HtmlString(
-                                        '<span style="font-weight: 600; color: #FFFFFF; font-size: 16px; background-color: #0056b3; padding: 4px 8px; border-radius: 5px; display: inline-block;">'
-                                        . ($totalInCash ?? '-') .
-                                        '</span>');
-                                })
-                                ->hidden(function (?CashBoxOpen $record = null) {
-                                    if ($record === null) {
-                                        return true;
-                                    }
-                                }),
-                            Forms\Components\Select::make('close_employee_id')
-                                ->relationship('closeEmployee', 'name', function ($query) {
-                                    $whereHouse = auth()->user()->employee->branch_id;
-                                    $query->where('branch_id', $whereHouse);
-                                })
-                                ->required()
-                                ->label('Empleado Cierra')
-                                ->hidden(function (?CashBoxOpen $record = null) {
-                                    if ($record === null) {
-                                        return true;
-                                    }
-                                })
-                                ->options(function () {
-                                    $whereHouse = auth()->user()->employee->branch_id;
-                                    return Employee::where('branch_id', $whereHouse)
-                                        ->pluck('name', 'id');
-                                }),
-                        ])->columns(3)
+                                Forms\Components\Placeholder::make('closed_amount')
+                                    ->label('Monto Cierre')
+                                    ->inlineLabel(true)
+                                    ->content(function (callable $get) use ($resumen) {
+//                                        dd ($resumen);
+//                                        $get = fn($key) => request()->input($key);
+                                        $montoApertura = round($get('open_amount') ?? 0, 2);
+
+
+//                                        $totalInresos = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
+//                                        $totalEgresos = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Egreso');
+//                                        $totalSale = (new GetCashBoxOpenedService())->getTotal(false);
+//                                        $totalOrder = (new GetCashBoxOpenedService())->getTotal(true, true);
+//                                        $montoApertura = $get('open_amount') ?? 0;
+                                        $totalInCash = $resumen->saldo_total + $montoApertura;//($montoApertura + $totalInresos + $totalOrder + $totalSale) - $totalEgresos;
+                                        return new HtmlString('<span style=" border-top: #1e2c2e solid 1px; color:green; font-weight:  bold; font-size: 15px;">$ ' . number_format($totalInCash, 2) . '</span>');
+
+//                                        return new HtmlString(
+//                                            '<span style="font-weight: 600; color: #FFFFFF; font-size: 16px; background-color: #0056b3; padding: 4px 8px; border-radius: 5px; display: inline-block;">'
+//                                            . ($totalInCash ?? '-') .
+//                                            '</span>');
+                                    })
+                                    ->hidden(function (?CashBoxOpen $record = null) {
+                                        if ($record === null) {
+                                            return true;
+                                        }
+                                    }),
+                                Forms\Components\Select::make('close_employee_id')
+                                    ->relationship('closeEmployee', 'name', function ($query) {
+                                        $whereHouse = auth()->user()->employee->branch_id;
+                                        $query->where('branch_id', $whereHouse);
+                                    })
+                                    ->required()
+                                    ->label('Empleado Cierra')
+                                    ->hidden(function (?CashBoxOpen $record = null) {
+                                        if ($record === null) {
+                                            return true;
+                                        }
+                                    })
+                                    ->options(function () {
+                                        $whereHouse = auth()->user()->employee->branch_id;
+                                        return Employee::where('branch_id', $whereHouse)
+                                            ->pluck('name', 'id');
+                                    }),
+                            ])->columns(3)
 
 
                     ])->columns(2)
@@ -224,7 +316,7 @@ class CashboxOpenResource extends Resource
                     ->placeholder('Sin cerrar')
                     ->dateTime()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('closed_amount')
+                Tables\Columns\TextColumn::make('saldo_total_operaciones')
                     ->label('Monto Cierre')
                     ->money('USD', true, locale: 'es_US')
                     ->placeholder('Sin cerrar')
@@ -288,7 +380,6 @@ class CashboxOpenResource extends Resource
                 ]),
             ]);
     }
-
 
 
     public static function getPages(): array

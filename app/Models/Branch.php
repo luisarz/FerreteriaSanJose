@@ -15,11 +15,16 @@ class Branch extends Model
     protected $softDelete = true;
 
     protected $fillable = ['stablisment_type_id',
-        'name', 'company_id',
-        'nit', 'nrc', 'departamento_id',
+        'name',
+        'company_id',
+        'nit',
+        'nrc',
+        'establishment_type_code',
+        'pos_terminal_code',
+        'departamento_id',
         'distrito_id', 'address',
         'economic_activity_id', 'phone',
-        'email', 'web', 'prices_by_products','print',
+        'email', 'web', 'prices_by_products', 'print',
         'logo', 'is_active'];
 
     public function getActivitylogOptions(): LogOptions

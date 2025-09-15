@@ -7,7 +7,9 @@ use App\Filament\Resources\LogResource;
 use App\Filament\Resources\SaleResource;
 use App\Models\Contingency;
 use App\Models\DteTransmisionWherehouse;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
+use Devonab\FilamentEasyFooter\EasyFooterPlugin;
 use EightyNine\FilamentPageAlerts\FilamentPageAlertsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -45,8 +47,8 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn() => view('logo'))
             ->brandLogoHeight('6rem')
             ->default()
-            ->font('Poppins')
-            ->sidebarWidth('18rem')
+            ->font('poppins')
+            ->sidebarWidth('17rem')
             ->id('admin')
             ->path('admin')
             ->profile(isSimple: false)
@@ -87,15 +89,49 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
                 \Hasnayeen\Themes\ThemesPlugin::make(),
-                GlobalSearchModalPlugin::make(),
+//                GlobalSearchModalPlugin::make(),
                 ActivitylogPlugin::make()->label('Bitacora')
                     ->pluralLabel('Bitacora')->navigationSort(3),
-                FilamentPageAlertsPlugin::make()
+                FilamentPageAlertsPlugin::make(),
+                EasyFooterPlugin::make()
+                    ->withBorder()
+                    ->withFooterPosition('footer')
+                    ->withSentence('Desarrollado por')
+                    ->withLogo(
+                        'https://res.cloudinary.com/dt5ncuobe/image/upload/v1745506235/computecLogo_lhe33p.png', // Path to logo
+                        'https://www.facebook.com/Consultores.computec',
+                        null,
+                        '40'
+                    )
+
+                    ->withLinks([
+                        ['title' => 'Contactanos', 'url' => 'https://api.whatsapp.com/send?phone=50379281878&text=Sistema%20de%20inventario%20y%20facturaci%C3%B3n%20electr%C3%B3nica'],
+                    ])
+                    ->withLoadTime(
+                        prefix: 'Tiempo de carga',
+                        enabled: true,
+                    ),
+                FilamentShieldPlugin::make()
+                    ->gridColumns([
+                        'default' => 1,
+                        'sm' => 2,
+                        'lg' => 3
+                    ])
+                    ->sectionColumnSpan(1)
+                    ->checkboxListColumns([
+                        'default' => 1,
+                        'sm' => 2,
+                        'lg' => 4,
+                    ])
+                    ->resourceCheckboxListColumns([
+                        'default' => 1,
+                        'sm' => 2,
+                    ]),
 
             ])
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, function () {
                 $whereHouse = auth()->user()->employee->branch_id ?? null;
-                $DTETransmisionType = Contingency::where('warehouse_id', $whereHouse)->where('is_close',0)->first();
+                $DTETransmisionType = Contingency::where('warehouse_id', $whereHouse)->where('is_close', 0)->first();
                 $labelTransmisionType = "Previo Normal";
                 $labelTransmisionTypeBorderColor = " #52b01e ";
                 if ($DTETransmisionType) {//Previo Normal)

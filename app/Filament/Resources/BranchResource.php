@@ -59,6 +59,16 @@ class BranchResource extends Resource
                             ->label('NIT')
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('establishment_type_code')
+                            ->label('Codigo de Establecimiento')
+                            ->required()
+                            ->minLength(4)
+                            ->maxLength(4),
+                        Forms\Components\TextInput::make('pos_terminal_code')
+                            ->label('Codigo de Terminal POS')
+                            ->required()
+                            ->minLength(4)
+                            ->maxLength(4),
 
                         Forms\Components\Select::make('departamento_id')
                             ->relationship('departamento', 'name')
@@ -143,6 +153,14 @@ class BranchResource extends Resource
 
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('establishment_type_code')
+                    ->label('Codigo de Establecimiento')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('pos_terminal_code')
+                    ->label('Codigo de Terminal POS')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('company.name')
                     ->toggleable(isToggledHiddenByDefault: true)
 

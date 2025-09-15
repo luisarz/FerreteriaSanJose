@@ -26,7 +26,8 @@ class Kardex extends Model
         'money_out',
         'money_actual',
         'sale_price',
-        'purchase_price'
+        'purchase_price',
+        'promedial_cost'
     ];
 
     public function whereHouse()

@@ -33,7 +33,7 @@ return [
 
     'nav.group' => 'Filament Shield',
     'nav.role.label' => '역할',
-    'nav.role.icon' => 'heroicon-o-shield-check',
+//    'nav.role.icon' => 'heroicon-o-shield-check',
     'resource.label.role' => '역할',
     'resource.label.roles' => '역할들',
 

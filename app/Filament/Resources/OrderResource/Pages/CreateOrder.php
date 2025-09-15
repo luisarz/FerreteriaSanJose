@@ -41,7 +41,9 @@ class CreateOrder extends CreateRecord
                 ->action('create')
                 ->before(function (Action $action, array &$data) {
                     $data['operation_type'] = "Order";
+
                     $data['is_invoiced'] = false;
+
                 })
                 ->extraAttributes([
                     'class' => 'alig', // Tailwind para ajustar el margen alinearlo a la derecha
@@ -75,6 +77,9 @@ class CreateOrder extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['operation_type'] = "Order";
+        $data['document_type_id'] = 1;//Guardar como factura predeterminada
+        $data['operation_condition_id'] = 1;//Contado por default
+        $data['payment_method_id'] = 1;//Efectivo por default
         $data['is_invoiced'] = false;
         $whereHouse = auth()->user()->employee->branch_id ?? null;
         $lastOrder = \App\Models\Sale::where('wherehouse_id', $whereHouse)

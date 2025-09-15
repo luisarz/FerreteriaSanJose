@@ -339,6 +339,7 @@ class EmployeeResource extends Resource
                     ->label('')
                     ->icon('heroicon-s-calendar-date-range')
                     ->color('success')
+                    ->visible(fn ($record) => $record->job_title_id != 4)
                     ->iconSize(IconSize::Medium)
                     ->modalWidth('max-w-2xl')
                     ->form([
@@ -371,6 +372,81 @@ class EmployeeResource extends Resource
                             ->send();
                     })
                 ->modalButton('Generar Reporte'),
+                Tables\Actions\Action::make('select_date_range_detail')
+                    ->label('')
+                    ->icon('heroicon-o-presentation-chart-line')
+                    ->iconSize('medium')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->job_title_id != 4)
+                    ->iconSize(IconSize::Medium)
+                    ->modalWidth('max-w-2xl')
+                    ->form([
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Fecha Inicio')
+                            ->default(Carbon::now()->subWeek())
+                            ->required(),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Fecha Fin')
+                            ->default(Carbon::now()->endOfMonth())
+                            ->required(),
+                    ])
+                    ->action(function (array $data, $record) {
+
+                        $url = route('employee.sales-test', [
+                            'id_employee' => $record->id,
+                            'star_date' => date('d-m-Y', strtotime($data['start_date'])),
+                            'end_date' => date('d-m-Y', strtotime($data['end_date']))
+                        ]);
+
+                        // Devolver la URL como una respuesta JSON para que el frontend la maneje
+                        return \Filament\Notifications\Notification::make()
+                            ->title('Reporte de ventas detalle')
+                            ->body('Haz clic aquí para ver los resultados.')
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('Ver reporte')
+                                    ->button()
+                                    ->url($url, true) // true = abrir en nueva pestaña
+                            ])
+                            ->send();
+                    })
+                    ->modalButton('Generar Reporte'),
+                Tables\Actions\Action::make('workReport')
+                    ->label('')
+                    ->visible(fn ($record) => $record->job_title_id == 4)
+                    ->icon('heroicon-s-calendar-date-range')
+                    ->color('danger')
+                    ->iconSize(IconSize::Medium)
+                    ->modalWidth('max-w-2xl')
+                    ->form([
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Fecha Inicio')
+                            ->default(Carbon::now()->startOfMonth())
+                            ->required(),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Fecha Fin')
+                            ->default(Carbon::now()->endOfMonth())
+                            ->required(),
+                    ])
+                    ->action(function (array $data, $record) {
+
+                        $url = route('employee.sales-work', [
+                            'id_employee' => $record->id,
+                            'star_date' => date('d-m-Y', strtotime($data['start_date'])),
+                            'end_date' => date('d-m-Y', strtotime($data['end_date']))
+                        ]);
+
+                        // Devolver la URL como una respuesta JSON para que el frontend la maneje
+                        return \Filament\Notifications\Notification::make()
+                            ->title('Reporte de manos de Obra')
+                            ->body('Haz clic aquí para ver los resultados.')
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('Ver reporte')
+                                    ->button()
+                                    ->url($url, true) // true = abrir en nueva pestaña
+                            ])
+                            ->send();
+                    })
+                    ->modalButton('Generar Reporte'),
 
                 Tables\Actions\ViewAction::make()->label('')->iconSize(IconSize::Medium),
 //                    Tables\Actions\ReplicateAction::make()->label('')->excludeAttributes(['email','dui','nit','photo','created_at','updated_at','deleted_at']),
