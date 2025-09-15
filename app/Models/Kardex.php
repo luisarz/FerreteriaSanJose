@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Kardex extends Model
 {
+
+    use softDeletes;
     protected $table = 'kardex';
     protected $fillable = [
         'branch_id',

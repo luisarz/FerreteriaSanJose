@@ -174,10 +174,19 @@ class InventoryResource extends Resource
                             Tables\Columns\Layout\Stack::make([
                                 Tables\Columns\TextColumn::make('product.name')
                                     ->label('Producto')
-                                    ->wrap()
                                     ->weight(FontWeight::Medium)
                                     ->sortable()
+                                    ->wrap()
+
                                     ->icon('heroicon-s-cube')
+                                    ->searchable()
+                                    ->sortable(),
+                                Tables\Columns\TextColumn::make('id')
+                                    ->label('Producto')
+                                    ->color('danger')
+                                    ->weight(FontWeight::Medium)
+                                    ->sortable()
+                                    ->icon('heroicon-o-qr-code')
                                     ->searchable()
                                     ->sortable(),
                                 Tables\Columns\TextColumn::make('product.aplications')

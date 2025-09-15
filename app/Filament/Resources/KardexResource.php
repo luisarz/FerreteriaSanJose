@@ -6,11 +6,14 @@ use App\Filament\Resources\KardexResource\Pages;
 use App\Models\Kardex;
 use Carbon\Carbon;
 use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\ColumnGroup;
 use Filament\Tables\Columns\Summarizers\Sum;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
 use Filament\Tables\Grouping\Group;
@@ -31,9 +34,9 @@ class KardexResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('branch_id')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\TextInput::make('inventory.product.name')
+//                    ->relationship('inventory.product', 'name')
+                    ->required(),
 
                 Forms\Components\DatePicker::make('date')
                     ->required(),
@@ -98,27 +101,33 @@ class KardexResource extends Resource
 
     public static function table(Table $table): Table
     {
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
-                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('inventory_id')
+                    ->label('Inventario')
+//                    ->searchable(isIndividual: true)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date')
                     ->label('Fecha')
                     ->date('d-m-Y')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('document_number')
-                    ->label('N° Comprobante')
+                    ->label('N°')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('document_type')
-                    ->label('T. Comprobante')
+                    ->label('Tipo')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('entity')
                     ->label('Razon Social')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nationality')
-                    ->label('Nacionalidad del proveedor')
+                    ->label('Nacionalidad')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
 
 //                    ->toggleable(isToggledHiddenByDefault: true),
@@ -131,8 +140,8 @@ class KardexResource extends Resource
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('inventory.product.unitmeasurement.description')
-                    ->label('Unidad de Medida')
-//                    ->wrap(50)
+                    ->label('U. Medida')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable()
                     ->sortable(),
 
@@ -140,7 +149,6 @@ class KardexResource extends Resource
                     ->label('Operación')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
-
 
 
                 Tables\Columns\TextColumn::make('previous_stock')
@@ -152,15 +160,20 @@ class KardexResource extends Resource
                     Tables\Columns\TextColumn::make('stock_in')
                         ->label('Entrada')
                         ->numeric()
+                        ->color('success') // 🟢 Aplica color de texto verde estilo Filament
+                        ->formatStateUsing(fn ($state) => number_format($state, 2)) //
                         ->summarize(Sum::make()->label('Entrada'))
-                        ->extraAttributes(['class' => 'bg-success-200']) // Agregar clases CSS para el borde
+//                        ->extraAttributes(['class' => 'bg-success-200']) // Agregar clases CSS para el borde
 
                         ->sortable(),
                     Tables\Columns\TextColumn::make('stock_out')
                         ->label('Salida')
                         ->numeric()
+                        ->sortable()
                         ->summarize(Sum::make()->label('Salida'))
-                        ->sortable(),
+                        ->color('danger') // 🔴 Aplica color de texto rojo estilo Filament
+                        ->formatStateUsing(fn ($state) => number_format($state, 2)), // formato numérico
+
                     Tables\Columns\TextColumn::make('stock_actual')
                         ->label('Existencia')
                         ->numeric()
@@ -173,27 +186,27 @@ class KardexResource extends Resource
                 ]),
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->money('USD', locale: 'USD')
-                    ->label('Precio Compra')
+                    ->label('Costo')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('promedial_cost')
-                    ->money('USD', locale: 'USD')
-                    ->label('Costo Promedio')
-                    ->sortable(),
-                ColumnGroup::make('IMPORTE MONETARIO / PC', [
-
-                    Tables\Columns\TextColumn::make('money_in')
-                        ->label('ENTRADA')
-                        ->money('USD', locale: 'USD')
-                        ->sortable(),
-                    Tables\Columns\TextColumn::make('money_out')
-                        ->label('SALIDA')
-                        ->money('USD', locale: 'USD')
-                        ->sortable(),
-                    Tables\Columns\TextColumn::make('money_actual')
-                        ->label('EXISTENCIA')
-                        ->money('USD', locale: 'USD')
-                        ->sortable(),
-                ]),
+//                Tables\Columns\TextColumn::make('promedial_cost')
+//                    ->money('USD', locale: 'USD')
+//                    ->label('Costo Promedio')
+//                    ->sortable(),
+//                ColumnGroup::make('IMPORTE MONETARIO / PC', [
+//
+//                    Tables\Columns\TextColumn::make('money_in')
+//                        ->label('ENTRADA')
+//                        ->money('USD', locale: 'USD')
+//                        ->sortable(),
+//                    Tables\Columns\TextColumn::make('money_out')
+//                        ->label('SALIDA')
+//                        ->money('USD', locale: 'USD')
+//                        ->sortable(),
+//                    Tables\Columns\TextColumn::make('money_actual')
+//                        ->label('EXISTENCIA')
+//                        ->money('USD', locale: 'USD')
+//                        ->sortable(),
+//                ]),
 //                Tables\Columns\TextColumn::make('sale_price')
 //                    ->money('USD', locale: 'USD')
 //                    ->label('Precio')
@@ -218,14 +231,36 @@ class KardexResource extends Resource
             ])
             ->filters([
                 DateRangeFilter::make('date')->timePicker24()
-                    ->label('Fecha de venta')
+                    ->label('Fecha de operacion')
                     ->startDate(Carbon::now())
-                    ->endDate(Carbon::now())
+                    ->endDate(Carbon::now()),
 
-            ])
+
+                Filter::make('inventory_id')
+                    ->label('Inventario ID')
+                    ->form([
+                        TextInput::make('inventory_id')
+                            ->inlineLabel(false)
+                            ->label('Inventario')
+                            ->numeric(),
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (!empty($data['inventory_id'])) {
+                            $query->where('inventory_id', $data['inventory_id']);
+                        }
+                    })
+
+
+            ],layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(2)
             ->actions([
-                Tables\Actions\ViewAction::make(),
-            ])
+                Tables\Actions\DeleteAction::make('delete')
+                    ->label('')
+
+                    ->icon('heroicon-o-trash'),
+                Tables\Actions\ViewAction::make()->label(''),
+//                Tables\Actions\EditAction::make('edit')->label(''),
+            ], position: Tables\Enums\ActionsPosition::BeforeCells)
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
 //                    Tables\Actions\DeleteBulkAction::make(),

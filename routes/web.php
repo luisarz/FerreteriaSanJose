@@ -5,6 +5,7 @@ use App\Http\Controllers\ContingencyController;
 use App\Http\Controllers\DTEController;
 use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\hoja;
+use App\Http\Controllers\InventoryReport;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\ReportsController;
@@ -55,5 +56,10 @@ Route::get('/sale/pdf/{starDate}/{endDate}',[ReportsController::class,'downloadP
 //Entrada Salia
 //Route::get('/printSalida/{idsalida}', [DTEController::class, 'printDTETicket'])->middleware(['auth'])->name('printSalida');
 Route::get('/salidaPrintTicket/{id}', [AdjustementInventory::class, 'salidaPrintTicket'])->middleware(['auth'])->name('salidaPrintTicket');
+
+//Inventory
+Route::get('/inventor/report/{upadte}/{starDate}/{endDate}',[InventoryReport::class,'inventoryReportExport'])->name('inventor.report');
+Route::get('/inventor/report-mov/{code}/{starDate}/{endDate}',[InventoryReport::class,'inventoryMovimentReportExport'])->name('inventor.moviment.report');
+
 
 require __DIR__ . '/auth.php';
