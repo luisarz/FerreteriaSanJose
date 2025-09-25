@@ -18,7 +18,10 @@ use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\Summarizers\Average;
+use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Table;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
@@ -213,6 +216,7 @@ class PurchaseResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('provider.comercial_name')
+                    ->searchable()
                     ->label('Proveedor')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('employ.name')
@@ -269,8 +273,15 @@ class PurchaseResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('purchase_total')
                     ->label('Total')
-                    ->money('USD', true, 'en_US')
+                    ->summarize(
+                        Sum::make()->query(fn (Builder $query) => $query->where('status','!=', 'Anulado')),
+
+                    )
+                    ->money('USD', locale: 'en_US')
                     ->sortable(),
+
+
+
                 Tables\Columns\IconColumn::make('paid')
                     ->label('Pagada')
                     ->boolean(),

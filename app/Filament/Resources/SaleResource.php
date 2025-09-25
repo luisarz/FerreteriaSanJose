@@ -645,6 +645,19 @@ class SaleResource extends Resource
                     ->relationship('documenttype', 'name', function ($query) {
                         return $query->whereIn('id', [1,3,11,14]); // Aplica tu condición aquí
                     }),
+                Tables\Filters\SelectFilter::make('sale_status')
+                    ->label('Estado')
+                    ->options([
+                        'Nueva' => 'Nueva',
+                        'Procesando' => 'Procesando',
+                        'Cancelada' => 'Cancelada',
+                        'Facturada' => 'Facturada',
+                        'Anulado' => 'Anulado',
+                        'Finalizado' => 'Finalizado',
+                    ])
+                    ->multiple() // si quieres permitir seleccionar más de uno
+                    ->preload(),
+
 
             ])
 

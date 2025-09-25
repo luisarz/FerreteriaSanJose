@@ -62,6 +62,7 @@ class CustomerResource extends Resource
                             ->relationship('economicactivity', 'description')
                             ->label('Actividad Económica')
                             ->preload()
+                            ->required()
                             ->searchable(),
                         Forms\Components\Select::make('wherehouse_id')
                             ->relationship('wherehouse', 'name')
@@ -91,20 +92,24 @@ class CustomerResource extends Resource
                         Forms\Components\TextInput::make('email')
                             ->label('Correo')
                             ->email()
+                            ->required()
                             ->maxLength(255),
                         Forms\Components\TextInput::make('phone')
                             ->label('Teléfono')
                             ->mask('(999) 9999-9999')
+                            ->required()
                             ->default(503)
                             ->tel()
                             ->maxLength(255),
                         Forms\Components\Select::make('country_id')
                             ->label('País')
+                            ->required()
                             ->relationship('country', 'name')
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('departamento_id')
                             ->label('Departamento')
+                            ->required()
                             ->relationship('departamento', 'name')
                             ->searchable()
                             ->live()
@@ -119,6 +124,7 @@ class CustomerResource extends Resource
                             ->label('Municipio')
                             ->live()
                             ->preload()
+
                             ->searchable()
                             ->afterStateUpdated(function ($state, $set) {
                                 if (!$state) {
@@ -215,6 +221,7 @@ class CustomerResource extends Resource
                         Forms\Components\TextInput::make('address')
                             ->label('Dirección')
                             ->maxLength(255)
+                            ->required()
                             ->default(null),
                         Forms\Components\Toggle::make('is_credit_client')
                             ->label('Cliente de crédito')
