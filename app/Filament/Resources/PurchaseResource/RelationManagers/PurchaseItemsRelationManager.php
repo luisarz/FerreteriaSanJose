@@ -109,7 +109,7 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->label('Cantidad')
                             ->step(1)
                             ->numeric()
-                            ->debounce(500)
+                            ->live(onBlur: true)
                             ->columnSpan(1)
                             ->required()
                             ->afterStateUpdated(function (callable $get, callable $set) {
@@ -120,9 +120,9 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->label('Precio')
                             ->step(0.01)
                             ->numeric()
+                            ->live(onBlur: true)
                             ->columnSpan(1)
                             ->required()
-                            ->debounce(500)
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $this->calculateTotal($get, $set);
                             }),
@@ -132,10 +132,10 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->step(0.01)
                             ->prefix('%')
                             ->numeric()
+                            ->live(onBlur: true)
                             ->columnSpan(1)
                             ->required()
                             ->default(0)
-                            ->debounce(500)
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $this->calculateTotal($get, $set);
                             }),
@@ -144,7 +144,7 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->label('Total')
                             ->step(0.01)
                             ->columnSpan(1)
-                            ->debounce(500)
+                            ->live(onBlur: true)
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $total = ($get('total') !== "" && $get('total') !== null) ? $get('total') : 0;
                                 $set('total', number_format($total, 2));

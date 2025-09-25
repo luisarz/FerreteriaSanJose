@@ -143,7 +143,10 @@ class QuoteResource extends Resource
                                                 return Customer::create($data)->id; // Guarda y devuelve el ID del nuevo cliente
                                             })
                                         ,
-
+                                        Forms\Components\Textarea::make('observaciones')
+                                            ->columnSpanFull()
+                                            ->inlineLabel(false)
+                                            ->label('Observaciones'),
 
                                         Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
@@ -183,7 +186,9 @@ class QuoteResource extends Resource
                                             ->label('Total')
                                             ->content(fn(?Sale $record) => new HtmlString('<span style="font-weight: bold; color: red; font-size: 18px;">$ ' . number_format($record->sale_total ?? 0, 2) . '</span>'))
                                             ->inlineLabel()
-                                            ->extraAttributes(['class' => 'p-0 text-lg']) // Tailwind classes for padding and font size
+                                            ->extraAttributes(['class' => 'p-0 text-lg']), // Tailwind classes for padding and font size
+
+
                                     ])
                                     ->extraAttributes([
                                         'class' => 'bg-blue-100 border border-blue-500 rounded-md p-2',

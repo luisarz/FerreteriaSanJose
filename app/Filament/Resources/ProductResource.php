@@ -13,6 +13,8 @@ use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\IconSize;
 use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -81,14 +83,14 @@ class ProductResource extends Resource
                                 modifyQueryUsing: fn ($query) => $query->whereNotNull('parent_id')
                             )
                             ->preload()
-                            ->searchable()
+                            //->searchable()
                             ->createOptionForm([
                                 Forms\Components\BelongsToSelect::make('parent_id')
                                     ->relationship('category', 'name')
                                     ->nullable()
                                     ->placeholder('Seleccione una categoría')
                                     ->preload()
-                                    ->searchable()
+                                    //->searchable()
                                     ->label('Categoría padre'),
 
                                 Forms\Components\TextInput::make('name')
@@ -109,7 +111,7 @@ class ProductResource extends Resource
                         Forms\Components\Select::make('marca_id')
                             ->label('Marca')
                             ->relationship('marca', 'nombre')
-                            ->searchable()
+                            //->searchable()
                             ->preload()
                             ->createOptionForm([
                                 Forms\Components\TextInput::make('nombre')
@@ -132,13 +134,13 @@ class ProductResource extends Resource
         Forms\Components\Select::make('unit_measurement_id')
                             ->label('Unidad de medida')
                             ->preload()
-                            ->searchable()
+                            //->searchable()
                             ->relationship('unitMeasurement', 'description')
                             ->required(),
 //                        Forms\Components\MultiSelect::make('tribute_id')
 //                            ->label('Impuestos')
 //                            ->preload()
-//                            ->searchable()
+//                            //->searchable()
 //                            ->relationship('tributes', 'name'),
 
                         Forms\Components\Section::make('Configuración')
@@ -195,8 +197,8 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('id')
                     ->label('Codigo')
                     ->sortable()
-                    ->wrap()
-                    ->searchable(),
+                    ->wrap(),
+                    //->searchable(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Producto')
 //                                    ->weight(FontWeight::SemiBold)
@@ -204,8 +206,8 @@ class ProductResource extends Resource
 //                                    ->icon('heroicon-s-cube')
                     ->wrap()
 //                                    ->formatStateUsing(fn($state, $record) => $record->deleted_at ? "<span style='text-decoration: line-through; color: red;'>$state</span>" : $state)
-                    ->html()
-                    ->searchable(),
+                    ->html(),
+                    //->searchable(),
                 Tables\Columns\TextColumn::make('unitMeasurement.description')
                     ->label('Presentación')
 //                    ->icon('heroicon-s-scale')
@@ -222,14 +224,14 @@ class ProductResource extends Resource
                     ->badge()
 //                    ->icon('heroicon-s-cog')
                     ->sortable()
-                    ->separator(';')
-                    ->searchable(),
+                    ->separator(';'),
+                    //->searchable(),
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
                     ->copyable()
 //                                    ->icon('heroicon-s-qr-code')
-                    ->copyMessage('SKU  copied')
-                    ->searchable(),
+                    ->copyMessage('SKU  copied'),
+                    //->searchable(),
                 Tables\Columns\BooleanColumn::make('is_grouped')
                     ->label('Servicio')
                     ->trueIcon('heroicon-o-server-stack')
@@ -241,7 +243,7 @@ class ProductResource extends Resource
 //                    ->icon('heroicon-s-code-bracket-square')
                     ->label('C. Barras')
                     ->toggleable(isToggledHiddenByDefault: true)
-                    ->searchable(),
+                    //->searchable(),
 
 
 
@@ -266,17 +268,31 @@ class ProductResource extends Resource
                 5, 10, 25, 50, 100 // Define your specific pagination limits here
             ])
             ->filters([
+                Filter::make('product_name')
+                    ->form([
+                        Forms\Components\TextInput::make('value')
+                            ->label('Producto')
+                            ->placeholder('Buscar por nombre o código de barra'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['value'], function ($query, $value) {
+                                $query->where('name', 'like', "%{$value}%")
+                                    ->orWhere('bar_code', 'like', "%{$value}%");
+                            });
+                    }),
+
                 //
                 Tables\Filters\SelectFilter::make('category_id')
                     ->label('Categoría')
-                    ->searchable()
+                    //->searchable()
                     ->preload()
                     ->relationship('category', 'name')
                     ->options(fn() => \App\Models\Category::pluck('name', 'id')->toArray())
                     ->default(null),
                 Tables\Filters\SelectFilter::make('marca_id')
                     ->label('Marca')
-                    ->searchable()
+                    //->searchable()
                     ->preload()
                     ->relationship('marca', 'nombre')
                     ->options(fn() => \App\Models\Marca::pluck('nombre', 'id')->toArray())
@@ -284,7 +300,7 @@ class ProductResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
 
 
-            ])
+            ],layout: FiltersLayout::AboveContent)->filtersFormColumns(2)
             ->actions([
 
                 Tables\Actions\ActionGroup::make([
