@@ -43,12 +43,45 @@ class InventoryMovimentExport implements FromCollection, WithHeadings, WithEvent
     {
         set_time_limit(0);
 
+        // 1️⃣ Calcular inventario inicial acumulado antes de $startDate
+        $initialStock = Kardex::where('inventory_id', $this->productCode)
+            ->where('date', '<', $this->startDate)
+            ->selectRaw('
+            COALESCE(SUM(stock_in),0) - COALESCE(SUM(stock_out),0) as cantidad,
+            COALESCE(SUM(money_in),0) - COALESCE(SUM(money_out),0) as dinero
+        ')
+            ->first();
+
+        // 2️⃣ Movimientos dentro del rango
         $rows = Kardex::with(['inventory', 'inventory.product', 'inventory.product.unitmeasurement'])
             ->where('inventory_id', $this->productCode)
             ->whereBetween('date', [$this->startDate, $this->endDate])
             ->orderBy('date', 'asc')
             ->orderBy('id', 'asc')
             ->get();
+
+        // 3️⃣ Insertar línea "INVENTARIO INICIAL" si existe saldo previo
+        if ($initialStock && ($initialStock->cantidad != 0 || $initialStock->dinero != 0)) {
+            $costoUnitario = $initialStock->cantidad > 0
+                ? $initialStock->dinero / $initialStock->cantidad
+                : 0;
+
+            $rows->prepend((object)[
+                'date'            => $this->startDate,
+                'operation_type'  => 'INVENTARIO INICIAL',
+                'operation_id'    => null,
+                'document_type'   => null,
+                'document_number' => null,
+                'stock_in'        => 0,
+                'stock_out'       => 0,
+                'stock_actual'    => $initialStock->cantidad,
+                'previous_stock'  => $initialStock->cantidad,
+                'money_in'        => 0,
+                'money_out'       => 0,
+                'money_actual'    => $initialStock->dinero,
+                'purchase_price'  => $costoUnitario, // importante para tu loop
+            ]);
+        }
 
         $item = 1;
         $saldoAnteriorRep = 0.0;
@@ -64,19 +97,24 @@ class InventoryMovimentExport implements FromCollection, WithHeadings, WithEvent
 
             $producto = $row->inventory->product ?? null;
             $nombreProducto = $producto ? $producto->name : 'S/N';
-            $unidadMedida = $producto && $producto->unitmeasurement ? $producto->unitmeasurement->description : 'S/N';
+            $unidadMedida = $producto && $producto->unitmeasurement
+                ? $producto->unitmeasurement->description
+                : 'S/N';
 
             $debe = 0.0;
             $haber = 0.0;
 
+            // 4️⃣ Procesar inventario inicial
             if ($row->operation_type === "INVENTARIO INICIAL") {
                 $saldoAnteriorRep = $this->toFloat($row->previous_stock);
                 $existencia = $this->toFloat($row->stock_actual);
                 $ultimoCostoUnitario = $costo;
-                $saldoDineroTotal = $existencia * $ultimoCostoUnitario;
-                $costoPromedio = $existencia > 0 ? $saldoDineroTotal / $existencia : $costoPromedioLineaAnterior;
+                $saldoDineroTotal = $this->toFloat($row->money_actual);
+                $costoPromedio = $existencia > 0
+                    ? $saldoDineroTotal / $existencia
+                    : $costoPromedioLineaAnterior;
                 $costoPromedioLineaAnterior = $costoPromedio;
-                $debe = $existencia * $ultimoCostoUnitario;
+                $debe = $saldoDineroTotal;
             } else {
                 if ($entrada > 0) { // COMPRA
                     $ultimoCostoUnitario = $costo;
@@ -119,6 +157,7 @@ class InventoryMovimentExport implements FromCollection, WithHeadings, WithEvent
 
         return $this->resultados;
     }
+
 
     public function columnFormats(): array
     {

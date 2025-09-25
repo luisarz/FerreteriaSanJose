@@ -139,7 +139,8 @@ class InventoryResource extends Resource
                                     ->required(),
                                 Forms\Components\Toggle::make('is_expiration_date')
                                     ->label('Tiene vencimiento')
-                                    ->default(true)
+                                    ->default(false)
+                                    ->hidden('expiration_date')
                                     ->required(),
                                 Forms\Components\Toggle::make('is_active')
                                     ->default(true)

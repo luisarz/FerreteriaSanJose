@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\CreateClienteForm;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
 use App\Models\Product;
@@ -81,15 +82,54 @@ class ProductResource extends Resource
                             )
                             ->preload()
                             ->searchable()
+                            ->createOptionForm([
+                                Forms\Components\BelongsToSelect::make('parent_id')
+                                    ->relationship('category', 'name')
+                                    ->nullable()
+                                    ->placeholder('Seleccione una categoría')
+                                    ->preload()
+                                    ->searchable()
+                                    ->label('Categoría padre'),
+
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
+                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                                return $action
+                                    ->label('Crear Categoria')
+                                    ->color('success')
+                                    ->icon('heroicon-o-plus');
+                            })
+                            ->createOptionUsing(function (array $data): int {
+                                return \App\Models\Category::create($data)->id;
+                            })
                             ->required(),
 
                         Forms\Components\Select::make('marca_id')
                             ->label('Marca')
-                            ->preload()
-                            ->searchable()
                             ->relationship('marca', 'nombre')
-                            ->required(),
-                        Forms\Components\Select::make('unit_measurement_id')
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('nombre')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('descripcion')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
+                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                                return $action
+                                    ->label('Crear marca')
+                                    ->color('success')
+                                    ->icon('heroicon-o-plus');
+                            })
+                            ->createOptionUsing(function (array $data): int {
+                                return \App\Models\Marca::create($data)->id;
+                            }),
+
+        Forms\Components\Select::make('unit_measurement_id')
                             ->label('Unidad de medida')
                             ->preload()
                             ->searchable()
@@ -112,7 +152,8 @@ class ProductResource extends Resource
                                     ->required(),
                                 Forms\Components\Toggle::make('is_grouped')
                                     ->label('Compuesto')
-                                    ->default(true)
+                                    ->default(false)
+                                    ->hidden()
                                     ->required(),
                                 Forms\Components\Toggle::make('is_taxed')
                                     ->label('Gravado')

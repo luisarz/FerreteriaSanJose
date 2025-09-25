@@ -36,67 +36,69 @@ class EditPurchase extends EditRecord
     }
 
 
-        public function aftersave()
-        {
-            $purchase = $this->record; // Obtener el registro de la compra
-            $purchaseItems = PurchaseItem::where('purchase_id', $purchase->id)->get();
-            $provider = Provider::with('pais')->find($purchase->provider_id);
-            $entity = $provider->comercial_name;
-            $pais = $provider->pais->name;
+    public function aftersave()
+    {
+        $purchase = $this->record; // Obtener el registro de la compra
+        $purchaseItems = PurchaseItem::where('purchase_id', $purchase->id)->get();
+        $provider = Provider::with('pais')->find($purchase->provider_id);
+        $entity = $provider->comercial_name;
+        $pais = $provider->pais->name;
 
-            foreach ($purchaseItems as $item) {
-                $inventory = Inventory::find($item->inventory_id);
+        foreach ($purchaseItems as $item) {
+            $inventory = Inventory::find($item->inventory_id);
 
-                // Verifica si el inventario existe
-                if (!$inventory) {
-                    \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
-                    continue; // Si no se encuentra el inventario, continua con el siguiente item
-                }
-
-                // Actualiza el stock del inventario
-                $newStock = $inventory->stock + $item->quantity;
-                $costoAnterior=$inventory->cost_without_taxes??0;
-                $inventory->update(['stock' => $newStock,"cost_without_taxes"=>$item->price]);
-
-                $historyCost=new InventoryCostoHistory();
-                $historyCost->inventory_id=$item->inventory_id;
-                $historyCost->fecha=now();
-                $historyCost->costo_anterior=$costoAnterior;
-                $historyCost->costo_actual=$item->price;
-                $historyCost->save();
-
-                // Crear el Kardex
-                $kardex = KardexHelper::createKardexFromInventory(
-                    $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
-                    $purchase->purchase_date, // date
-                    'Compra', // operation_type
-                    $purchase->id, // operation_id
-                    $item->id, // operation_detail_id
-                    'CCF', // document_type
-                    $purchase->document_number, // document_number
-                    $entity, // entity
-                    $pais, // nationality
-                    $inventory->id, // inventory_id
-                    $newStock - $item->quantity, // previous_stock
-                    $item->quantity, // stock_in
-                    0, // stock_out
-                    $inventory->stock, // stock_actual
-                    $item->quantity * $item->price, // money_in
-                    0, // money_out
-                    $inventory->stock * $item->price, // money_actual
-                    0, // sale_price
-                    $item->price, // purchase_price,
-                );
-
-                // Verifica si la creación del Kardex fue exitosa
-                if (!$kardex) {
-                    \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
-                }
+            // Verifica si el inventario existe
+            if (!$inventory) {
+                \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                continue; // Si no se encuentra el inventario, continua con el siguiente item
             }
 
-            // Redirigir después de completar el proceso
-            $this->redirect(static::getResource()::getUrl('index'));
+            // Actualiza el stock del inventario
+            $newStock = $inventory->stock + $item->quantity;
+            $costoAnterior = $inventory->cost_without_taxes ?? 0;
+            $iva = $item->price ?? 0 * 0.13;
+            $cost_with_taxes = $item->price + $iva;
+            $inventory->update(['stock' => $newStock, "cost_without_taxes" => $item->price, "cost_with_taxes" => $cost_with_taxes]);
+
+            $historyCost = new InventoryCostoHistory();
+            $historyCost->inventory_id = $item->inventory_id;
+            $historyCost->fecha = now();
+            $historyCost->costo_anterior = $costoAnterior;
+            $historyCost->costo_actual = $item->price;
+            $historyCost->save();
+
+            // Crear el Kardex
+            $kardex = KardexHelper::createKardexFromInventory(
+                $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
+                $purchase->purchase_date, // date
+                'Compra', // operation_type
+                $purchase->id, // operation_id
+                $item->id, // operation_detail_id
+                'CCF', // document_type
+                $purchase->document_number, // document_number
+                $entity, // entity
+                $pais, // nationality
+                $inventory->id, // inventory_id
+                $newStock - $item->quantity, // previous_stock
+                $item->quantity, // stock_in
+                0, // stock_out
+                $inventory->stock, // stock_actual
+                $item->quantity * $item->price, // money_in
+                0, // money_out
+                $inventory->stock * $item->price, // money_actual
+                0, // sale_price
+                $item->price, // purchase_price,
+            );
+
+            // Verifica si la creación del Kardex fue exitosa
+            if (!$kardex) {
+                \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+            }
         }
+
+        // Redirigir después de completar el proceso
+        $this->redirect(static::getResource()::getUrl('index'));
+    }
 
 
 }

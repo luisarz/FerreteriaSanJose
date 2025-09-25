@@ -50,26 +50,27 @@ class SaleItemsRelationManager extends RelationManager
                                     ->compact()
                                     ->schema([
 
-                                        Select::make('search_type')
-                                            ->label('Buscar por')
-                                            ->options([
-                                                'name' => 'Descripción',
-                                                'sku' => 'Código',
-                                            ])
-                                            ->inlineLabel(false)
-                                            ->default(
-                                                'name' // Valor por defecto
-                                            ),
+//                                        Select::make('search_type')
+//                                            ->label('Buscar por')
+//                                            ->options([
+//                                                'name' => 'Descripción',
+//                                                'sku' => 'Código',
+//                                            ])
+//                                            ->inlineLabel(false)
+//                                            ->default(
+//                                                'name' // Valor por defecto
+//                                            ),
                                         Select::make('inventory_id')
                                             ->label('Producto')
                                             ->searchable()
+                                            ->columnSpanFull()
                                             ->inlineLabel(false)
                                             ->preload(true)
                                             ->debounce(300)
                                             ->getSearchResultsUsing(function (string $query, callable $get) {
                                                 $whereHouse = \Auth::user()->employee->branch_id; // Sucursal del usuario
                                                 $aplications = $get('aplications');
-                                                $searchType = $get('search_type');
+//                                                $searchType = $get('search_type');
                                                 if (strlen($query) < 2) {
                                                     return []; // No buscar si el texto es muy corto
                                                 }
@@ -90,26 +91,17 @@ class SaleItemsRelationManager extends RelationManager
                                                     ->whereHas('prices', function ($q) {
                                                         $q->where('is_default', 1); // Verifica que tenga un precio predeterminado
                                                     })
-                                                    ->whereHas('product', function ($q) use ($aplications, $keywords, $searchType) {
+                                                    ->whereHas('product', function ($q) use ($aplications, $keywords) {
                                                         // Unir todas las palabras en una sola cadena
                                                         $searchTerm = $keywords;//trim(implode(' ', $keywords));
 
-                                                        $q->where(function ($queryBuilder) use ($searchTerm, $searchType) {
+                                                        $q->where(function ($queryBuilder) use ($searchTerm) {
                                                             if (strlen($searchTerm) >= 2) {
-                                                                switch ($searchType) {
-                                                                    case 'name':
-                                                                        $queryBuilder->where('name', 'like', "%{$searchTerm}%");
-                                                                        break;
 
-                                                                    case 'sku':
-                                                                        $queryBuilder->where('sku', 'like', "%{$searchTerm}%");
-                                                                        break;
 
-                                                                    default:
+
                                                                         $queryBuilder->where('name', 'like', "%{$searchTerm}%")
-                                                                            ->orWhere('sku', 'like', "%{$searchTerm}%");
-                                                                        break;
-                                                                }
+                                                                            ->orWhere('bar_code', 'like', "%{$searchTerm}%");
                                                             }
                                                         });
 

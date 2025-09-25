@@ -81,10 +81,11 @@ class OrderResource extends Resource
                                             ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
                                         Forms\Components\Select::make('customer_id')
                                             ->searchable()
+                                            ->columnSpanFull()
                                             ->live()
-//                                            ->inlineLabel(false)
-//                                            ->columnSpanFull()
+                                            ->inlineLabel(false)
                                             ->preload()
+                                            ->default(111)
                                             ->getSearchResultsUsing(function (string $query) {
                                                 if (strlen($query) < 2) {
                                                     return []; // No buscar si el texto es muy corto
@@ -113,33 +114,33 @@ class OrderResource extends Resource
                                                     : 'Cliente no encontrado';
                                             })
                                             ->label('Cliente')
-                                            ->createOptionForm([
-                                                Section::make('Nuevo Cliente')
-                                                    ->schema([
-                                                        Select::make('wherehouse_id')
-                                                            ->label('Sucursal')
-                                                            ->inlineLabel(false)
-                                                            ->options(function (callable $get) {
-                                                                $wherehouse = (Auth::user()->employee)->branch_id;
-                                                                if ($wherehouse) {
-                                                                    return \App\Models\Branch::where('id', $wherehouse)->pluck('name', 'id');
-                                                                }
-                                                                return []; // Return an empty array if no wherehouse selected
-                                                            })
-                                                            ->preload()
-                                                            ->default(fn() => optional(Auth::user()->employee)->branch_id)
-                                                            ->columnSpanFull(),
-                                                        Forms\Components\TextInput::make('name')
-                                                            ->required()
-                                                            ->label('Nombre'),
-                                                        Forms\Components\TextInput::make('last_name')
-                                                            ->required()
-                                                            ->label('Apellido'),
-                                                    ])->columns(2),
-                                            ])
-                                            ->createOptionUsing(function ($data) {
-                                                return Customer::create($data)->id; // Guarda y devuelve el ID del nuevo cliente
-                                            })
+//                                            ->createOptionForm([
+//                                                Section::make('Nuevo Cliente')
+//                                                    ->schema([
+//                                                        Select::make('wherehouse_id')
+//                                                            ->label('Sucursal')
+//                                                            ->inlineLabel(false)
+//                                                            ->options(function (callable $get) {
+//                                                                $wherehouse = (Auth::user()->employee)->branch_id;
+//                                                                if ($wherehouse) {
+//                                                                    return \App\Models\Branch::where('id', $wherehouse)->pluck('name', 'id');
+//                                                                }
+//                                                                return []; // Return an empty array if no wherehouse selected
+//                                                            })
+//                                                            ->preload()
+//                                                            ->default(fn() => optional(Auth::user()->employee)->branch_id)
+//                                                            ->columnSpanFull(),
+//                                                        Forms\Components\TextInput::make('name')
+//                                                            ->required()
+//                                                            ->label('Nombre'),
+//                                                        Forms\Components\TextInput::make('last_name')
+//                                                            ->required()
+//                                                            ->label('Apellido'),
+//                                                    ])->columns(2),
+//                                            ])
+//                                            ->createOptionUsing(function ($data) {
+//                                                return Customer::create($data)->id; // Guarda y devuelve el ID del nuevo cliente
+//                                            })
                                         ,
 
 
