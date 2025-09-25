@@ -37,11 +37,16 @@ class PurchaseItemsRelationManager extends RelationManager
                             ->getSearchResultsUsing(function (string $query, callable $get) {
                                 $whereHouse = \Auth::user()->employee->branch_id; // Sucursal del usuario
                                 $aplications = $get('aplications');
+                                $searchType = $get('search_type');
                                 if (strlen($query) < 2) {
                                     return []; // No buscar si el texto es muy corto
                                 }
-                                // Dividir el texto ingresado en palabras clave
-                                $keywords = explode(' ', $query);
+                                if (str_ends_with($query, '-')) {
+                                    return [];
+                                }
+                                $keywords = $query;
+//                                                $keywords = explode(' ', $query); // Convertir string a array
+
 
                                 return Inventory::with([
                                     'product:id,name,sku,bar_code,aplications',
@@ -53,25 +58,41 @@ class PurchaseItemsRelationManager extends RelationManager
                                     ->whereHas('prices', function ($q) {
                                         $q->where('is_default', 1); // Verifica que tenga un precio predeterminado
                                     })
-                                    ->whereHas('product', function ($q) use ($aplications, $keywords) {
-                                        $q->where(function ($queryBuilder) use ($keywords) {
-                                            foreach ($keywords as $word) {
-                                                $queryBuilder->where('name', 'like', "%{$word}%")
-                                                    ->orWhere('sku', 'like', "%{$word}%")
-                                                    ->orWhere('bar_code', 'like', "%{$word}%");
+                                    ->whereHas('product', function ($q) use ($aplications, $keywords, $searchType) {
+                                        // Unir todas las palabras en una sola cadena
+                                        $searchTerm = $keywords;//trim(implode(' ', $keywords));
+
+                                        $q->where(function ($queryBuilder) use ($searchTerm, $searchType) {
+                                            if (strlen($searchTerm) >= 2) {
+                                                switch ($searchType) {
+                                                    case 'name':
+                                                        $queryBuilder->where('name', 'like', "%{$searchTerm}%");
+                                                        break;
+
+                                                    case 'sku':
+                                                        $queryBuilder->where('sku', 'like', "%{$searchTerm}%");
+                                                        break;
+
+                                                    default:
+                                                        $queryBuilder->where('name', 'like', "%{$searchTerm}%")
+                                                            ->orWhere('sku', 'like', "%{$searchTerm}%");
+                                                        break;
+                                                }
                                             }
                                         });
 
                                         if (!empty($aplications)) {
-                                            $q->where('aplications', 'like', "%{$aplications}%");
+                                            $q->where('aplications', 'like', "{$aplications}%");
                                         }
                                     })
+
+
                                     ->select(['id', 'branch_id', 'product_id', 'stock']) // Selecciona solo las columnas necesarias
                                     ->limit(50) // Limita el número de resultados
                                     ->get()
                                     ->mapWithKeys(function ($inventory) {
                                         $price = optional($inventory->prices->first())->price; // Obtén el precio predeterminado
-                                        $displayText = "{$inventory->product->name} - Cod: {$inventory->product->bar_code} - STOCK: {$inventory->stock} - $ {$price}";
+                                        $displayText = "{$inventory->product->name} - Cod: {$inventory->product->sku} - STOCK: {$inventory->stock} - $ {$price}";
                                         return [$inventory->id => $displayText];
                                     });
                             })

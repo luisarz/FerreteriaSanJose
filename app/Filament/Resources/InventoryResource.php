@@ -18,6 +18,8 @@ use Filament\Resources\RelationManagers\RelationGroup;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Filament\Notifications\Actions\Action;
 use Filament\Tables\Actions;
@@ -256,6 +258,23 @@ class InventoryResource extends Resource
 //            ->deferLoading()
             ->striped()
             ->filters([
+                Filter::make('product_name')
+                    ->form([
+                        Forms\Components\TextInput::make('value')
+                            ->label('Producto')
+                            ->placeholder('Buscar por nombre de producto'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['value'], function ($query, $value) {
+                                $query->whereHas('product', function ($q) use ($value) {
+                                    $q->where('name', 'like', "%{$value}%")
+                                        ->orWhere('bar_code', 'like', "%{$value}%");
+                                });
+                            });
+                    }),
+
+
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('branch_id')
                     ->relationship('branch', 'name')
@@ -264,7 +283,7 @@ class InventoryResource extends Resource
                     ->default(\Auth::user()->employee->wherehouse->id)
                     ->placeholder('Buscar por sucursal'),
 //
-            ])->filtersFormColumns(2)
+            ],layout: FiltersLayout::AboveContent)->filtersFormColumns(2)
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),

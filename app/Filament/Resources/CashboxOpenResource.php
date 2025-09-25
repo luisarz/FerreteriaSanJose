@@ -118,28 +118,28 @@ class CashboxOpenResource extends Resource
                                             ->content(function () use ($resumen) {
                                                 return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_ccf, 2) . '</span>');
                                             }),
-                                        Forms\Components\Placeholder::make('ingreso_ordenes')
-                                            ->label('Ordenes')
-                                            ->inlineLabel(true)
-                                            ->content(function () use ($resumen) {
-//                                                $ingreso_ordenes = (new GetCashBoxOpenedService())->getTotal(true, true);
-                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_ordenes, 2) . '</span>');
-                                            }),
-                                        Forms\Components\Placeholder::make('ingreso_taller')
-                                            ->label('Taller')
-                                            ->inlineLabel(true)
-                                            ->content(function () use ($resumen) {
-//                                                $ingreso_ordenes = (new GetCashBoxOpenedService())->getTotal(true, true);
-                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_taller, 2) . '</span>');
-                                            }),
+//                                        Forms\Components\Placeholder::make('ingreso_ordenes')
+//                                            ->label('Ordenes')
+//                                            ->inlineLabel(true)
+//                                            ->content(function () use ($resumen) {
+////                                                $ingreso_ordenes = (new GetCashBoxOpenedService())->getTotal(true, true);
+//                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_ordenes, 2) . '</span>');
+//                                            }),
+//                                        Forms\Components\Placeholder::make('ingreso_taller')
+//                                            ->label('Taller')
+//                                            ->inlineLabel(true)
+//                                            ->content(function () use ($resumen) {
+////                                                $ingreso_ordenes = (new GetCashBoxOpenedService())->getTotal(true, true);
+//                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_taller, 2) . '</span>');
+//                                            }),
 
-                                        Forms\Components\Placeholder::make('ingreso_caja_chica')
-                                            ->label('Caja Chica')
-                                            ->inlineLabel(true)
-                                            ->content(function () use ($resumen) {
-//                                                $ingreso_caja_chica = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
-                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_caja_chica, 2) . '</span>');
-                                            }),
+//                                        Forms\Components\Placeholder::make('ingreso_caja_chica')
+//                                            ->label('Caja Chica')
+//                                            ->inlineLabel(true)
+//                                            ->content(function () use ($resumen) {
+////                                                $ingreso_caja_chica = (new GetCashBoxOpenedService())->minimalCashBoxTotal('Ingreso');
+//                                                return new HtmlString('<span style="font-weight: bold; font-size: 15px;">$ ' . number_format($resumen->ingreso_caja_chica, 2) . '</span>');
+//                                            }),
                                         Forms\Components\Placeholder::make('ingreso_totales')
                                             ->label('INGRESOS TOTALES')
                                             ->inlineLabel(true)

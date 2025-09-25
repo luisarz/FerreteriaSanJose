@@ -143,23 +143,6 @@ class OrderResource extends Resource
                                         ,
 
 
-                                        Forms\Components\Select::make('mechanic_id')
-                                            ->label('Mecanico')
-                                            ->preload()
-                                            ->searchable()
-                                            ->live()
-                                            ->options(function (callable $get) {
-                                                $wherehouse = $get('wherehouse_id');
-                                                if ($wherehouse) {
-                                                    return Employee::where('branch_id', $wherehouse)
-                                                        ->where('job_title_id', 4)
-                                                        ->where('is_active', true)
-                                                        ->pluck('name', 'id');
-                                                }
-                                                return []; // Return an empty array if no wherehouse selected
-                                            })
-                                            ->disabled(fn(callable $get) => !$get('wherehouse_id')), // Disable if no wherehouse selected
-
                                         Forms\Components\Select::make('sales_payment_status')
                                             ->options(['Pagado' => 'Pagado',
                                                 'Pendiente' => 'Pendiente',
@@ -249,11 +232,7 @@ class OrderResource extends Resource
                     ->label('Vendedor')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('mechanic.name')
-                    ->label('Mecánico')
-                    ->searchable()
-                    ->placeholder('No asignado')
-                    ->sortable(),
+
 
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Cliente')
@@ -264,12 +243,12 @@ class OrderResource extends Resource
                     ->badge()
                     ->searchable()
                     ->sortable()
-                    ->formatStateUsing(fn ($state, $record) => $record->deleted_at ? 'Eliminado' : $state)
-                    ->color(fn ($state) => match ($state) {
+                    ->formatStateUsing(fn($state, $record) => $record->deleted_at ? 'Eliminado' : $state)
+                    ->color(fn($state) => match ($state) {
                         'Nueva', 'En proceso' => 'info',
                         'Finalizado' => 'success',
                         'Pendiente' => 'warning',
-                        'Anulado', 'Eliminado','Cancelada' => 'danger',
+                        'Anulado', 'Eliminado', 'Cancelada' => 'danger',
                         default => null, // Sin color
                     })
                     ->label('Estado'),
@@ -300,10 +279,7 @@ class OrderResource extends Resource
                     ->suffix('%')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
-                Tables\Columns\TextColumn::make('discount_money')
-                    ->label('Taller')
-                    ->money('USD', locale: 'en_US')
-                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('total_order_after_discount')
                     ->label('Total - Descuento')
 //                    ->toggleable(isToggledHiddenByDefault: true)
@@ -333,7 +309,6 @@ class OrderResource extends Resource
 //                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('updated_at', 'desc')
-
             ->recordUrl(null)
             ->filters([
                 DateRangeFilter::make('operation_date')
@@ -342,7 +317,7 @@ class OrderResource extends Resource
                     ->endDate(Carbon::now()),
                 Tables\Filters\TrashedFilter::make('eliminados')
                     ->label('Eliminados')
-                    ->query(fn ($query) => $query->withoutGlobalScope(SoftDeletingScope::class))
+                    ->query(fn($query) => $query->withoutGlobalScope(SoftDeletingScope::class))
                     ->default(true),
 
             ])
@@ -350,10 +325,12 @@ class OrderResource extends Resource
             ->actions([
                 orderActions::printOrder(),
                 Tables\Actions\EditAction::make()->label('')->iconSize(IconSize::Large)->color('warning')
-                    ->visible(fn($record) =>
-                        $record->sale_status == 'Nueva' && $record->deleted_at == null
+                    ->visible(fn($record) => $record->sale_status == 'Nueva' && $record->deleted_at == null
                     ),
-                orderActions::closeOrder(),
+                Tables\Actions\DeleteAction::make('delete')
+                    ->iconSize(IconSize::Large)
+                    ->visible(fn($record) => !in_array($record->sale_status, ['Finalizado', 'Facturada', 'Anulado']) && $record->deleted_at == null)
+                    ->label(''),
                 orderActions::billingOrden(),
                 orderActions::cancelOrder(),
                 Tables\Actions\RestoreAction::make()->label('')->iconSize(IconSize::Large)->color('success'),
