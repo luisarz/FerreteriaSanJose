@@ -659,6 +659,7 @@ class SaleResource extends Resource
                     ->preload(),
 
 
+
             ])
 
             ->actions([

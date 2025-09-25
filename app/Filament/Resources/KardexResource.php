@@ -6,6 +6,7 @@ use App\Filament\Resources\KardexResource\Pages;
 use App\Models\Kardex;
 use Carbon\Carbon;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,6 +16,8 @@ use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Filament\Tables\Grouping\Group;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
@@ -248,11 +251,25 @@ class KardexResource extends Resource
                         if (!empty($data['inventory_id'])) {
                             $query->where('inventory_id', $data['inventory_id']);
                         }
-                    })
+                    }),
+                Filter::make('Buscar por sucursal')
+                    ->form([
+                        Select::make('branch_id')
+                            ->label('Sucursal')
+                            ->inlineLabel(false)
+                            ->relationship('wherehouse', 'name')
+                            ->preload()
+                            ->default(fn () => Auth::user()->employee->branch_id)
+//                            ->visible(fn () => Auth::user()->hasRole(['super_admin','manager'])),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        return $query
+                            ->when($data['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id));
+                    }),
 
 
             ],layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(2)
+            ->filtersFormColumns(3)
             ->actions([
                 Tables\Actions\DeleteAction::make('delete')
                     ->label('')
