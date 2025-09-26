@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -130,7 +131,7 @@ class SalesExportCCF implements FromCollection, WithHeadings, WithEvents
                         'bold' => true,
                     ],
                     'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'F2F2F2'],
                     ],
                 ]);

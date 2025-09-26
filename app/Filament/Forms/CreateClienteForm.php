@@ -2,13 +2,12 @@
 
 namespace App\Filament\Forms;
 
+use Filament\Schemas\Components\Section;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Card;
 use App\Models\Distrito;
 use App\Models\Municipality;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +19,7 @@ class CreateClienteForm
         return [
             Section::make('Nuevo Cliente')
                 ->schema([
-                    Card::make('')
+                    Section::make('')
                         ->description('Información personal del cliente')
                         ->icon('heroicon-o-user')
                         ->schema([

@@ -43,28 +43,6 @@
       0 => 'BladeUI\\Icons\\BladeIconsServiceProvider',
     ),
   ),
-  'devonab/filament-easy-footer' => 
-  array (
-    'aliases' => 
-    array (
-      'FilamentEasyFooter' => 'Devonab\\FilamentEasyFooter\\Facades\\EasyFooter',
-    ),
-    'providers' => 
-    array (
-      0 => 'Devonab\\FilamentEasyFooter\\EasyFooterServiceProvider',
-    ),
-  ),
-  'eightynine/filament-page-alerts' => 
-  array (
-    'aliases' => 
-    array (
-      'FilamentPageAlerts' => 'EightyNine\\FilamentPageAlerts\\Facades\\FilamentPageAlerts',
-    ),
-    'providers' => 
-    array (
-      0 => 'EightyNine\\FilamentPageAlerts\\FilamentPageAlertsServiceProvider',
-    ),
-  ),
   'filament/actions' => 
   array (
     'providers' => 
@@ -100,6 +78,13 @@
       0 => 'Filament\\Notifications\\NotificationsServiceProvider',
     ),
   ),
+  'filament/schemas' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Filament\\Schemas\\SchemasServiceProvider',
+    ),
+  ),
   'filament/support' => 
   array (
     'providers' => 
@@ -114,18 +99,18 @@
       0 => 'Filament\\Tables\\TablesServiceProvider',
     ),
   ),
+  'filament/upgrade' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Filament\\Upgrade\\UpgradeServiceProvider',
+    ),
+  ),
   'filament/widgets' => 
   array (
     'providers' => 
     array (
       0 => 'Filament\\Widgets\\WidgetsServiceProvider',
-    ),
-  ),
-  'hasnayeen/themes' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Hasnayeen\\Themes\\ThemesServiceProvider',
     ),
   ),
   'kirschbaum-development/eloquent-power-joins' => 
@@ -174,17 +159,6 @@
       0 => 'Livewire\\Volt\\VoltServiceProvider',
     ),
   ),
-  'maatwebsite/excel' => 
-  array (
-    'aliases' => 
-    array (
-      'Excel' => 'Maatwebsite\\Excel\\Facades\\Excel',
-    ),
-    'providers' => 
-    array (
-      0 => 'Maatwebsite\\Excel\\ExcelServiceProvider',
-    ),
-  ),
   'malzariey/filament-daterangepicker-filter' => 
   array (
     'aliases' => 
@@ -203,13 +177,6 @@
       0 => 'Carbon\\Laravel\\ServiceProvider',
     ),
   ),
-  'novadaemon/filament-pretty-json' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Novadaemon\\FilamentPrettyJson\\FilamentPrettyJsonServiceProvider',
-    ),
-  ),
   'nunomaduro/collision' => 
   array (
     'providers' => 
@@ -222,24 +189,6 @@
     'providers' => 
     array (
       0 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    ),
-  ),
-  'pxlrbt/filament-excel' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'pxlrbt\\FilamentExcel\\FilamentExcelServiceProvider',
-    ),
-  ),
-  'rmsramos/activitylog' => 
-  array (
-    'aliases' => 
-    array (
-      'Activitylog' => 'Rmsramos\\Activitylog\\Facades\\Activitylog',
-    ),
-    'providers' => 
-    array (
-      0 => 'Rmsramos\\Activitylog\\ActivitylogServiceProvider',
     ),
   ),
   'ryangjchandler/blade-capture-directive' => 
@@ -262,13 +211,6 @@
     'aliases' => 
     array (
       'QrCode' => 'SimpleSoftwareIO\\QrCode\\Facades\\QrCode',
-    ),
-  ),
-  'spatie/laravel-activitylog' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Spatie\\Activitylog\\ActivitylogServiceProvider',
     ),
   ),
   'spatie/laravel-permission' => 

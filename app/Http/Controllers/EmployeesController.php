@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Auth;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Company;
@@ -95,7 +96,7 @@ class EmployeesController extends Controller
 
 
         $empresa = Company::find(1);
-        $id_sucursal = \Auth::user()->employee->branch_id;
+        $id_sucursal = Auth::user()->employee->branch_id;
         $sucursal = Branch::find($id_sucursal);
         $empleado = Employee::where('id', $id_employee)->select('name', 'lastname')->first();
 
@@ -198,7 +199,7 @@ class EmployeesController extends Controller
 
 
         $empresa = Company::find(1);
-        $id_sucursal = \Auth::user()->employee->branch_id;
+        $id_sucursal = Auth::user()->employee->branch_id;
         $sucursal = Branch::find($id_sucursal);
         $empleado = Employee::where('id', $id_employee)->select('name', 'lastname')->first();
 
@@ -272,7 +273,7 @@ class EmployeesController extends Controller
 
 
         $empresa = Company::find(1);
-        $id_sucursal = \Auth::user()->employee->branch_id;
+        $id_sucursal = Auth::user()->employee->branch_id;
         $sucursal = Branch::find($id_sucursal);
         $empleado = Employee::where('id', $id_employee)->select('name', 'lastname')->first();
 

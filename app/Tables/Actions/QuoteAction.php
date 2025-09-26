@@ -2,18 +2,18 @@
 
 namespace App\Tables\Actions;
 
+use Filament\Actions\Action;
+use Filament\Schemas\Components\Section;
 use App\Helpers\KardexHelper;
 use App\Http\Controllers\OrdenController;
 use App\Models\CashBoxOpen;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\IconSize;
-use Filament\Tables\Actions\Action;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\HtmlString;
 use PhpParser\Node\Stmt\Label;
@@ -82,7 +82,7 @@ class QuoteAction
             ->iconSize(IconSize::Large)
             ->color('info')
             ->requiresConfirmation()
-            ->form([
+            ->schema([
                 Section::make('Cerrar orden')
                     ->columns(1)
                     ->schema([

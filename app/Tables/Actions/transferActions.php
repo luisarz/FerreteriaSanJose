@@ -2,12 +2,13 @@
 
 namespace App\Tables\Actions;
 
+use Filament\Actions\Action;
+use Log;
 use App\Helpers\KardexHelper;
 use App\Models\Inventory;
 use App\Models\Transfer;
 use App\Models\TransferItems;
 use Filament\Forms\Components\Select;
-use Filament\Tables\Actions\Action;
 use Filament\Support\Enums\IconSize;
 use App\Http\Controllers\DTEController;
 use App\Http\Controllers\SenEmailDTEController;
@@ -35,7 +36,7 @@ class transferActions
             ->modalHeading('¿Está seguro de recibir estos productos?')
             ->color('success')
             ->modalWidth('7xl')
-            ->form([
+            ->schema([
 
                 Repeater::make('items')
                     ->label('Productos a recibir')
@@ -103,7 +104,7 @@ class transferActions
                     $inventory = Inventory::where('product_id', $productId)->where('branch_id', $whereHouseTo)->first();
                     // Verifica si el inventario existe
                     if (!$inventory) {
-                        \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                        Log::error("Inventario no encontrado para el item de compra: {$item->id}");
                         continue; // Si no se encuentra el inventario, continua con el siguiente item
                     }
                     if($item['received']) {
@@ -138,7 +139,7 @@ class transferActions
                     );
 
                     if (!$kardex) {
-                        \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                        Log::error("Error al crear Kardex para el item de compra: {$item->id}");
                     }
 
 
@@ -186,7 +187,7 @@ class transferActions
                     $inventory = Inventory::where('product_id', $productId)->where('branch_id', $whereHouseTo)->first();
                     // Verifica si el inventario existe
                     if (!$inventory) {
-                        \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                        Log::error("Inventario no encontrado para el item de compra: {$item->id}");
                         continue; // Si no se encuentra el inventario, continua con el siguiente item
                     }
                     $newStock = $inventory->stock + $item->quantity;
@@ -215,7 +216,7 @@ class transferActions
                     );
 
                     if (!$kardex) {
-                        \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                        Log::error("Error al crear Kardex para el item de compra: {$item->id}");
                     }
                 }
                 $transfer->status_received = 'Recibido';
@@ -248,7 +249,7 @@ class transferActions
             ->modalHeading('¿Está seguro de Anular el Traslado?')
             ->modalDescription('Al anular el TRASLADO no se podrá recuperar, no se podra revertir.')
             ->color('danger')
-            ->form([
+            ->schema([
                 Select::make('ConfirmacionAnular')
                     ->label('Confirmar')
                     ->options(['confirmacion' => 'Estoy seguro, si Anular Traslado'])
@@ -289,7 +290,7 @@ class transferActions
                     $inventory = Inventory::find($item->inventory_id);
                     // Verifica si el inventario existe
                     if (!$inventory) {
-                        \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                        Log::error("Inventario no encontrado para el item de compra: {$item->id}");
                         continue; // Si no se encuentra el inventario, continua con el siguiente item
                     }
                     $newStock = $inventory->stock - $item->quantity;
@@ -318,7 +319,7 @@ class transferActions
                     );
 
                     if (!$kardex) {
-                        \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                        Log::error("Error al crear Kardex para el item de compra: {$item->id}");
                     }
                 }
             });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use App\Exports\inventoryExport;
 use App\Exports\InventoryMovimentExport;
 use App\Exports\SalesExportFac;
@@ -12,7 +13,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class InventoryReport extends Controller
 {
-    public function inventoryReportExport($update,$startDate, $endDate): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function inventoryReportExport($update,$startDate, $endDate): BinaryFileResponse
     {
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
@@ -23,7 +24,7 @@ class InventoryReport extends Controller
             "Reporte de inventario-{$startDate->format('Y-m-d')}-{$endDate->format('Y-m-d')}.xlsx"
         );
     }
-    public function inventoryMovimentReportExport($code,$startDate, $endDate): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function inventoryMovimentReportExport($code,$startDate, $endDate): BinaryFileResponse
     {
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);

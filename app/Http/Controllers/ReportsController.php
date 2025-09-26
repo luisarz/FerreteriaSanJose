@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Http\JsonResponse;
+use Exception;
 use App\Exports\SalesExportCCF;
 use App\Exports\SalesExportFac;
 use App\Models\Sale;
@@ -16,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportsController extends Controller
 {
-    public function saleReportFact($doctype,$startDate, $endDate): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function saleReportFact($doctype,$startDate, $endDate): BinaryFileResponse
     {
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
@@ -30,7 +33,7 @@ class ReportsController extends Controller
         );
     }
 
-    public function downloadJson($startDate, $endDate): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
+    public function downloadJson($startDate, $endDate): BinaryFileResponse|JsonResponse
     {
         set_time_limit(0);
         $sales = Sale::select('id')
@@ -98,12 +101,12 @@ class ReportsController extends Controller
 
             return response()->download($zipPath)->deleteFileAfterSend(true);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => 'Error al descargar el archivo ZIP: ' . $e->getMessage()], 500);
         }
     }
 
-    public function downloadPdf($startDate, $endDate): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
+    public function downloadPdf($startDate, $endDate): BinaryFileResponse|JsonResponse
     {
         set_time_limit(0);
         $sales = Sale::select('id')
@@ -169,7 +172,7 @@ class ReportsController extends Controller
 
             return response()->download($zipPath)->deleteFileAfterSend(true);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => 'Error al descargar el archivo ZIP: ' . $e->getMessage()], 500);
         }
     }
@@ -221,7 +224,7 @@ class ReportsController extends Controller
             if (file_exists($path)) {
                 $qr = Storage::url("QR/{$DTE['identificacion']['codigoGeneracion']}.jpg");
             } else {
-                throw new \Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
+                throw new Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
             }
             $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
 

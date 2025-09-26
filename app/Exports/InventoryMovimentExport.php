@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use App\Models\Kardex;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -192,7 +193,7 @@ class InventoryMovimentExport implements FromCollection, WithHeadings, WithEvent
                 // Alinear numéricos a la derecha
                 $sheet->getStyle('I2:R' . $highestRow)
                     ->getAlignment()
-                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT);
+                    ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 // Resaltar en rojo los valores negativos de la columna EXISTENCIA (columna L)
                 for ($row = 2; $row <= $highestRow; $row++) {

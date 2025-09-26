@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -25,19 +27,19 @@ class Product extends Model
 //    {
 //        return $this->belongsToMany(Tribute::class, 'product_tributes', 'product_id', 'tribute_id');
 //    }
-    public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id', 'id');
     }
-    public function marca(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function marca(): BelongsTo
     {
         return $this->belongsTo(Marca::class, 'marca_id', 'id');
     }
-    public function unitmeasurement(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function unitmeasurement(): BelongsTo
     {
         return $this->belongsTo(UnitMeasurement::class, 'unit_measurement_id', 'id');
     }
-    public function inventories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class);
     }

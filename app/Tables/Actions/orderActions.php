@@ -2,6 +2,9 @@
 
     namespace App\Tables\Actions;
 
+    use Log;
+    use Filament\Actions\Action;
+    use Filament\Schemas\Components\Section;
     use App\Helpers\KardexHelper;
     use App\Http\Controllers\OrdenController;
     use App\Models\CashBoxOpen;
@@ -11,12 +14,10 @@
     use App\Models\Sale;
     use App\Models\SaleItem;
     use Filament\Forms\Components\Placeholder;
-    use Filament\Forms\Components\Section;
     use Filament\Forms\Components\Select;
     use Filament\Forms\Components\TextInput;
     use Filament\Notifications\Notification;
     use Filament\Support\Enums\IconSize;
-    use Filament\Tables\Actions\Action;
     use Barryvdh\DomPDF\Facade\Pdf;
     use Illuminate\Support\HtmlString;
     use PhpParser\Node\Stmt\Label;
@@ -39,7 +40,7 @@
 
             // Verifica si el inventario existe
             if (!$inventory) {
-                \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                Log::error("Inventario no encontrado para el item de compra: {$item->id}");
                 continue; // Si no se encuentra el inventario, continúa con el siguiente item
             }
 
@@ -76,7 +77,7 @@
 
                 // Verifica si la creación del Kardex fue exitosa
                 if (!$kardex) {
-                    \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                    Log::error("Error al crear Kardex para el item de compra: {$item->id}");
                 }
             }
         }
@@ -149,7 +150,7 @@
                 ->iconSize(IconSize::Large)
                 ->color('info')
                 ->requiresConfirmation()
-                ->form([
+                ->schema([
                     Section::make('Cerrar orden')
                         ->columns(1)
                         ->schema([
@@ -256,7 +257,7 @@
                 ->modalSubheading("Para cancelar esta venta, escribe el siguiente código:")
                 ->modalButton('Sí, cancelar venta')
 
-                ->form(function () {
+                ->schema(function () {
                     if (!session()->has('codigo_cancelacion_orden')) {
                         session(['codigo_cancelacion_orden' => Str::upper(Str::random(4))]);
                     }

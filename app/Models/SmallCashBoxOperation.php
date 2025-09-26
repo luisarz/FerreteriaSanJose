@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -22,11 +23,11 @@ class SmallCashBoxOperation extends Model
     protected $casts = [
         'voucher' => 'array',
     ];
-    public function cashBoxOpen(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function cashBoxOpen(): BelongsTo
     {
         return $this->belongsTo(CashBoxOpen::class,'cash_box_open_id');
     }
-    public function employee(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class,'employ_id');
     }

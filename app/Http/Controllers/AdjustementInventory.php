@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Storage;
 use App\Models\adjustmentInventory;
 use App\Models\Company;
 use App\Models\Sale;
@@ -18,7 +19,7 @@ class AdjustementInventory extends Controller
         $datos = adjustmentInventory::with('branch', 'adjustItems', 'branch', 'adjustItems.inventory', 'adjustItems.inventory.product')
             ->find($id_adjustement);
         $logo = auth()->user()->employee->wherehouse->logo;
-        $logoPath=\Storage::url($logo);
+        $logoPath=Storage::url($logo);
         $empresa = $configuracion = Company::find(1);
         $formatter = new NumeroALetras();
         $montoLetras = $formatter->toInvoice($datos->monto, 2, 'DoLARES');

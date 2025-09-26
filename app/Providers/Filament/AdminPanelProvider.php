@@ -2,15 +2,13 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\pages\Dashboard;
+use App\Filament\Resources\Sales\Widgets\ChartWidgetSales;
 use App\Filament\Auth\CustomLogin;
-use App\Filament\Resources\LogResource;
-use App\Filament\Resources\SaleResource;
+use App\Filament\Resources\Sales\SaleResource;
 use App\Models\Contingency;
 use App\Models\DteTransmisionWherehouse;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
-use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
-use Devonab\FilamentEasyFooter\EasyFooterPlugin;
-use EightyNine\FilamentPageAlerts\FilamentPageAlertsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -61,14 +59,14 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                \App\Filament\pages\Dashboard::class,
+                Dashboard::class,
             ])
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
 
 //                \App\Filament\Resources\SaleResource\Widgets\SalesStat::class,
-                SaleResource\Widgets\ChartWidgetSales::class,
+                ChartWidgetSales::class,
 
             ])
             ->middleware([
@@ -81,36 +79,18 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                \Hasnayeen\Themes\Http\Middleware\SetTheme::class
+//                SetTheme::class
             ])
             ->authMiddleware([
                 Authenticate::class,
             ])
             ->plugins([
-                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
-                \Hasnayeen\Themes\ThemesPlugin::make(),
+                FilamentShieldPlugin::make(),
+//                ThemesPlugin::make(),
 //                GlobalSearchModalPlugin::make(),
-                ActivitylogPlugin::make()->label('Bitacora')
-                    ->pluralLabel('Bitacora')->navigationSort(3),
-                FilamentPageAlertsPlugin::make(),
-                EasyFooterPlugin::make()
-                    ->withBorder()
-                    ->withFooterPosition('footer')
-                    ->withSentence('Desarrollado por')
-                    ->withLogo(
-                        'https://res.cloudinary.com/dt5ncuobe/image/upload/v1745506235/computecLogo_lhe33p.png', // Path to logo
-                        'https://www.facebook.com/Consultores.computec',
-                        null,
-                        '40'
-                    )
 
-                    ->withLinks([
-                        ['title' => 'Contactanos', 'url' => 'https://api.whatsapp.com/send?phone=50379281878&text=Sistema%20de%20inventario%20y%20facturaci%C3%B3n%20electr%C3%B3nica'],
-                    ])
-                    ->withLoadTime(
-                        prefix: 'Tiempo de carga',
-                        enabled: true,
-                    ),
+
+
                 FilamentShieldPlugin::make()
                     ->gridColumns([
                         'default' => 1,

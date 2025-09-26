@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Database\Factories\UserFactory;
 use BezhanSalleh\FilamentShield\Traits\HasPanelShield;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,11 +15,11 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
     use HasRoles;
     use HasPanelShield;
-    use \Spatie\Activitylog\Traits\LogsActivity;
+//    use LogsActivity;
 
     /**
      * The attributes that are mass assignable.
@@ -30,11 +32,11 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
     ];
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->logOnly(['name', 'parent_id']);
-    }
+//    public function getActivitylogOptions(): LogOptions
+//    {
+//        return LogOptions::defaults()
+//            ->logOnly(['name', 'parent_id']);
+//    }
     /**
      * The attributes that should be hidden for serialization.
      *

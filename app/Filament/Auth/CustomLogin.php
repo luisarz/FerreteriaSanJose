@@ -2,14 +2,14 @@
 
 namespace App\Filament\Auth;
 
+use Filament\Auth\Pages\Login;
+use Filament\Schemas\Components\Component;
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use App\Models\Employee;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Facades\Filament;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
-use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Models\Contracts\FilamentUser;
-use Filament\Pages\Auth\Login;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Session;
@@ -24,7 +24,7 @@ class CustomLogin extends Login
         return [
             'form' => $this->form(
                 $this->makeForm()
-                    ->schema([
+                    ->components([
                         $this->getLoginFormComponent(),
                         $this->getPasswordFormComponent(),
                         $this->getRememberFormComponent(),
@@ -96,7 +96,7 @@ class CustomLogin extends Login
             ->withProperties(['ip' => request()->ip(), 'browser' => request()->header('User-Agent')])
             ->log('Inicio de session del usuario.' . $user->email);
 
-        if (($user instanceof FilamentUser) && (!$user->canAccessPanel(Filament::getCurrentPanel()))) {
+        if (($user instanceof FilamentUser) && (!$user->canAccessPanel(Filament::getCurrentOrDefaultPanel()))) {
             Filament::auth()->logout();
             $this->throwFailureValidationException();
         }

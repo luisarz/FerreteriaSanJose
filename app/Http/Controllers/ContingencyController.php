@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Auth;
+use Exception;
 use App\Models\Company;
 use App\Models\Contingency;
 use App\Models\HistoryDte;
@@ -56,7 +58,7 @@ class ContingencyController extends Controller
 
 
             $contingency = new Contingency();
-            $contingency->warehouse_id = \Auth::user()->employee->branch_id ;
+            $contingency->warehouse_id = Auth::user()->employee->branch_id ;
             $contingency->uuid_hacienda = $data['data']['uuid'];
             $contingency->start_date = $data['data']['inicioContingencia'];
             $contingency->contingency_types_id = $data['data']['tipoContiengencia'];
@@ -67,7 +69,7 @@ class ContingencyController extends Controller
             }else{
                 return false;
             }
-        }catch (\Exception $e){
+        }catch (Exception $e){
         return $e->getMessage();
         }
     }
@@ -112,7 +114,7 @@ class ContingencyController extends Controller
             }else{
                 return false;
             }
-        }catch (\Exception $e){
+        }catch (Exception $e){
             return $e->getMessage();
         }
     }

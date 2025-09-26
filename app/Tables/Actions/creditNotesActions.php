@@ -2,12 +2,12 @@
 
 namespace App\Tables\Actions;
 
-use App\Filament\Resources\DteTransmisionWherehouseResource;
+use Filament\Actions\Action;
+use App\Filament\Resources\DteTransmisionWherehouses\DteTransmisionWherehouseResource;
 use App\Models\Branch;
 use App\Models\DteTransmisionWherehouse;
 use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Forms\Components\Select;
-use Filament\Tables\Actions\Action;
 use Filament\Support\Enums\IconSize;
 use App\Http\Controllers\DTEController;
 use App\Http\Controllers\SenEmailDTEController;
@@ -27,7 +27,7 @@ class creditNotesActions
             ->requiresConfirmation()
             ->modalHeading('¿Está seguro de generar el DTE?')
             ->color('danger')
-            ->form([
+            ->schema([
                 Select::make('confirmacion')
                     ->label('Enviar a Hacienda')
                     ->options(['si' => 'Sí, deseo enviar', 'no' => 'No, no enviar'])
@@ -76,7 +76,7 @@ class creditNotesActions
             ->modalHeading('¿Está seguro de Anular el DTE?')
             ->modalDescription('Al anular el DTE no se podrá recuperar')
             ->color('danger')
-            ->form([
+            ->schema([
                 Select::make('ConfirmacionAnular')
                     ->label('Confirmar')
                     ->options(['confirmacion' => 'Estoy seguro, si Anular'])

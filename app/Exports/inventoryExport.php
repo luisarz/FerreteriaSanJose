@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use App\Models\Inventory;
 use App\Models\Kardex;
 use Carbon\Carbon;
@@ -182,7 +183,7 @@ $warehouse_id=auth()->user()->employee->branch_id;
                 $sheet->getStyle('A' . $footerRow . ':L' . $footerRow)->applyFromArray([
                     'font' => ['bold' => true],
                     'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'F2F2F2'],
                     ],
                 ]);

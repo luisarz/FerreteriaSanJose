@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Log;
 use App\Helpers\KardexHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -54,7 +55,7 @@ class Inventory extends Model
 
             // Verifica si la creación del Kardex fue exitosa
             if (!$kardex) {
-                \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                Log::error("Error al crear Kardex para el item de compra: {$item->id}");
             }
         });
     }

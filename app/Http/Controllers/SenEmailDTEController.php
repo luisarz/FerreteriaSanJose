@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Exception;
 use App\Models\Sale;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\sendEmailDTE as sendDTEFiles;
 
 class SenEmailDTEController extends Controller
 {
-    public function SenEmailDTEController($idVenta): \Illuminate\Http\JsonResponse
+    public function SenEmailDTEController($idVenta): JsonResponse
     {
         $sale = Sale::with('customer','wherehouse','wherehouse.company')->find($idVenta);
         if (!$sale) {
@@ -41,7 +43,7 @@ class SenEmailDTEController extends Controller
                     'body' => 'Correo enviado a ' . $sale->customer->email,
 
                 ];
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $data = [
                     'status' => false,
                     'message' => 'Error al enviar el correo: ' . $e->getMessage(),

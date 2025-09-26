@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -35,16 +36,16 @@ class Purchase extends Model
 
     public function provider()
     {
-        return $this->belongsTo(\App\Models\Provider::class);
+        return $this->belongsTo(Provider::class);
     }
 
     public function employee()
     {
-        return $this->belongsTo(\App\Models\Employee::class);
+        return $this->belongsTo(Employee::class);
     }
 
 
-    public function wherehouse(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function wherehouse(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }

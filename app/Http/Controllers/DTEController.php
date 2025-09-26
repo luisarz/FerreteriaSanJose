@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Auth;
+use Log;
 use App\Helpers\KardexHelper;
 use App\Models\Branch;
 use App\Models\CashBoxCorrelative;
@@ -1060,7 +1062,7 @@ class DTEController extends Controller
 
         $codigoGeneracion = $venta->dteProcesado->codigoGeneracion;
         $establishmentType = trim($venta->wherehouse->stablishmenttype->code);
-        $user = \Auth::user()->employee;
+        $user = Auth::user()->employee;
         $dte = [
             "codeGeneration" => $codigoGeneracion,
             "codeGenerationR" => null,
@@ -1105,7 +1107,7 @@ class DTEController extends Controller
                     $inventory = Inventory::with('product')->find($item->inventory_id);
                     // Verifica si el inventario existe
                     if (!$inventory) {
-                        \Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                        Log::error("Inventario no encontrado para el item de compra: {$item->id}");
                         continue; // Si no se encuentra el inventario, continua con el siguiente item
                     }
                     // Actualiza el stock del inventario
@@ -1170,7 +1172,7 @@ class DTEController extends Controller
 
                     // Verifica si la creación del Kardex fue exitosa
                     if (!$kardex) {
-                        \Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                        Log::error("Error al crear Kardex para el item de compra: {$item->id}");
                     }
                 }
             }
@@ -1310,7 +1312,7 @@ class DTEController extends Controller
             if (file_exists($path)) {
                 $qr = Storage::url("QR/{$DTE['identificacion']['codigoGeneracion']}.jpg");
             } else {
-                throw new \Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
+                throw new Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
             }
 
             $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
@@ -1395,7 +1397,7 @@ class DTEController extends Controller
             if (file_exists($path)) {
                 $qr = Storage::url("QR/{$DTE['identificacion']['codigoGeneracion']}.jpg");
             } else {
-                throw new \Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
+                throw new Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
             }
             $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
 
