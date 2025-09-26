@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\Kardexes\Pages;
 
-use Maatwebsite\Excel\Excel;
+//use Maatwebsite\Excel\Excel;
 use App\Filament\Resources\Kardexes\KardexResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
-use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
-use pxlrbt\FilamentExcel\Columns\Column;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
+//use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
+//use pxlrbt\FilamentExcel\Columns\Column;
+//use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class ListKardexes extends ListRecords
 {
@@ -18,16 +18,16 @@ class ListKardexes extends ListRecords
     {
         return [
 //            Actions\CreateAction::make(),
-            ExportAction::make()
-                ->exports([
-                    ExcelExport::make()
-                        ->fromTable()
-                        ->withFilename(fn ($resource) => $resource::getModelLabel() . '-' . date('Y-m-d'))
-                        ->withWriterType(Excel::XLSX)
-                        ->withColumns([
-//                            Column::make('updated_at'),
-                        ])
-                ]),
-            ];
+//            ExportAction::make()
+//                ->exports([
+//                    ExcelExport::make()
+//                        ->fromTable()
+//                        ->withFilename(fn ($resource) => $resource::getModelLabel() . '-' . date('Y-m-d'))
+//                        ->withWriterType(Excel::XLSX)
+//                        ->withColumns([
+////                            Column::make('updated_at'),
+//                        ])
+//                ]),
+        ];
     }
 }

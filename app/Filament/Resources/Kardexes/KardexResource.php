@@ -2,22 +2,17 @@
 
 namespace App\Filament\Resources\Kardexes;
 
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\ViewAction;
-use Filament\Tables\Enums\RecordActionsPosition;
-use Filament\Actions\BulkActionGroup;
-use Maatwebsite\Excel\Excel;
-use App\Filament\Resources\Kardexes\Pages\ListKardexes;
 use App\Filament\Resources\Kardexes\Pages\CreateKardex;
+use App\Filament\Resources\Kardexes\Pages\ListKardexes;
 use App\Filament\Resources\KardexResource\Pages;
 use App\Models\Kardex;
 use Carbon\Carbon;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\ExportAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\ColumnGroup;
@@ -25,14 +20,12 @@ use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Filament\Tables\Grouping\Group;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
-use pxlrbt\FilamentExcel\Columns\Column;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
+//use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
+//use pxlrbt\FilamentExcel\Columns\Column;
+//use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 
 class KardexResource extends Resource
@@ -40,71 +33,71 @@ class KardexResource extends Resource
     protected static ?string $model = Kardex::class;
 
     protected static ?string $label = 'Kardex productos';
-    protected static string | \UnitEnum | null $navigationGroup = 'Inventario';
+    protected static string|null|\UnitEnum $navigationGroup = 'Inventario';
 
-    public static function form(Schema $schema): Schema
+    public static function form(Form|\Filament\Schemas\Schema $form): \Filament\Schemas\Schema
     {
-        return $schema
-            ->components([
-                TextInput::make('inventory.product.name')
+        return $form
+            ->schema([
+                Forms\Components\TextInput::make('inventory.product.name')
 //                    ->relationship('inventory.product', 'name')
                     ->required(),
 
-                DatePicker::make('date')
+                Forms\Components\DatePicker::make('date')
                     ->required(),
-                TextInput::make('operation_type')
+                Forms\Components\TextInput::make('operation_type')
                     ->maxLength(255)
                     ->default(null),
-                TextInput::make('operation_id')
+                Forms\Components\TextInput::make('operation_id')
                     ->label('Tipo de Operación')
                     ->maxLength(255)
                     ->default(null),
-                TextInput::make('operation_detail_id')
+                Forms\Components\TextInput::make('operation_detail_id')
                     ->numeric()
                     ->default(null),
-                TextInput::make('document_type')
+                Forms\Components\TextInput::make('document_type')
                     ->label('T. Documento')
                     ->maxLength(255)
                     ->default(null),
-                TextInput::make('document_number')
+                Forms\Components\TextInput::make('document_number')
                     ->label('Número')
                     ->maxLength(255)
                     ->default(null),
-                TextInput::make('entity')
+                Forms\Components\TextInput::make('entity')
                     ->maxLength(255)
                     ->default(null),
 //                Forms\Components\TextInput::make('nationality')
 //                    ->maxLength(255)
 //                    ->default(null),
-                TextInput::make('inventory_id')
+                Forms\Components\TextInput::make('inventory_id')
                     ->required()
                     ->numeric(),
-                TextInput::make('previous_stock')
+                Forms\Components\TextInput::make('previous_stock')
                     ->required()
                     ->numeric(),
-                TextInput::make('stock_in')
+                Forms\Components\TextInput::make('stock_in')
                     ->required()
                     ->numeric(),
-                TextInput::make('stock_out')
+                Forms\Components\TextInput::make('stock_out')
                     ->required()
                     ->numeric(),
-                TextInput::make('stock_actual')
+                Forms\Components\TextInput::make('stock_actual')
                     ->required()
                     ->numeric(),
-                TextInput::make('money_in')
+                Forms\Components\TextInput::make('money_in')
                     ->required()
                     ->numeric(),
-                TextInput::make('money_out')
+                Forms\Components\TextInput::make('money_out')
                     ->required()
                     ->numeric(),
-                TextInput::make('money_actual')
+                Forms\Components\TextInput::make('money_actual')
                     ->required()
                     ->numeric(),
-                TextInput::make('sale_price')
+                Forms\Components\TextInput::make('sale_price')
                     ->required()
                     ->numeric()
                     ->default(0.00),
-                TextInput::make('purchase_price')
+                Forms\Components\TextInput::make('purchase_price')
                     ->required()
                     ->numeric()
                     ->default(0.00),
@@ -116,60 +109,60 @@ class KardexResource extends Resource
 
         return $table
             ->columns([
-                TextColumn::make('id')
+                Tables\Columns\TextColumn::make('id')
                     ->label('ID')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
-                TextColumn::make('inventory_id')
+                Tables\Columns\TextColumn::make('inventory_id')
                     ->label('Inventario')
 //                    ->searchable(isIndividual: true)
                     ->sortable(),
-                TextColumn::make('date')
+                Tables\Columns\TextColumn::make('date')
                     ->label('Fecha')
                     ->date('d-m-Y')
                     ->sortable(),
-                TextColumn::make('document_number')
+                Tables\Columns\TextColumn::make('document_number')
                     ->label('N°')
                     ->searchable(),
-                TextColumn::make('document_type')
+                Tables\Columns\TextColumn::make('document_type')
                     ->label('Tipo')
                     ->searchable(),
-                TextColumn::make('entity')
+                Tables\Columns\TextColumn::make('entity')
                     ->label('Razon Social')
                     ->searchable(),
-                TextColumn::make('nationality')
+                Tables\Columns\TextColumn::make('nationality')
                     ->label('Nacionalidad')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
 
 //                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('whereHouse.name')
+                Tables\Columns\TextColumn::make('whereHouse.name')
                     ->label('Sucursal')
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('inventory.product.name')
+                Tables\Columns\TextColumn::make('inventory.product.name')
                     ->label('Producto')
 //                    ->wrap(50)
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('inventory.product.unitmeasurement.description')
+                Tables\Columns\TextColumn::make('inventory.product.unitmeasurement.description')
                     ->label('U. Medida')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('operation_type')
+                Tables\Columns\TextColumn::make('operation_type')
                     ->label('Operación')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
 
 
-                TextColumn::make('previous_stock')
+                Tables\Columns\TextColumn::make('previous_stock')
                     ->label('S. Anterior')
                     ->numeric()
                     ->extraAttributes(['class' => ' color-success bg-success-200']) // Agregar clases CSS para el borde
                     ->sortable(),
                 ColumnGroup::make('DETALLE DE UNIDADES ( CANT)', [
-                    TextColumn::make('stock_in')
+                    Tables\Columns\TextColumn::make('stock_in')
                         ->label('Entrada')
                         ->numeric()
                         ->color('success') // 🟢 Aplica color de texto verde estilo Filament
@@ -178,7 +171,7 @@ class KardexResource extends Resource
 //                        ->extraAttributes(['class' => 'bg-success-200']) // Agregar clases CSS para el borde
 
                         ->sortable(),
-                    TextColumn::make('stock_out')
+                    Tables\Columns\TextColumn::make('stock_out')
                         ->label('Salida')
                         ->numeric()
                         ->sortable()
@@ -186,7 +179,7 @@ class KardexResource extends Resource
                         ->color('danger') // 🔴 Aplica color de texto rojo estilo Filament
                         ->formatStateUsing(fn ($state) => number_format($state, 2)), // formato numérico
 
-                    TextColumn::make('stock_actual')
+                    Tables\Columns\TextColumn::make('stock_actual')
                         ->label('Existencia')
                         ->numeric()
                         ->summarize(Sum::make()
@@ -196,8 +189,8 @@ class KardexResource extends Resource
                         )
                         ->sortable(),
                 ]),
-                TextColumn::make('purchase_price')
-                    ->money('USD', locale: 'USD')
+                Tables\Columns\TextColumn::make('purchase_price')
+                    ->money('USD', locale: 'en_US')
                     ->label('Costo')
                     ->sortable(),
 //                Tables\Columns\TextColumn::make('promedial_cost')
@@ -224,11 +217,11 @@ class KardexResource extends Resource
 //                    ->label('Precio')
 //                    ->sortable(),
 
-                TextColumn::make('created_at')
+                Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
+                Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -250,7 +243,7 @@ class KardexResource extends Resource
 
                 Filter::make('inventory_id')
                     ->label('Inventario ID')
-                    ->schema([
+                    ->form([
                         TextInput::make('inventory_id')
                             ->inlineLabel(false)
                             ->label('Inventario')
@@ -260,48 +253,20 @@ class KardexResource extends Resource
                         if (!empty($data['inventory_id'])) {
                             $query->where('inventory_id', $data['inventory_id']);
                         }
-                    }),
-                Filter::make('Buscar por sucursal')
-                    ->schema([
-                        Select::make('branch_id')
-                            ->label('Sucursal')
-                            ->inlineLabel(false)
-                            ->relationship('wherehouse', 'name')
-                            ->preload()
-                            ->default(fn () => Auth::user()->employee->branch_id)
-//                            ->visible(fn () => Auth::user()->hasRole(['super_admin','manager'])),
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        return $query
-                            ->when($data['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id));
-                    }),
+                    })
 
 
             ],layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(3)
-            ->recordActions([
+            ->filtersFormColumns(2)
+            ->actions([
                 DeleteAction::make('delete')
                     ->label('')
-
                     ->icon('heroicon-o-trash'),
                 ViewAction::make()->label(''),
 //                Tables\Actions\EditAction::make('edit')->label(''),
-            ], position: RecordActionsPosition::BeforeCells)
-            ->toolbarActions([
-                BulkActionGroup::make([
-//                    Tables\Actions\DeleteBulkAction::make(),
-                    ExportAction::make()
-                        ->exports([
-                            ExcelExport::make()
-                                ->fromTable()
-                                ->withFilename(fn($resource) => $resource::getModelLabel() . '-' . date('Y-m-d'))
-                                ->withWriterType(Excel::XLSX)
-                                ->withColumns([
-                                    Column::make('updated_at'),
-                                ]),
+            ])
+            ->bulkActions([
 
-                        ]),
-                ]),
             ]);
     }
 
