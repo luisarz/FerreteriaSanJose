@@ -2,70 +2,65 @@
 
 namespace App\Filament\Auth;
 
-use Filament\Auth\Pages\Login;
-use Filament\Schemas\Components\Component;
-use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use App\Models\Employee;
-use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
-use Filament\Facades\Filament;
+use Filament\Auth\Pages\Login;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Schema;
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 
 class CustomLogin extends Login
 {
+    // Estado del formulario
+//    public array $data = [];
+    public ?array $data = null;
 
-    protected function getForms(): array
+    /**
+     * Define el formulario de login
+     */
+    public function form(Schema $schema): Schema
     {
-        return [
-            'form' => $this->form(
-                $this->makeForm()
-                    ->components([
-                        $this->getLoginFormComponent(),
-                        $this->getPasswordFormComponent(),
-                        $this->getRememberFormComponent(),
-                    ])->statePath('data')
-            )
-        ];
+        return $schema
+            ->components([
+                TextInput::make('login')
+                    ->label(__('Usuario / Correo'))
+                    ->required()
+                    ->autofocus()
+                    ->extraAttributes(['tabindex' => 1]),
+
+                TextInput::make('password')
+                    ->label('Contraseña')
+                    ->password()
+                    ->revealable() // ✅ botón mostrar/ocultar automático
+                    ->autocomplete('current-password')
+                    ->required()
+                    ->extraAttributes(['tabindex' => 2]),
+
+                $this->getRememberFormComponent(),
+            ])
+            ->statePath('data');
     }
 
-    protected function getLoginFormComponent(): Component
-
-    {
-        return TextInput::make('login')
-            ->label(__('Usuario / Correo'))
-            ->inlineLabel(false)
-            ->required()
-            ->autofocus()
-            ->extraAttributes(['tabindex' => '1']);
-
-    }
-
-    protected function getPasswordFormComponent(): Component
-    {
-        return TextInput::make('password')
-            ->label('Contraseña')
-            ->password()
-            ->inlineLabel(false)
-            ->revealable(filament()->arePasswordsRevealable())
-            ->autocomplete('current-password')
-            ->required()
-            ->extraInputAttributes(['tabindex' => 2]);
-    }
-
+    /**
+     * Convierte los datos del formulario en credenciales
+     */
     protected function getCredentialsFromFormData(array $data): array
     {
-        $login_type = filter_var($data['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+        $loginType = filter_var($data['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+
         return [
-            $login_type => $data['login'],
+            $loginType => $data['login'],
             'password' => $data['password'],
         ];
     }
 
+    /**
+     * Lanza excepción si falla el login
+     */
     protected function throwFailureValidationException(): never
     {
         throw ValidationException::withMessages([
@@ -73,36 +68,42 @@ class CustomLogin extends Login
         ]);
     }
 
+    /**
+     * Autentica al usuario
+     */
     public function authenticate(): ?LoginResponse
     {
         try {
             $this->rateLimit(5);
         } catch (TooManyRequestsException $exception) {
             $this->getRateLimitedNotification($exception)?->send();
-
             return null;
         }
 
+        // ✅ Estado del formulario en Filament 4
+//        $data = $this->data;
         $data = $this->form->getState();
 
         if (!Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
             $this->throwFailureValidationException();
         }
+
         $user = Filament::auth()->user();
-        activity()
-            ->causedBy(auth()->user())
-            ->event('login')
-            ->performedOn($user)
-            ->withProperties(['ip' => request()->ip(), 'browser' => request()->header('User-Agent')])
-            ->log('Inicio de session del usuario.' . $user->email);
 
         if (($user instanceof FilamentUser) && (!$user->canAccessPanel(Filament::getCurrentOrDefaultPanel()))) {
             Filament::auth()->logout();
             $this->throwFailureValidationException();
         }
+
         session()->regenerate();
+
+        $empleado = Auth::user()->employee->id;
+        $empleado = Employee::with('wherehouse')->find($empleado);
+        $sucursal_actual = $empleado->wherehouse->name;
+        session()->put('sucursal_id', $empleado->wherehouse->id);
+        session()->put('sucursal_actual', $sucursal_actual);
+        session()->put('empleado', $empleado->name);
+
         return app(LoginResponse::class);
     }
-
-
 }

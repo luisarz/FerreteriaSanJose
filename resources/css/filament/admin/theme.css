@@ -1,30 +1,239 @@
-@import '/vendor/filament/filament/resources/css/theme.css';
+/*@import '../../../../vendor/resma/filament-awin-theme/resources/css/theme.css';*/
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
 
-@config 'tailwind.config.js';
-.fi-ta-table > thead > tr {
-    @apply divide-x divide-gray-200 dark:divide-white/5;
+
+
+
+.fi-sidebar-nav-groups {
+    row-gap: 7px !important;
+}
+@theme inline {
+    --color-gray-50: var(--color-slate-50);
+    --color-gray-100: var(--color-slate-100);
+    --color-gray-200: var(--color-slate-200);
+    --color-gray-300: var(--color-slate-300);
+    --color-gray-400: var(--color-slate-400);
+    --color-gray-500: var(--color-slate-500);
+    --color-gray-600: var(--color-slate-600);
+    --color-gray-700: var(--color-slate-700);
+    --color-gray-800: var(--color-slate-800);
+    --color-gray-900: var(--color-slate-900);
+    --color-gray-950: var(--color-slate-950);
 }
 
-.fi-ta-row {
-    @apply divide-x divide-gray-200 dark:divide-white/5;
+.fi-body {
+    @apply bg-white dark:bg-gray-800
 }
 
-.fi-topbar > nav {
-    @apply !bg-inherit ring-0 shadow-none;
+.fi-simple-main-ctn {
+    @apply bg-gray-100 dark:bg-gray-900
 }
 
-.fi-sidebar-header {
-    @apply !bg-inherit ring-0 shadow-none;
+.fi-simple-main {
+    @apply ring-0 shadow-none bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 border border-gray-300 dark:border-gray-700 relative before:absolute before:inset-1 before:rounded-[calc(var(--radius-2xl)-var(--spacing))]  before:border before:bg-white dark:before:bg-gray-800 before:border-gray-300 dark:before:border-gray-700 ;
 }
 
-/*.fi-sidebar-item-active > a {*/
-/*    @apply bg-indigo-500;*/
+.fi-simple-page-content {
+    @apply relative z-10
+}
 
-/*    & > svg, span {*/
-/*        @apply text-white;*/
-/*    }*/
+.fi-main-ctn {
+    @apply bg-gray-100 dark:bg-gray-900 h-[calc(100vh-4rem)] border-t border-s border-gray-300 dark:border-gray-700 overflow-y-auto sm:rounded-ss-4xl;
+}
 
-/*    &:hover {*/
-/*        @apply bg-indigo-400;*/
-/*    }*/
-/*}*/
+.fi-body.fi-body-has-top-navigation .fi-main-ctn {
+    @apply rounded-ss-none;
+}
+
+.fi-body.fi-body-has-sidebar-fully-collapsible-on-desktop .fi-main-ctn:not(.fi-main-ctn-sidebar-open) {
+    @apply  rounded-ss-none;
+}
+
+.fi-global-search-results-ctn {
+    @apply rounded-lg border-0;
+}
+
+.fi-global-search-result-group-header {
+    @apply bg-gray-100 dark:bg-gray-700 p-4
+}
+
+.fi-global-search-result-group-results {
+    @apply bg-white dark:bg-gray-800
+}
+
+.fi-tenant-menu-trigger {
+    @apply px-4 rounded-full;
+}
+.fi-sidebar-open .fi-sidebar-item .fi-sidebar-item-btn {
+    @apply px-4 rounded-full;
+}
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn {
+    @apply transition-all duration-300 rounded-full shadow-sm bg-primary-600 dark:bg-primary-500;
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-grouped-border-part {
+    @apply transition-all duration-300 bg-gray-50 dark:bg-gray-800;
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn .fi-sidebar-item-label,
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn .fi-sidebar-item-icon {
+    @apply text-primary-50;
+}
+
+.fi-sidebar-item > .fi-sidebar-item-btn {
+    @apply hover:bg-gray-100 dark:hover:bg-gray-700 hover:transition-all hover:duration-300 hover:rounded-full;
+}
+
+.fi-sidebar-item:hover .fi-sidebar-item-btn .fi-sidebar-item-label,
+.fi-sidebar-item:hover .fi-sidebar-item-btn .fi-sidebar-item-icon {
+    @apply text-gray-800 transition-all duration-300 dark:text-gray-200;
+}
+
+
+.fi-sidebar-item:hover.fi-active .fi-sidebar-item-btn {
+    @apply bg-primary-500 dark:bg-primary-600;
+}
+
+.fi-sidebar-item:hover.fi-active .fi-sidebar-item-grouped-border-part {
+    @apply transition-all duration-300 bg-gray-50 dark:bg-gray-800;
+}
+
+.fi-sidebar-item:hover.fi-active .fi-sidebar-item-btn .fi-sidebar-item-label,
+.fi-sidebar-item:hover.fi-active .fi-sidebar-item-btn .fi-sidebar-item-icon {
+    @apply transition duration-200 text-gray-50;
+}
+
+.fi-sidebar-item .fi-sidebar-item-badge-ctn .fi-badge{
+    @apply text-white rounded-full bg-primary-600 dark:bg-primary-500;
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-badge-ctn .fi-badge{
+    @apply bg-primary-50 text-primary-900 ;
+}
+
+.fi-topbar {
+    @apply ring-0 shadow-none bg-white dark:bg-gray-800
+}
+
+.fi-topbar-item .fi-topbar-item-btn {
+    @apply rounded-full px-4;
+}
+
+.fi-topbar-item.fi-active .fi-topbar-item-btn {
+    @apply bg-primary-600 dark:bg-primary-500 transition-all duration-300 rounded-full shadow-sm;
+}
+
+.fi-topbar-item.fi-active .fi-topbar-item-label,
+.fi-topbar-item.fi-active .fi-topbar-item-icon {
+    @apply text-primary-50;
+}
+.fi-topbar-item .fi-topbar-item-btn .fi-badge {
+    @apply rounded-full bg-primary-600 dark:bg-primary-500 text-white;
+}
+
+.fi-topbar-item.fi-active .fi-topbar-item-btn .fi-badge {
+    @apply bg-primary-50  text-primary-900;
+}
+
+.fi-topbar-item.fi-active .fi-topbar-group-toggle-icon {
+    @apply text-primary-50;
+}
+
+.fi-topbar-nav-groups .fi-dropdown .fi-badge {
+    @apply rounded-full bg-primary-600 dark:bg-primary-500 text-white;
+}
+
+
+.fi-section {
+    @apply bg-white dark:bg-gray-800 rounded-[calc(var(--radius-2xl)-var(--spacing))]  border border-gray-300 dark:border-gray-700 p-1 ring-0 shadow-none;
+}
+
+.fi-sc-section{
+    @apply p-1 border border-gray-300 bg-gray-50 dark:bg-gray-800 rounded-2xl dark:border-gray-700;
+}
+
+/*Modal*/
+.fi-modal-window {
+    @apply rounded-2xl;
+}
+/*Notifictions*/
+.fi-no-database .fi-no-notification-unread-ctn::before {
+    @apply bg-white dark:bg-gray-800 -z-10 inset-1 rounded-[calc(var(--radius-2xl)-var(--spacing))]  border border-gray-300  w-[calc(100%-0.5rem)] h-[calc(100%-0.5rem)] ;
+}
+
+.fi-no-database .fi-no-notification-unread-ctn {
+    @apply relative z-0 mx-3 my-1.5 border border-gray-300 bg-gray-50 dark:bg-gray-800 rounded-2xl dark:border-gray-700 dark:before:bg-gray-800 dark:before:border-gray-700;
+}
+/*dropdown*/
+.fi-dropdown-panel {
+    @apply rounded-2xl dark:bg-gray-800;
+}
+
+/*Tabs*/
+.fi-tabs {
+    @apply relative z-10 p-3 shadow-none ring-0 border rounded-2xl border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 before:absolute before:inset-1 before:bg-white dark:before:bg-gray-800 before:border before:border-gray-300 dark:before:border-gray-700 before:rounded-[calc(var(--radius-2xl)-var(--spacing))] before:-z-10;
+}
+
+/*Tables*/
+.fi-ta{
+    @apply bg-gray-50 dark:bg-gray-800 p-1 border border-gray-300 dark:border-gray-700 rounded-2xl;
+}
+.fi-ta-ctn {
+    @apply bg-white dark:bg-gray-800 rounded-[calc(var(--radius-2xl)-var(--spacing))]  border border-gray-300 dark:border-gray-700 ring-0 shadow-none
+}
+
+.fi-ta-ctn .fi-ta-header-toolbar {
+    @apply border-0;
+}
+
+.fi-dropdown .fi-icon-btn-badge-ctn {
+    @apply dark:bg-gray-800;
+}
+/* Grupo con hijo activo → resaltado sutil */
+.fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-btn {
+    @apply bg-gray-100 dark:bg-gray-800 text-primary-600 dark:text-primary-400
+    font-semibold rounded-lg;
+}
+
+/* Ícono y texto del grupo */
+.fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-btn .fi-sidebar-group-label,
+.fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-btn .fi-icon {
+    @apply text-primary-600 dark:text-primary-400;
+}
+
+/* Hijo activo → resaltado fuerte */
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn {
+    @apply bg-primary-600 dark:bg-primary-500 text-white font-medium shadow-sm;
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn .fi-sidebar-item-label,
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn .fi-sidebar-item-icon {
+    @apply text-white;
+}
+
+/* Hover en grupo padre */
+.fi-sidebar-group .fi-sidebar-group-btn:hover {
+    @apply bg-gray-200 dark:bg-gray-700 text-primary-600 dark:text-primary-400 transition-all duration-300 rounded-lg;
+}
+
+/* Hover en ícono y label del padre */
+.fi-sidebar-group .fi-sidebar-group-btn:hover .fi-sidebar-group-label,
+.fi-sidebar-group .fi-sidebar-group-btn:hover .fi-icon {
+    @apply text-primary-600 dark:text-primary-400 transition-colors duration-300;
+}
+
+/* Evitar que el hover sobrescriba el estado activo del padre */
+.fi-sidebar-group.fi-active .fi-sidebar-group-btn:hover {
+    @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.fi-sidebar-group.fi-active .fi-sidebar-group-btn:hover .fi-sidebar-group-label,
+.fi-sidebar-group.fi-active .fi-sidebar-group-btn:hover .fi-icon {
+    @apply text-primary-600 dark:text-primary-400;
+}
+
+label.fi-fo-field-label>span.fi-fo-field-label-content {
+    @apply text-xs;
+}

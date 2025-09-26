@@ -10,17 +10,16 @@
   "require": {
     "php": "^8.2",
     "ext-curl": "*",
-    "barryvdh/laravel-dompdf": "^3.0",
-    "bezhansalleh/filament-shield": "4.0.0-beta2",
+    "barryvdh/laravel-dompdf": "^v3.1.1",
+    "bezhansalleh/filament-shield": "^4.0.1",
     "filament/filament": "~4.0",
-    "laravel/framework": "^11.9",
+    "laravel/framework": "v12.29.0",
     "laravel/tinker": "^2.9",
-    "league/flysystem-aws-s3-v3": "3.0",
     "livewire/livewire": "^3.4",
     "livewire/volt": "^1.0",
     "luecano/numero-a-letras": "^4.0",
-    "malzariey/filament-daterangepicker-filter": "4.0.6",
-    "psr/simple-cache": "2.0",
+    "malzariey/filament-daterangepicker-filter": "^4.0",
+    "psr/simple-cache": "^3.0",
     "simplesoftwareio/simple-qrcode": "^4.2"
   },
   "require-dev": {
