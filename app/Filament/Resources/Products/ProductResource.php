@@ -227,17 +227,14 @@ class ProductResource extends Resource
                 TextColumn::make('id')
                     ->label('Codigo')
                     ->sortable()
+                    ->searchable()
                     ->wrap(),
-                    //->searchable(),
                 TextColumn::make('name')
                     ->label('Producto')
-//                                    ->weight(FontWeight::SemiBold)
                     ->sortable()
-//                                    ->icon('heroicon-s-cube')
+                    ->searchable()
                     ->wrap()
-//                                    ->formatStateUsing(fn($state, $record) => $record->deleted_at ? "<span style='text-decoration: line-through; color: red;'>$state</span>" : $state)
                     ->html(),
-                    //->searchable(),
                 TextColumn::make('unitMeasurement.description')
                     ->label('Presentación')
 //                    ->icon('heroicon-s-scale')
@@ -270,10 +267,9 @@ class ProductResource extends Resource
 
 
                 TextColumn::make('bar_code')
-//                    ->icon('heroicon-s-code-bracket-square')
                     ->label('C. Barras')
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    //->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
 
 
@@ -295,40 +291,22 @@ class ProductResource extends Resource
 //                'xs' => 4,
 //            ])
             ->paginationPageOptions([
-                5, 10, 25, 50, 100 // Define your specific pagination limits here
+                5, 10, 25, 50, 100
             ])
+            ->searchDebounce('500ms')
             ->filters([
-                Filter::make('product_name')
-                    ->schema([
-                        TextInput::make('value')
-                            ->label('Producto')
-                            ->placeholder('Buscar por nombre o código de barra')
-                            ->live(debounce: 500),
-                    ])
-                    ->query(function ($query, array $data) {
-                        return $query
-                            ->when($data['value'], function ($query, $value) {
-                                $query->where('name', 'like', "{$value}%")
-                                    ->orWhere('bar_code', 'like', "{$value}%");
-                            });
-                    }),
-
                 SelectFilter::make('category_id')
                     ->label('Categoría')
                     ->preload()
-                    ->relationship('category', 'name')
-                    ->options(fn() => Category::pluck('name', 'id')->toArray())
-                    ->default(null),
+                    ->searchable()
+                    ->relationship('category', 'name'),
                 SelectFilter::make('marca_id')
                     ->label('Marca')
                     ->preload()
-                    ->relationship('marca', 'nombre')
-                    ->options(fn() => Marca::pluck('nombre', 'id')->toArray())
-                    ->default(null),
+                    ->searchable()
+                    ->relationship('marca', 'nombre'),
                 TrashedFilter::make(),
-
-            ], layout: FiltersLayout::AboveContent)
-            ->filtersFormColumns(4)
+            ])
             ->persistFiltersInSession()
             ->recordActions([
 

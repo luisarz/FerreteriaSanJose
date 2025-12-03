@@ -78,6 +78,12 @@ class CategoryResource extends Resource
                     ->label('Categoría padre')
                     ->placeholder('Ninguna')
                     ->sortable(),
+                TextColumn::make('products_count')
+                    ->label('Productos')
+                    ->counts('products')
+                    ->badge()
+                    ->color('success')
+                    ->sortable(),
                 IconColumn::make('is_active')
                     ->boolean(),
                 TextColumn::make('commission_percentage')

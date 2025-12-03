@@ -83,6 +83,12 @@ class MarcaResource extends Resource
 
                 TextColumn::make('descripcion')
                     ->searchable(),
+                TextColumn::make('productos_count')
+                    ->label('Productos')
+                    ->counts('productos')
+                    ->badge()
+                    ->color('success')
+                    ->sortable(),
                 ImageColumn::make('imagen')
                     ->disk('public')
                     ->placeholder('Sin imagen')
