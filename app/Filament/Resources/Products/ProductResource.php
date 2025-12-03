@@ -188,6 +188,12 @@ class ProductResource extends Resource
                             ->directory('products')
                             ->image()
                             ->openable()
+                            ->imageEditor()
+                            ->imageResizeMode('cover')
+                            ->imageResizeTargetWidth(800)
+                            ->imageResizeTargetHeight(800)
+                            ->maxSize(1024) // 1MB máximo
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->columnSpanFull(),
 
                     ])->columns(2)
