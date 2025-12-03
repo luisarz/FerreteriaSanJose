@@ -60,7 +60,16 @@ class ListInventories extends ListRecords
 
                     $url = route('inventory.counting.pdf', $params);
 
-                    return redirect()->away($url);
+                    return Notification::make()
+                        ->title('PDF generado')
+                        ->body('Haz clic para abrir la hoja de conteo.')
+                        ->success()
+                        ->actions([
+                            \Filament\Notifications\Actions\Action::make('Abrir PDF')
+                                ->button()
+                                ->url($url, shouldOpenInNewTab: true)
+                        ])
+                        ->send();
                 }),
 //            ExportAction::make()
 //                ->exports([
