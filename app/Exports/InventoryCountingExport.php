@@ -8,12 +8,14 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Generator;
 
-class InventoryCountingExport implements FromGenerator, WithHeadings, WithStyles, WithTitle, WithColumnWidths, WithEvents
+class InventoryCountingExport implements FromGenerator, WithHeadings, WithStyles, WithTitle, WithColumnWidths, WithColumnFormatting, WithEvents
 {
     protected int $branchId;
     protected string $branchName;
@@ -75,9 +77,12 @@ class InventoryCountingExport implements FromGenerator, WithHeadings, WithStyles
                 ];
             }
 
+            // Forzar código como texto agregando apóstrofe invisible
+            $codigo = $inventory->bar_code ?: 'COD-' . $inventory->product_id;
+
             yield [
                 $index++,
-                $inventory->bar_code ?: 'COD-' . $inventory->product_id,
+                "'" . $codigo, // Apóstrofe fuerza texto en Excel
                 $inventory->product_name . ($inventory->marca_name ? ' (' . $inventory->marca_name . ')' : ''),
                 $inventory->unit_description ?? 'N/A',
                 number_format($inventory->stock, 2),
@@ -111,12 +116,19 @@ class InventoryCountingExport implements FromGenerator, WithHeadings, WithStyles
     {
         return [
             'A' => 8,
-            'B' => 15,
+            'B' => 18,
             'C' => 50,
             'D' => 12,
             'E' => 12,
             'F' => 12,
             'G' => 12,
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'B' => NumberFormat::FORMAT_TEXT, // Código como texto
         ];
     }
 
