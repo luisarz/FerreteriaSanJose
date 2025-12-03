@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Inventories\Pages;
 
+use App\Models\Category;
+use App\Models\Marca;
 use Filament\Notifications\Notification;
 use App\Filament\Resources\Inventories\InventoryResource;
 use Filament\Actions;
@@ -24,6 +26,42 @@ class ListInventories extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('counting_pdf')
+                ->label('Hoja de Conteo')
+                ->tooltip('Generar PDF para conteo de inventario')
+                ->icon('heroicon-o-clipboard-document-list')
+                ->iconSize(IconSize::Large)
+                ->color('info')
+                ->modalHeading('Generar Hoja de Conteo de Inventario')
+                ->modalDescription('Seleccione los filtros para generar la hoja de conteo. Deje en blanco para incluir todos los productos.')
+                ->modalSubmitActionLabel('Generar PDF')
+                ->schema([
+                    Select::make('category_id')
+                        ->label('Categoría')
+                        ->placeholder('Todas las categorías')
+                        ->options(fn () => Category::whereNotNull('parent_id')->orderBy('name')->pluck('name', 'id'))
+                        ->searchable()
+                        ->preload(),
+                    Select::make('marca_id')
+                        ->label('Marca')
+                        ->placeholder('Todas las marcas')
+                        ->options(fn () => Marca::where('estado', true)->orderBy('nombre')->pluck('nombre', 'id'))
+                        ->searchable()
+                        ->preload(),
+                ])->action(function (array $data) {
+                    $params = [];
+
+                    if (!empty($data['category_id'])) {
+                        $params['category_id'] = $data['category_id'];
+                    }
+                    if (!empty($data['marca_id'])) {
+                        $params['marca_id'] = $data['marca_id'];
+                    }
+
+                    $url = route('inventory.counting.pdf', $params);
+
+                    return redirect()->away($url);
+                }),
 //            ExportAction::make()
 //                ->exports([
 //                    ExcelExport::make()
