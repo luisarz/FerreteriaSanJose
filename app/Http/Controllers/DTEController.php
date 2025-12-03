@@ -1271,157 +1271,135 @@ class DTEController extends Controller
     public
     function printDTETicket($codGeneracion)
     {
-        $fileName = "/DTEs/{$codGeneracion}.json";
-        if (Storage::disk('public')->exists($fileName)) {
-            $fileContent = Storage::disk('public')->get($fileName);
-            $DTE = json_decode($fileContent, true); // Decodificar JSON en un array asociativo
-            $tipoDocumento = $DTE['identificacion']['tipoDte'] ?? 'DESCONOCIDO';
-            $logo = auth()->user()->employee->wherehouse->logo;
-            $tiposDTE = [
-                '03' => 'COMPROBANTE DE CREDITO  FISCAL',
-                '01' => 'FACTURA',
-                '04' => 'NOTA DE REMISION',
-                '05' => 'NOTA DE CREDITO',
-                '06' => 'NOTA DE DEBITO',
-                '07' => 'COMPROBANTE DE RETENCION',
-                '08' => 'COMPROBANTE DE LIQUIDACION',
-                '11' => 'FACTURA DE EXPORTACION',
-                '14' => 'SUJETO EXCLUIDO'
-            ];
-            $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
-            $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
+        // Leer directamente de la base de datos
+        $historyDte = HistoryDte::where('codigoGeneracion', $codGeneracion)->first();
 
-            $datos = [
-                'empresa' => $DTE["emisor"], // O la función correspondiente para cargar datos globales de la empresa.
-                'DTE' => $DTE,
-                'tipoDocumento' => $tipoDocumento,
-                'logo' => Storage::url($logo),
-            ];
-
-            // dd($datos['logo']);
-
-            $directory = storage_path('app/public/QR');
-
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true); // Create the directory with proper permissions
-            }
-            $path = $directory . '/' . $DTE['identificacion']['codigoGeneracion'] . '.jpg';
-
-
-            QrCode::size(300)->generate($contenidoQR, $path);
-            if (file_exists($path)) {
-                $qr = Storage::url("QR/{$DTE['identificacion']['codigoGeneracion']}.jpg");
-            } else {
-                throw new Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
-            }
-
-            $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
-
-            $pdf = Pdf::loadView('DTE.dte-print-ticket', compact('datos', 'qr'))
-                ->setOptions([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => !$isLocalhost,
-                ]);
-
-            $pdfPage = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
-                ->setOptions([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => !$isLocalhost,
-                ]);
-
-            $pathPage = storage_path("app/public/DTEs/{$codGeneracion}.pdf");
-
-
-            $pdfPage->save($pathPage);
-            $pdf->set_paper(array(0, 0, 250, 1000)); // Custom paper size
-
-            return $pdf->stream("{$codGeneracion}.pdf");
-        } else {
-            $jsonResponse = $this->getDTE($codGeneracion);
-            $this->saveRestoreJson($jsonResponse->original['dte'], $codGeneracion);
+        if (!$historyDte || !$historyDte->dte) {
             return [
                 'estado' => 'Error',
-                'mensaje' => 'El Archivo no existe, pero fue solicitado a hacienda, por favor intente nuevamente (refresque el navegador)',
+                'mensaje' => 'El DTE no existe en la base de datos',
             ];
-
         }
 
+        $DTE = is_array($historyDte->dte) ? $historyDte->dte : json_decode($historyDte->dte, true);
+        $tipoDocumento = $DTE['identificacion']['tipoDte'] ?? 'DESCONOCIDO';
+        $logo = auth()->user()->employee->wherehouse->logo;
+        $tiposDTE = [
+            '03' => 'COMPROBANTE DE CREDITO  FISCAL',
+            '01' => 'FACTURA',
+            '04' => 'NOTA DE REMISION',
+            '05' => 'NOTA DE CREDITO',
+            '06' => 'NOTA DE DEBITO',
+            '07' => 'COMPROBANTE DE RETENCION',
+            '08' => 'COMPROBANTE DE LIQUIDACION',
+            '11' => 'FACTURA DE EXPORTACION',
+            '14' => 'SUJETO EXCLUIDO'
+        ];
+        $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
+        $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
+        $datos = [
+            'empresa' => $DTE["emisor"],
+            'DTE' => $DTE,
+            'tipoDocumento' => $tipoDocumento,
+            'logo' => Storage::url($logo),
+        ];
+
+        // Crear QR en carpeta temporal
+        $directory = storage_path('app/temp/QR');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        $qrPath = $directory . '/' . $codGeneracion . '.jpg';
+        QrCode::size(300)->generate($contenidoQR, $qrPath);
+
+        if (!file_exists($qrPath)) {
+            throw new Exception("Error: El archivo QR no fue guardado correctamente");
+        }
+
+        // Usar ruta absoluta para el QR en el PDF
+        $qr = $qrPath;
+
+        $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
+
+        $pdf = Pdf::loadView('DTE.dte-print-ticket', compact('datos', 'qr'))
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => !$isLocalhost,
+            ]);
+
+        $pdf->set_paper(array(0, 0, 250, 1000));
+
+        // Limpiar QR temporal después de generar PDF
+        @unlink($qrPath);
+
+        return $pdf->stream("{$codGeneracion}.pdf");
     }
 
     public
     function printDTEPdf($codGeneracion)
     {
+        // Leer directamente de la base de datos
+        $historyDte = HistoryDte::where('codigoGeneracion', $codGeneracion)->first();
 
-        $fileName = "/DTEs/{$codGeneracion}.json";
-
-        if (Storage::disk('public')->exists($fileName)) {
-            $fileContent = Storage::disk('public')->get($fileName);
-            $DTE = json_decode($fileContent, true); // Decodificar JSON en un array asociativo
-            $tipoDocumento = $DTE['identificacion']['tipoDte'] ?? 'DESCONOCIDO';
-            $logo = auth()->user()->employee->wherehouse->logo;
-            $tiposDTE = [
-                '03' => 'COMPROBANTE DE CREDITO  FISCAL',
-                '01' => 'FACTURA',
-                '02' => 'NOTA DE DEBITO',
-                '04' => 'NOTA DE CREDITO',
-                '05' => 'LIQUIDACION DE FACTURA',
-                '06' => 'LIQUIDACION DE FACTURA SIMPLIFICADA',
-                '08' => 'COMPROBANTE LIQUIDACION',
-                '09' => 'DOCUMENTO CONTABLE DE LIQUIDACION',
-                '11' => 'FACTURA DE EXPORTACION',
-                '14' => 'SUJETO EXCLUIDO',
-                '15' => 'COMPROBANTE DE DONACION'
-            ];
-            $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
-            $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
-
-            $datos = [
-                'empresa' => $DTE["emisor"], // O la función correspondiente para cargar datos globales de la empresa.
-                'DTE' => $DTE,
-                'tipoDocumento' => $tipoDocumento,
-                'logo' => Storage::url($logo),
-            ];
-
-
-            $directory = storage_path('app/public/QR');
-
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true); // Create the directory with proper permissions
-            }
-            $path = $directory . '/' . $DTE['identificacion']['codigoGeneracion'] . '.jpg';
-
-
-            QrCode::size(300)->generate($contenidoQR, $path);
-
-            if (file_exists($path)) {
-                $qr = Storage::url("QR/{$DTE['identificacion']['codigoGeneracion']}.jpg");
-            } else {
-                throw new Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
-            }
-            $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
-
-            $pdf = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
-                ->setOptions([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => !$isLocalhost,
-                ]);
-
-            $pathPage = storage_path("app/public/DTEs/{$codGeneracion}.pdf");
-
-            $pdf->save($pathPage);
-            return $pdf->stream("{$codGeneracion}.pdf"); // El PDF se abre en una nueva pestaña
-        } else {
-            $jsonResponse = $this->getDTE($codGeneracion);
-            $this->saveRestoreJson($jsonResponse->original['dte'], $codGeneracion);
+        if (!$historyDte || !$historyDte->dte) {
             return [
                 'estado' => 'Error',
-                'mensaje' => 'El Archivo no existe, pero fue solicitado a hacienda, por favor intente nuevamente (refresque el navegador)',
+                'mensaje' => 'El DTE no existe en la base de datos',
             ];
-
         }
 
+        $DTE = is_array($historyDte->dte) ? $historyDte->dte : json_decode($historyDte->dte, true);
+        $tipoDocumento = $DTE['identificacion']['tipoDte'] ?? 'DESCONOCIDO';
+        $logo = auth()->user()->employee->wherehouse->logo;
+        $tiposDTE = [
+            '03' => 'COMPROBANTE DE CREDITO  FISCAL',
+            '01' => 'FACTURA',
+            '02' => 'NOTA DE DEBITO',
+            '04' => 'NOTA DE CREDITO',
+            '05' => 'LIQUIDACION DE FACTURA',
+            '06' => 'LIQUIDACION DE FACTURA SIMPLIFICADA',
+            '08' => 'COMPROBANTE LIQUIDACION',
+            '09' => 'DOCUMENTO CONTABLE DE LIQUIDACION',
+            '11' => 'FACTURA DE EXPORTACION',
+            '14' => 'SUJETO EXCLUIDO',
+            '15' => 'COMPROBANTE DE DONACION'
+        ];
+        $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
+        $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
+        $datos = [
+            'empresa' => $DTE["emisor"],
+            'DTE' => $DTE,
+            'tipoDocumento' => $tipoDocumento,
+            'logo' => Storage::url($logo),
+        ];
+
+        // Crear QR en carpeta temporal
+        $directory = storage_path('app/temp/QR');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        $qrPath = $directory . '/' . $codGeneracion . '.jpg';
+        QrCode::size(300)->generate($contenidoQR, $qrPath);
+
+        if (!file_exists($qrPath)) {
+            throw new Exception("Error: El archivo QR no fue guardado correctamente");
+        }
+
+        $qr = $qrPath;
+        $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
+
+        $pdf = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => !$isLocalhost,
+            ]);
+
+        // Limpiar QR temporal
+        @unlink($qrPath);
+
+        return $pdf->stream("{$codGeneracion}.pdf");
     }
 
     public
@@ -1481,16 +1459,14 @@ class DTEController extends Controller
     function saveJson(mixed $responseData, $idVenta, $enviado_hacienda): void
     {
         $codGeneration = $responseData['respuestaHacienda']['codigoGeneracion'] ?? $responseData['identificacion']['codigoGeneracion'] ?? null;
-        $fileName = "DTEs/{$codGeneration}.json";
 
-        $jsonContent = json_encode($responseData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        Storage::disk('public')->put($fileName, $jsonContent);
-
+        // Ya no guardamos archivo físico - el JSON está en history_dtes.dte
+        // Solo actualizamos la venta con el código de generación
         $venta = Sale::find($idVenta);
         $venta->is_dte = true;
         $venta->is_hacienda_send = $enviado_hacienda;
         $venta->generationCode = $codGeneration ?? null;
-        $venta->jsonUrl = $fileName;
+        $venta->jsonUrl = null; // Ya no usamos archivo físico
         $venta->save();
     }
 

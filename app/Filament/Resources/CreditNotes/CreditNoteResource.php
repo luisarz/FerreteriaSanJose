@@ -48,10 +48,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
-use pxlrbt\FilamentExcel\Columns\Column;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+// Exportación nativa de Filament 4
+use Filament\Actions\ExportAction;
+use Filament\Actions\Exports\Enums\ExportFormat;
 
 function updateTotalNC(mixed $idItem, array $data): void
 {
@@ -518,7 +517,8 @@ class CreditNoteResource extends Resource
             ], position: RecordActionsPosition::BeforeCells)
             ->toolbarActions([
                 BulkActionGroup::make([
-                    ExportBulkAction::make('Exportar'),
+                    // TODO: Implementar exportador para notas de crédito
+                    // ExportAction requiere un Exporter class
                 ]),
             ]);
     }

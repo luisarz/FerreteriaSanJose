@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HistoryDte;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Http\JsonResponse;
 use Exception;
@@ -19,13 +20,11 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportsController extends Controller
 {
-    public function saleReportFact($doctype,$startDate, $endDate): BinaryFileResponse
+    public function saleReportFact($doctype, $startDate, $endDate): BinaryFileResponse
     {
         $startDate = Carbon::parse($startDate);
         $endDate = Carbon::parse($endDate);
         $documentType = intval($doctype);
-
-
 
         return Excel::download(
             new SalesExportFac($documentType, $startDate, $endDate),
@@ -36,65 +35,55 @@ class ReportsController extends Controller
     public function downloadJson($startDate, $endDate): BinaryFileResponse|JsonResponse
     {
         set_time_limit(0);
-        $sales = Sale::select('id')
-            ->where('is_dte', '1')
-            ->whereIn('document_type_id', [1, 3, 5, 11, 14])//1- Fac 3-CCF 5-NC 11-FExportacion 14-Sujeto excluido
-            ->whereBetween('operation_date', [$startDate, $endDate])
-            ->orderBy('operation_date', 'asc')
-            ->with(['dteProcesado' => function ($query) {
-                $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'dte')
-                    ->whereNotNull('selloRecibido');
-            }])
+
+        // Obtener DTEs directamente de history_dtes
+        $historyDtes = HistoryDte::whereNotNull('selloRecibido')
+            ->whereNotNull('dte')
+            ->whereHas('salesInvoice', function ($query) use ($startDate, $endDate) {
+                $query->where('is_dte', '1')
+                    ->whereIn('document_type_id', [1, 3, 5, 11, 14])
+                    ->whereBetween('operation_date', [$startDate, $endDate]);
+            })
             ->get();
 
+        if ($historyDtes->isEmpty()) {
+            return response()->json(['error' => 'No se encontraron DTEs para el rango de fechas especificado.'], 404);
+        }
 
         try {
-
-            $failed = array();
-            $failedCount = 0;
-            //Limpiamops los incorrectos
-            foreach ($sales as $sale) {
-                $codgeneration = $sale->dteProcesado->codigoGeneracion;
-                $filePath = storage_path("app/public/DTEs/{$codgeneration}.json");
-                if (file_exists($filePath) && filesize($filePath) < 2048) {//Eliminar si pesa menos de 2kb
-                    unlink($filePath);
-                    $failedCount++;
-                    $failed [] = $codgeneration;
-                }
+            // Crear directorio temporal
+            $tempDir = storage_path('app/temp/zip_json');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
             }
 
             $zipFileName = 'dte_' . $startDate . '-' . $endDate . '.zip';
-            $zipPath = storage_path("app/public/{$zipFileName}");
+            $zipPath = storage_path("app/temp/{$zipFileName}");
+
             $zip = new ZipArchive;
             if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-                $added = false;
-                foreach ($sales as $sale) {
-                    $codgeneration = $sale->dteProcesado->codigoGeneracion;
-                    $filePath = storage_path("app/public/DTEs/{$codgeneration}.json");
-                    if (file_exists($filePath)) {
-                        $zip->addFile($filePath, "{$codgeneration}.json");
-                        $added = true;
+                $tempFiles = [];
 
-                    } else {
+                foreach ($historyDtes as $historyDte) {
+                    $codGeneracion = $historyDte->codigoGeneracion;
+                    $dte = is_array($historyDte->dte) ? $historyDte->dte : json_decode($historyDte->dte, true);
 
-                        //Lo almacena
-                        $dteController = new DTEController();
-                        $dteController->saveRestoreJson($sale->dteProcesado->dte, $codgeneration);
-                        $filePath = storage_path("app/public/DTEs/{$codgeneration}.json");
-                        if (file_exists($filePath)) {
-                            $zip->addFile($filePath, "{$codgeneration}.json");
-                            $added = true;
-                        }
-                    }
-                }
+                    // Crear archivo temporal
+                    $tempFilePath = $tempDir . '/' . $codGeneracion . '.json';
+                    file_put_contents($tempFilePath, json_encode($dte, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                    $tempFiles[] = $tempFilePath;
 
-                if ($failedCount > 0) {
-                    $failedList = implode("\n", $failed);
-                    $zip->addFromString('README.txt', "No se encontraron archivos JSON para los siguientes archivos:\n{$failedList}");
-
+                    $zip->addFile($tempFilePath, "{$codGeneracion}.json");
                 }
 
                 $zip->close();
+
+                // Limpiar archivos temporales después de cerrar el ZIP
+                foreach ($tempFiles as $tempFile) {
+                    @unlink($tempFile);
+                }
+                @rmdir($tempDir);
+
             } else {
                 return response()->json(['error' => 'No se pudo crear el archivo ZIP.'], 500);
             }
@@ -109,63 +98,55 @@ class ReportsController extends Controller
     public function downloadPdf($startDate, $endDate): BinaryFileResponse|JsonResponse
     {
         set_time_limit(0);
-        $sales = Sale::select('id')
-            ->where('is_dte', '1')
-            ->whereIn('document_type_id', [1, 3, 5, 11, 14])//1- Fac 3-CCF 5-NC 11-FExportacion 14-Sujeto excluido
-            ->whereBetween('operation_date', [$startDate, $endDate])
-            ->orderBy('operation_date', 'asc')
-            ->with(['dteProcesado' => function ($query) {
-                $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'dte')
-                    ->whereNotNull('selloRecibido');
-            }])
+
+        // Obtener DTEs directamente de history_dtes
+        $historyDtes = HistoryDte::whereNotNull('selloRecibido')
+            ->whereNotNull('dte')
+            ->whereHas('salesInvoice', function ($query) use ($startDate, $endDate) {
+                $query->where('is_dte', '1')
+                    ->whereIn('document_type_id', [1, 3, 5, 11, 14])
+                    ->whereBetween('operation_date', [$startDate, $endDate]);
+            })
             ->get();
 
-        try {
+        if ($historyDtes->isEmpty()) {
+            return response()->json(['error' => 'No se encontraron DTEs para el rango de fechas especificado.'], 404);
+        }
 
-            $failed = array();
-            $failedCount = 0;
-            //Limpiamops los incorrectos
-            foreach ($sales as $sale) {
-                $codgeneration = $sale->dteProcesado->codigoGeneracion;
-                $filePath = storage_path("app/public/DTEs/{$codgeneration}.json");
-                if (file_exists($filePath) && filesize($filePath) < 2048) {//Eliminar si pesa menos de 2kb
-                    unlink($filePath);
-                    $failedCount++;
-                    $failed [] = $codgeneration;
-                }
+        try {
+            // Crear directorio temporal
+            $tempDir = storage_path('app/temp/zip_pdf');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
             }
 
             $zipFileName = 'pdf_' . $startDate . '-' . $endDate . '.zip';
-            $zipPath = storage_path("app/public/{$zipFileName}");
+            $zipPath = storage_path("app/temp/{$zipFileName}");
+
             $zip = new ZipArchive;
             if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-                $added = false;
-                foreach ($sales as $sale) {
-                    $codgeneration = $sale->dteProcesado->codigoGeneracion;
-                    $filePath = storage_path("app/public/DTEs/{$codgeneration}.pdf");
-                    if (file_exists($filePath)) {
-                        $zip->addFile($filePath, "{$codgeneration}.pdf");
-                        $added = true;
+                $tempFiles = [];
 
-                    } else {
+                foreach ($historyDtes as $historyDte) {
+                    $codGeneracion = $historyDte->codigoGeneracion;
+                    $dte = is_array($historyDte->dte) ? $historyDte->dte : json_decode($historyDte->dte, true);
 
-                        //Lo almacena
-                        $this->generatePdf($codgeneration);
-                        $filePath = storage_path("app/public/DTEs/{$codgeneration}.pdf");
-                        if (file_exists($filePath)) {
-                            $zip->addFile($filePath, "{$codgeneration}.pdf");
-                            $added = true;
-                        }
+                    // Generar PDF temporal
+                    $tempPdfPath = $this->generateTempPdf($dte, $codGeneracion, $tempDir);
+                    if ($tempPdfPath) {
+                        $tempFiles[] = $tempPdfPath;
+                        $zip->addFile($tempPdfPath, "{$codGeneracion}.pdf");
                     }
                 }
 
-                if ($failedCount > 0) {
-                    $failedList = implode("\n", $failed);
-                    $zip->addFromString('README.txt', "No se encontraron archivos JSON para los siguientes archivos:\n{$failedList}");
-
-                }
-
                 $zip->close();
+
+                // Limpiar archivos temporales después de cerrar el ZIP
+                foreach ($tempFiles as $tempFile) {
+                    @unlink($tempFile);
+                }
+                @rmdir($tempDir);
+
             } else {
                 return response()->json(['error' => 'No se pudo crear el archivo ZIP.'], 500);
             }
@@ -177,18 +158,14 @@ class ReportsController extends Controller
         }
     }
 
-    function generatePdf($codGeneracion): bool
+    private function generateTempPdf(array $DTE, string $codGeneracion, string $tempDir): ?string
     {
-
-        $fileName = "/DTEs/{$codGeneracion}.json";
-
-        if (Storage::disk('public')->exists($fileName)) {
-            $fileContent = Storage::disk('public')->get($fileName);
-            $DTE = json_decode($fileContent, true); // Decodificar JSON en un array asociativo
+        try {
             $tipoDocumento = $DTE['identificacion']['tipoDte'] ?? 'DESCONOCIDO';
             $logo = auth()->user()->employee->wherehouse->logo;
+
             $tiposDTE = [
-                '03' => 'COMPROBANTE DE CREDITO  FISCAL',
+                '03' => 'COMPROBANTE DE CREDITO FISCAL',
                 '01' => 'FACTURA',
                 '02' => 'NOTA DE DEBITO',
                 '04' => 'NOTA DE CREDITO',
@@ -200,32 +177,26 @@ class ReportsController extends Controller
                 '14' => 'SUJETO EXCLUIDO',
                 '15' => 'COMPROBANTE DE DONACION'
             ];
-            $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
+
+            $tipoDocumentoNombre = $tiposDTE[$tipoDocumento] ?? 'DOCUMENTO';
             $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
             $datos = [
-                'empresa' => $DTE["emisor"], // O la función correspondiente para cargar datos globales de la empresa.
+                'empresa' => $DTE["emisor"],
                 'DTE' => $DTE,
-                'tipoDocumento' => $tipoDocumento,
+                'tipoDocumento' => $tipoDocumentoNombre,
                 'logo' => Storage::url($logo),
             ];
 
-
-            $directory = storage_path('app/public/QR');
-
-            if (!file_exists($directory)) {
-                mkdir($directory, 0755, true); // Create the directory with proper permissions
+            // Crear QR temporal
+            $qrDir = storage_path('app/temp/QR');
+            if (!file_exists($qrDir)) {
+                mkdir($qrDir, 0755, true);
             }
-            $path = $directory . '/' . $DTE['identificacion']['codigoGeneracion'] . '.jpg';
+            $qrPath = $qrDir . '/' . $codGeneracion . '.jpg';
+            QrCode::size(300)->generate($contenidoQR, $qrPath);
 
-
-            QrCode::size(300)->generate($contenidoQR, $path);
-
-            if (file_exists($path)) {
-                $qr = Storage::url("QR/{$DTE['identificacion']['codigoGeneracion']}.jpg");
-            } else {
-                throw new Exception("Error: El archivo QR no fue guardado correctamente en {$path}");
-            }
+            $qr = $qrPath;
             $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
 
             $pdf = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
@@ -233,15 +204,18 @@ class ReportsController extends Controller
                     'isHtml5ParserEnabled' => true,
                     'isRemoteEnabled' => !$isLocalhost,
                 ]);
-            $pathPage = storage_path("app/public/DTEs/{$codGeneracion}.pdf");
 
-            $pdf->save($pathPage);
-            return true;
-        } else {
-            return false;
+            $pdfPath = $tempDir . '/' . $codGeneracion . '.pdf';
+            $pdf->save($pdfPath);
+
+            // Limpiar QR temporal
+            @unlink($qrPath);
+
+            return $pdfPath;
+
+        } catch (Exception $e) {
+            return null;
         }
-
-
     }
 
     function searchInArray($clave, $array)
@@ -252,5 +226,4 @@ class ReportsController extends Controller
             return 'Clave no encontrada';
         }
     }
-
 }

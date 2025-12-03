@@ -53,10 +53,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 use Livewire\Component;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
-use pxlrbt\FilamentExcel\Columns\Column;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+// pxlrbt\FilamentExcel no compatible con Filament 4 - usar exportadores nativos
+// use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
+// use pxlrbt\FilamentExcel\Columns\Column;
+// use pxlrbt\FilamentExcel\Exports\ExcelExport;
+// use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use Filament\Support\Enums\MaxWidth;
 use function Filament\Support\format_number;
 
@@ -704,7 +705,7 @@ class SaleResource extends Resource
             ], position: RecordActionsPosition::BeforeCells)
             ->toolbarActions([
                 BulkActionGroup::make([
-                    ExportBulkAction::make('Exportar'),
+                    // TODO: Implementar SaleExporter para exportación
                 ]),
             ]);
     }

@@ -43,7 +43,7 @@ use Livewire\Component;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Infolists\Components\IconEntry;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+// use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction; // No compatible con Filament 4
 
 class OrderResource extends Resource
 {
@@ -355,7 +355,7 @@ class OrderResource extends Resource
             ], position: RecordActionsPosition::BeforeCells)
             ->toolbarActions([
                 BulkActionGroup::make([
-                    ExportBulkAction::make('Exportar'),
+                    // TODO: Implementar exportador para órdenes
                 ]),
             ]);
     }

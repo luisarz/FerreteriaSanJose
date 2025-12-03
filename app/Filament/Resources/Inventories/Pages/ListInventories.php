@@ -12,9 +12,9 @@ use Filament\Forms\Components\Toggle;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Enums\IconSize;
 use Filament\Tables\Actions\Action;
-use pxlrbt\FilamentExcel\Columns\Column;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
-use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
+// use pxlrbt\FilamentExcel\Columns\Column; // No compatible con Filament 4
+// use pxlrbt\FilamentExcel\Exports\ExcelExport;
+// use pxlrbt\FilamentExcel\Actions\Pages\ExportAction;
 
 class ListInventories extends ListRecords
 {

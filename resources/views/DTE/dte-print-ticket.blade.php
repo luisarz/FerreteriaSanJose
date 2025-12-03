@@ -6,239 +6,327 @@
     <title>Documento Tributario Electrónico</title>
     <style>
         body {
-            font-family:  Verdana, sans-serif;
+            font-family: Verdana, sans-serif;
             font-size: 10px;
             margin: 0;
-            padding: 0;
-            display: flex;
+            padding: 10px;
             text-align: center;
-            flex-direction: column;
-            min-height: 100vh;
         }
 
         .header {
             width: 100%;
-            /*text-align: center;*/
+            margin-bottom: 10px;
         }
 
-        .footer {
-            width: 100%;
-            text-align: right;
-            font-size: 12px;
+        .separator {
+            border-top: 1px dashed #000;
+            margin: 8px 0;
         }
 
-        .content {
-            flex: 1;
+        .logo-container {
+            text-align: center;
+            margin-bottom: 10px;
         }
 
-        .header img {
-            width: 100px;
+        .logo-container img {
+            max-width: 120px;
+            height: auto;
         }
 
-        .empresa-info, .documento-info, .tabla-productos, .resumen {
+        .qr-container {
+            text-align: center;
             margin: 10px 0;
         }
 
-        .tabla-productos th, .tabla-productos td {
-            /*padding: 5px;*/
+        .qr-container img {
+            max-width: 100px;
+            height: auto;
         }
 
-        .tabla-productos th {
-            /*background-color: #f2f2f2;*/
+        .empresa-info {
+            text-align: center;
+            margin-bottom: 10px;
         }
 
-        .resumen p {
+        .empresa-info h4 {
             margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .empresa-info p {
+            margin: 3px 0;
+            line-height: 1.3;
+        }
+
+        .documento-info {
+            text-align: left;
+            margin: 10px 0;
+        }
+
+        .documento-info h4 {
+            text-align: center;
+            margin: 8px 0;
+            font-size: 11px;
+        }
+
+        .documento-info h5 {
+            text-align: center;
+            margin: 5px 0;
+            font-size: 10px;
+        }
+
+        .documento-info p {
+            margin: 4px 0;
+            word-wrap: break-word;
+        }
+
+        .cliente-info {
+            text-align: left;
+            margin: 10px 0;
+        }
+
+        .cliente-info p {
+            margin: 3px 0;
+            line-height: 1.4;
+        }
+
+        .tabla-productos {
+            width: 100%;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .tabla-productos .item-row {
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .tabla-productos .item-descripcion {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .tabla-productos .item-detalle {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            padding-left: 10px;
+        }
+
+        .footer {
+            text-align: left;
+            margin-top: 10px;
+            font-size: 9px;
+        }
+
+        .footer table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .footer td {
+            padding: 2px 0;
+        }
+
+        .footer .total-final {
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 2px solid #000;
+        }
+
+        .text-right {
             text-align: right;
         }
 
-        .table {
-            width: 100%;
-            border-collapse: collapse;
+        .text-center {
+            text-align: center;
+        }
+
+        .bold {
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-<!-- Header Empresa -->
-<div class="header">
-    <table style="width: 100%; padding: 0; border-collapse: collapse;">
-        <tr>
-            <td style="width: 50%; text-align: left; vertical-align: middle; padding-right: 10px;">
+    <!-- Logo Empresa -->
+    <div class="logo-container">
+        @if($datos['logo'])
+            <img src="{{ asset($datos['logo']) }}" alt="Logo de la empresa">
+        @endif
+    </div>
 
-                <img src="{{ asset($datos['logo']) }}" alt="Logo de la empresa" style="width: 150px; height: auto;">
+    <!-- Información Empresa -->
+    <div class="empresa-info">
+        <h4>{{ $datos['empresa']['nombre'] }}</h4>
+        <p>
+            NIT: {{ $datos['empresa']['nit'] }}<br>
+            NRC: {{ $datos['empresa']['nrc'] }}<br>
+            {{ $datos['empresa']['descActividad'] }}<br>
+            {{ $datos['empresa']['direccion']['complemento'] }}<br>
+            Teléfono: {{ $datos['empresa']['telefono'] }}
+        </p>
+    </div>
 
-            </td>
-
-
-            <td style="width: 50%; text-align: right; vertical-align: middle; padding-left: 10px;">
-                <img src="{{ asset($qr) }}" alt="QR Código"
-                     style="max-width: 150px; height: auto; margin-left: auto;">
-            </td>
-        </tr>
-    </table>
-
-
-</div>
-<div class="header">
-    <table style="text-align: left; border: black solid 0px; border-radius: 10px;">
-        <tr>
-
-            <td style="text-align: left;">
-                <h4>{{ $datos['empresa']['nombre'] }}</h4>
-                NIT: {{ $datos['empresa']['nit'] }}<br>
-                NRC: {{ $datos['empresa']['nrc'] }}
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" style="font-size: 12px;">
-                {{ $datos['empresa']['descActividad'] }}<br>
-                {{ $datos['empresa']['direccion']['complemento'] }}<br>
-                Teléfono: {{ $datos['empresa']['telefono'] }}
-            </td>
-        </tr>
-    </table>
     @php
         $ext = $datos['DTE']['extencion'] ?? $datos['DTE']['extension'] ?? null;
     @endphp
-    <div style="text-align: left;">Vendedor: {{  $ext['nombEntrega']??'S/N' }}</div>
-    ---------------------------------------------------------------------------
-    <div style="text-align: left">
+    <p style="text-align: left; margin: 8px 0;">
+        <strong>Vendedor:</strong> {{ $ext['nombEntrega'] ?? 'Sin nombre' }}
+    </p>
+
+    <div class="separator"></div>
+
+    <!-- Información del Documento -->
+    <div class="documento-info">
         <h4>DOCUMENTO TRIBUTARIO ELECTRÓNICO</h4>
         <h5>{{ $datos['tipoDocumento'] }}</h5>
-        <b>Código de generación</b> <br>
-        {{ $datos['DTE']['respuestaHacienda']['codigoGeneracion'] ?? $datos['DTE']['identificacion']['codigoGeneracion'] }}
 
-        <br>
-        <br>
-        <b>Número de control</b> <br>
-        {{ $datos['DTE']['identificacion']['numeroControl'] }} <br>
-        <b>Sello de recepción:</b> <br>
-        {{ $datos['DTE']['respuestaHacienda']['selloRecibido']?? 'CONTINGENCIA' }} <br>
-        <b>Fecha emisión</b> <br>
-        {{ date('d/m/Y', strtotime($datos['DTE']['identificacion']['fecEmi'])) }} {{ $datos['DTE']['identificacion']['horEmi'] }}
+        <p>
+            <strong>Código de generación:</strong><br>
+            <span style="font-size: 8px; word-break: break-all;">
+                {{ $datos['DTE']['respuestaHacienda']['codigoGeneracion'] ?? $datos['DTE']['identificacion']['codigoGeneracion'] }}
+            </span>
+        </p>
+
+        <p>
+            <strong>Número de control:</strong><br>
+            {{ $datos['DTE']['identificacion']['numeroControl'] }}
+        </p>
+
+        <p>
+            <strong>Sello de recepción:</strong><br>
+            {{ $datos['DTE']['respuestaHacienda']['selloRecibido'] ?? 'CONTINGENCIA' }}
+        </p>
+
+        <p>
+            <strong>Fecha y hora de emisión:</strong><br>
+            {{ date('d/m/Y', strtotime($datos['DTE']['identificacion']['fecEmi'])) }}
+            {{ $datos['DTE']['identificacion']['horEmi'] }}
+        </p>
     </div>
-    ---------------------------------------------------------------------------
 
-</div>
-<?php
-//$url = "http://api-fel-sv-dev.olintech.com/api/Catalog/municipalities/12"; // Endpoint
-//$response = file_get_contents($url);
-//print_r($response);
-//$data = json_decode($response, true); // Decodificar JSON a un array asociativo
-//
-//print_r($data); // Muestra la respuesta
-?>
-        <!-- Contenido principal -->
+    <div class="separator"></div>
 
-<div class="content">
-    <!-- Info Cliente -->
-
+    <!-- Información del Cliente -->
     <div class="cliente-info">
+        <p><strong>CLIENTE</strong></p>
+        <p>
+            <strong>Razón Social:</strong> {{ $datos['DTE']['receptor']['nombre'] }}<br>
+            <strong>Documento:</strong> {{ $datos['DTE']['receptor']['numDocumento'] ?? 'N/A' }}<br>
+            @if(isset($datos['DTE']['receptor']['nrc']) && $datos['DTE']['receptor']['nrc'])
+                <strong>NRC:</strong> {{ $datos['DTE']['receptor']['nrc'] }}<br>
+            @endif
+            @if(isset($datos['DTE']['receptor']['codActividad']) && $datos['DTE']['receptor']['codActividad'])
+                <strong>Actividad:</strong> {{ $datos['DTE']['receptor']['codActividad'] }} - {{ $datos['DTE']['receptor']['descActividad'] ?? '' }}<br>
+            @endif
+            @if(isset($datos['DTE']['receptor']['direccion']['complemento']) && $datos['DTE']['receptor']['direccion']['complemento'])
+                <strong>Dirección:</strong> {{ $datos['DTE']['receptor']['direccion']['complemento'] }}<br>
+            @endif
+            @if(isset($datos['DTE']['receptor']['telefono']) && $datos['DTE']['receptor']['telefono'])
+                <strong>Teléfono:</strong> {{ $datos['DTE']['receptor']['telefono'] }}<br>
+            @endif
+            @if(isset($datos['DTE']['receptor']['correo']) && $datos['DTE']['receptor']['correo'])
+                <strong>Correo:</strong> {{ $datos['DTE']['receptor']['correo'] }}
+            @endif
+        </p>
+    </div>
+
+    <div class="separator"></div>
+
+    <!-- Productos -->
+    <div class="tabla-productos">
+        <p><strong>DETALLE DE PRODUCTOS/SERVICIOS</strong></p>
+
+        @foreach ($datos['DTE']['cuerpo'] ?? $datos['DTE']['cuerpoDocumento'] as $item)
+            <div class="item-row">
+                <div class="item-descripcion">
+                    {{ $item['cantidad'] }} x {{ $item['descripcion'] }}
+                </div>
+                <div class="item-detalle">
+                    <span>P.Unit: ${{ number_format($item['precioUni'], 2) }}</span>
+                    <span>Desc: ${{ number_format($item['montoDescu'], 2) }}</span>
+                    <span><strong>${{ number_format($item['ventaGravada'] ?? $item['compra'] ?? 0, 2) }}</strong></span>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <div class="separator"></div>
+
+    <!-- Resumen/Footer -->
+    <div class="footer">
+        <p><strong>RESUMEN</strong></p>
         <table>
             <tr>
-                <td>
-                    <p>Razón Social: {{ $datos['DTE']['receptor']['nombre'] }}<br>
-                        Documento: {{ $datos['DTE']['receptor']['numDocumento'] ?? '' }}<br>
-                        NRC: {{ $datos['DTE']['receptor']['nrc']??'' }}<br>
-                        Actividad: {{ $datos['DTE']['receptor']['codActividad']??'' }}
-                        - {{ $datos['DTE']['receptor']['descActividad']??'' }}<br>
-                        Dirección: {{ $datos['DTE']['receptor']['direccion']['complemento']??'' }}<br>
-                        Teléfono: {{ $datos['DTE']['receptor']['telefono']??'' }} <br>
-                        Correo: {{ $datos['DTE']['receptor']['correo']??'' }} <br>
-
-                    </p>
+                <td><strong>Condición de Operación:</strong></td>
+                <td class="text-right">
+                    @php
+                        $condicion = $datos['DTE']['resumen']['condicionOperacion'] ?? 1;
+                        echo $condicion == 1 ? 'Contado' : ($condicion == 2 ? 'Crédito' : 'Otro');
+                    @endphp
                 </td>
-
-            </tr>
-        </table>
-    </div>
-    ---------------------------------------------------------------------------
-    <!-- Tabla Productos -->
-    <table class="tabla-productos" width="100%" border="0" cellspacing="0" cellpadding="5">
-
-        <tbody>
-
-        @foreach ($datos['DTE']['cuerpo']??$datos['DTE']['cuerpoDocumento'] as $item)
-            <tr>
-                <td>{{ $item['cantidad'] }}</td>
-                <td colspan="2">{{ $item['descripcion'] }}</td>
-
             </tr>
             <tr>
-                <td></td>
-                <td>${{ number_format($item['precioUni'], 2) }}</td>
-                <td>Desc. ${{ number_format($item['montoDescu'], 2) }}</td>
-                {{--                <td>${{ number_format($item['ventaGravada'], 2) }}</td>--}}
-                <td>${{ number_format($item['ventaGravada']??$item['compra']??0, 2) }}</td>
-            </tr>
-        @endforeach
-        </tbody>
-    </table>
-    ---------------------------------------------------------------------------
-</div>
-
-<!-- Footer fijo -->
-<div class="footer">
-    Condicion Operación {{$datos["DTE"]['resumen']['condicionOperacion']??''}}
-    <table>
-        <tr>
-            <td style="width: 100%">Total Operaciones:
-        <tr>
-            <td>{{ $datos["DTE"]['resumen']['totalLetras'] }} </td>
-        </tr>
-        <tr>
-            <td>Total No Sujeto:</td>
-            <td>
-                ${{ number_format($datos['DTE']['resumen']['totalNoSuj']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
-
-            {{--            <td>${{ number_format($datos['DTE']['resumen']['totalNoSuj']??$datos['DTE']['resumen']['totalNoGravado'], 2) }}</td>--}}
-        </tr>
-        <tr>
-            <td>Total Exento:</td>
-            <td>
-                ${{ number_format($datos['DTE']['resumen']['totalExenta']??$datos['DTE']['resumen']['totalNoGravado']??0, 2) }}</td>
-
-            {{--            <td>${{ number_format($datos['DTE']['resumen']['totalExenta']??$datos['DTE']['resumen']['totalNoGravado'], 2) }}</td>--}}
-        </tr>
-        <tr>
-            <td>Total Gravadas:</td>
-
-            <td>${{ number_format($datos['DTE']['resumen']['totalGravada']??0, 2) }}</td>
-        </tr>
-        <tr>
-            <td>Subtotal:</td>
-            <td>
-                ${{ number_format($datos['DTE']['resumen']['subTotal']??$datos['DTE']['resumen']['totalGravada'], 2) }}</td>
-        </tr>
-        @isset($datos['DTE']['resumen']['tributos'])
-            @foreach($datos['DTE']['resumen']['tributos'] as $tributo)
-                <tr>
-                    <td>{{ $tributo['descripcion'] }}:</td>
-                    <td>${{ number_format($tributo['valor'], 2) }}</td>
-                </tr>
-            @endforeach
-        @endisset
-        <tr>
-            <td>
-                <b>TOTAL A PAGAR:</b></td>
-            {{--            <td> ${{number_format($datos['DTE']['resumen']['totalPagar']??$datos['DTE']['resumen']['montoTotalOperacion'], 2)}}--}}
-            {{--            </td>--}}
-
-            <td>
-                @if(isset($datos['DTE']['resumen']['totalPagar']))
-                    ${{ number_format($datos['DTE']['resumen']['totalPagar'], 2) }}
-                @elseif(isset($datos['DTE']['resumen']['montoTotalOperacion']))
-                    ${{ number_format($datos['DTE']['resumen']['montoTotalOperacion'], 2) }}
-                @elseif(isset($datos['DTE']['resumen']['totalLetras']))
+                <td colspan="2" style="padding: 5px 0;">
+                    <strong>Total en letras:</strong><br>
                     {{ $datos['DTE']['resumen']['totalLetras'] }}
-                @endif
-            </td>
-        </tr>
-        </td>
-        </tr>
-    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>Total No Sujeto:</td>
+                <td class="text-right">${{ number_format($datos['DTE']['resumen']['totalNoSuj'] ?? $datos['DTE']['resumen']['totalNoGravado'] ?? 0, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Total Exento:</td>
+                <td class="text-right">${{ number_format($datos['DTE']['resumen']['totalExenta'] ?? $datos['DTE']['resumen']['totalNoGravado'] ?? 0, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Total Gravadas:</td>
+                <td class="text-right">${{ number_format($datos['DTE']['resumen']['totalGravada'] ?? $datos['DTE']['resumen']['totalCompra'] ?? 0, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Subtotal:</td>
+                <td class="text-right">${{ number_format($datos['DTE']['resumen']['subTotal'] ?? $datos['DTE']['resumen']['totalGravada'] ?? 0, 2) }}</td>
+            </tr>
+            @isset($datos['DTE']['resumen']['tributos'])
+                @foreach($datos['DTE']['resumen']['tributos'] as $tributo)
+                    <tr>
+                        <td>{{ $tributo['descripcion'] }}:</td>
+                        <td class="text-right">${{ number_format($tributo['valor'], 2) }}</td>
+                    </tr>
+                @endforeach
+            @endisset
+        </table>
 
+        <div class="total-final text-center">
+            TOTAL A PAGAR:
+            @if(isset($datos['DTE']['resumen']['totalPagar']))
+                ${{ number_format($datos['DTE']['resumen']['totalPagar'], 2) }}
+            @elseif(isset($datos['DTE']['resumen']['montoTotalOperacion']))
+                ${{ number_format($datos['DTE']['resumen']['montoTotalOperacion'], 2) }}
+            @else
+                $0.00
+            @endif
+        </div>
+    </div>
 
-</div>
+    <div class="separator"></div>
+
+    <!-- QR Code -->
+    <div class="qr-container">
+        <p style="margin-bottom: 5px;"><strong>Código QR</strong></p>
+        <img src="{{ asset($qr) }}" alt="Código QR">
+        <p style="font-size: 8px; margin-top: 5px;">Escanea para verificar el documento</p>
+    </div>
+
+    <div class="separator"></div>
+
+    <p style="font-size: 8px; text-align: center; margin-top: 10px;">
+        Gracias por su compra<br>
+        Documento generado electrónicamente
+    </p>
 </body>
 </html>
