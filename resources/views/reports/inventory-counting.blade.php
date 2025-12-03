@@ -30,14 +30,7 @@
 <div class="header">
     <h1>HOJA DE CONTEO DE INVENTARIO</h1>
     <p>
-        @if($categoryName && $marcaName)
-            Categoría: {{ $categoryName }} | Marca: {{ $marcaName }}
-        @elseif($categoryName)
-            Categoría: {{ $categoryName }}
-        @elseif($marcaName)
-            Marca: {{ $marcaName }}
-        @endif
-        | {{ $fecha }} | Total: {{ $totalProductos }} productos
+        Búsqueda: "{{ $searchTerm }}..." | {{ $fecha }} | Total: {{ $totalProductos }} productos
     </p>
 </div>
 

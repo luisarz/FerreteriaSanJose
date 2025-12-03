@@ -8,8 +8,6 @@ use App\Exports\InventoryMovimentExport;
 use App\Exports\SalesExportFac;
 use App\Filament\Exports\InventoryExporter;
 use App\Models\Inventory;
-use App\Models\Category;
-use App\Models\Marca;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -26,13 +24,12 @@ class InventoryReport extends Controller
         set_time_limit(120);
         ini_set('memory_limit', '512M');
 
-        $categoryId = $request->get('category_id');
-        $marcaId = $request->get('marca_id');
+        $productName = $request->get('product_name');
         $branchId = $request->get('branch_id');
 
-        // Validar que al menos un filtro esté presente
-        if (empty($categoryId) && empty($marcaId)) {
-            return redirect()->back()->with('error', 'Debe seleccionar al menos una categoría o marca.');
+        // Validar que el filtro por nombre esté presente
+        if (empty($productName) || strlen($productName) < 2) {
+            return redirect()->back()->with('error', 'Debe ingresar al menos 2 caracteres para buscar.');
         }
 
         // Query optimizada con select específico y joins
@@ -61,15 +58,8 @@ class InventoryReport extends Controller
             $query->where('inventories.branch_id', $branchId);
         }
 
-        // Filtrar por categoría
-        if ($categoryId) {
-            $query->where('products.category_id', $categoryId);
-        }
-
-        // Filtrar por marca
-        if ($marcaId) {
-            $query->where('products.marca_id', $marcaId);
-        }
+        // Filtrar por nombre del producto (empieza con)
+        $query->where('products.name', 'LIKE', $productName . '%');
 
         // Ordenar por categoría y nombre de producto
         $query->orderBy('categories.name')
@@ -95,14 +85,9 @@ class InventoryReport extends Controller
         // Ordenar las categorías alfabéticamente
         $groupedInventories = $groupedInventories->sortKeys();
 
-        // Obtener información de filtros para el título
-        $categoryName = $categoryId ? Category::find($categoryId)?->name : null;
-        $marcaName = $marcaId ? Marca::find($marcaId)?->nombre : null;
-
         $data = [
             'groupedInventories' => $groupedInventories,
-            'categoryName' => $categoryName,
-            'marcaName' => $marcaName,
+            'searchTerm' => $productName,
             'fecha' => now()->format('d/m/Y H:i'),
             'totalProductos' => $totalProductos,
         ];

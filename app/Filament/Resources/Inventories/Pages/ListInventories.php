@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Inventories\Pages;
 
-use App\Models\Category;
-use App\Models\Marca;
 use Filament\Notifications\Notification;
 use App\Filament\Resources\Inventories\InventoryResource;
 use Filament\Actions;
@@ -33,43 +31,27 @@ class ListInventories extends ListRecords
                 ->iconSize(IconSize::Large)
                 ->color('info')
                 ->modalHeading('Generar Hoja de Conteo de Inventario')
-                ->modalDescription('Debe seleccionar al menos una categoría o marca para generar el reporte.')
+                ->modalDescription('Ingrese el inicio del nombre del producto para buscar.')
                 ->modalSubmitActionLabel('Generar PDF')
                 ->schema([
-                    Select::make('category_id')
-                        ->label('Categoría')
-                        ->placeholder('Seleccione una categoría')
-                        ->options(fn () => Category::whereNotNull('parent_id')->orderBy('name')->pluck('name', 'id'))
-                        ->searchable()
-                        ->preload()
-                        ->helperText('Filtra productos por categoría'),
-                    Select::make('marca_id')
-                        ->label('Marca')
-                        ->placeholder('Seleccione una marca')
-                        ->options(fn () => Marca::where('estado', true)->orderBy('nombre')->pluck('nombre', 'id'))
-                        ->searchable()
-                        ->preload()
-                        ->helperText('Filtra productos por marca'),
+                    TextInput::make('product_name')
+                        ->label('Nombre del producto')
+                        ->placeholder('Ej: TORNILLO, TUERCA, CABLE...')
+                        ->required()
+                        ->minLength(2)
+                        ->helperText('Ingrese como empieza el nombre del producto (mínimo 2 caracteres)'),
                 ])->action(function (array $data) {
-                    // Validar que al menos un filtro esté seleccionado
-                    if (empty($data['category_id']) && empty($data['marca_id'])) {
+                    $productName = trim($data['product_name'] ?? '');
+
+                    if (strlen($productName) < 2) {
                         return Notification::make()
-                            ->title('Filtro requerido')
-                            ->body('Debe seleccionar al menos una categoría o una marca para generar el reporte.')
+                            ->title('Búsqueda muy corta')
+                            ->body('Debe ingresar al menos 2 caracteres para buscar.')
                             ->danger()
                             ->send();
                     }
 
-                    $params = [];
-
-                    if (!empty($data['category_id'])) {
-                        $params['category_id'] = $data['category_id'];
-                    }
-                    if (!empty($data['marca_id'])) {
-                        $params['marca_id'] = $data['marca_id'];
-                    }
-
-                    $url = route('inventory.counting.pdf', $params);
+                    $url = route('inventory.counting.pdf', ['product_name' => $productName]);
 
                     return Notification::make()
                         ->title('PDF generado')
