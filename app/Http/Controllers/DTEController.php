@@ -1557,13 +1557,4 @@ class DTEController extends Controller
             ];
         }
     }
-
-    public
-    function saveRestoreJson($responseData, $codGeneracion): void
-    {
-        $fileName = "DTEs/{$codGeneracion}.json";
-        $jsonContent = json_encode($responseData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        Storage::disk('public')->put($fileName, $jsonContent);
-    }
-
 }
