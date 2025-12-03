@@ -314,7 +314,6 @@ class InventoryResource extends Resource
 
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
-            ->filtersApplyAction(fn () => null)
             ->persistFiltersInSession()
             ->recordActions([
                 ActionGroup::make([

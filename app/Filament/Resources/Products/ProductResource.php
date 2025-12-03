@@ -329,7 +329,6 @@ class ProductResource extends Resource
 
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->filtersApplyAction(fn () => null)
             ->persistFiltersInSession()
             ->recordActions([
 
