@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use App\Exports\inventoryExport;
+use App\Exports\InventoryCountingExport;
 use App\Exports\InventoryMovimentExport;
 use App\Exports\SalesExportFac;
 use App\Filament\Exports\InventoryExporter;
@@ -104,6 +105,34 @@ class InventoryReport extends Controller
         $pdf->setOption('margin-right', '10mm');
 
         return $pdf->stream('conteo-inventario-' . $branch->name . '-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Genera Excel para conteo de inventario (mejor para muchos registros)
+     */
+    public function inventoryCountingExcel(Request $request): BinaryFileResponse
+    {
+        set_time_limit(600);
+        ini_set('memory_limit', '2048M');
+
+        $productName = trim($request->get('product_name', ''));
+        $branchId = $request->get('branch_id');
+
+        if (empty($branchId)) {
+            abort(400, 'Debe seleccionar una sucursal.');
+        }
+
+        $branch = Branch::find($branchId);
+        if (!$branch) {
+            abort(404, 'Sucursal no encontrada.');
+        }
+
+        $fileName = 'conteo-inventario-' . $branch->name . '-' . now()->format('Y-m-d') . '.xlsx';
+
+        return Excel::download(
+            new InventoryCountingExport($branchId, $branch->name, $productName ?: null),
+            $fileName
+        );
     }
 
     public function inventoryReportExport($update,$startDate, $endDate): BinaryFileResponse

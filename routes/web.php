@@ -61,6 +61,7 @@ Route::get('/salidaPrintTicket/{id}', [AdjustementInventory::class, 'salidaPrint
 Route::get('/inventor/report/{upadte}/{starDate}/{endDate}',[InventoryReport::class,'inventoryReportExport'])->name('inventor.report');
 Route::get('/inventor/report-mov/{code}/{starDate}/{endDate}',[InventoryReport::class,'inventoryMovimentReportExport'])->name('inventor.moviment.report');
 Route::get('/inventory/counting-pdf',[InventoryReport::class,'inventoryCountingPdf'])->middleware(['auth'])->name('inventory.counting.pdf');
+Route::get('/inventory/counting-excel',[InventoryReport::class,'inventoryCountingExcel'])->middleware(['auth'])->name('inventory.counting.excel');
 
 
 require __DIR__ . '/auth.php';
