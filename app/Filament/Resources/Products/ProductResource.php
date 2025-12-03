@@ -321,7 +321,7 @@ class ProductResource extends Resource
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
-            ->filtersApplyAction(fn () => null)
+            ->deferFilters(false)
             ->persistFiltersInSession()
             ->recordActions([
 
