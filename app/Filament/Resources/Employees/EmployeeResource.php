@@ -156,7 +156,8 @@ class EmployeeResource extends Resource
                                             ])
                                             ->maxLength(255),
                                         FileUpload::make('photo')
-//                                                        ->inlineLabel()
+                                            ->disk('public')
+                                            ->visibility('public')
                                             ->columnSpanFull()
                                             ->label('Foto')
                                             ->directory('employees'),

@@ -56,6 +56,8 @@ class MarcaResource extends Resource
                             ->required()
                             ->maxLength(255),
                         FileUpload::make('imagen')
+                            ->disk('public')
+                            ->visibility('public')
                             ->image()
                             ->directory('marcas'),
 
@@ -82,8 +84,8 @@ class MarcaResource extends Resource
                 TextColumn::make('descripcion')
                     ->searchable(),
                 ImageColumn::make('imagen')
+                    ->disk('public')
                     ->placeholder('Sin imagen')
-
                     ->circular(),
                 IconColumn::make('estado')
                     ->boolean(),

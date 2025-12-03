@@ -129,7 +129,9 @@ class CompanyResource extends Resource
                             ->inlineLabel()
                             ->default(null),
                         FileUpload::make('logo')
-                            ->directory('/configuracion')
+                            ->disk('public')
+                            ->visibility('public')
+                            ->directory('configuracion')
                             ->avatar()
                             ->imageEditor()
                             ->inlineLabel()
@@ -143,6 +145,7 @@ class CompanyResource extends Resource
         return $table
             ->columns([
                 ImageColumn::make('logo')
+                    ->disk('public')
                     ->label('Logo')
                     ->circular(),
                 TextColumn::make('name')

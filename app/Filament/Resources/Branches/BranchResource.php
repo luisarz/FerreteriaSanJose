@@ -145,6 +145,8 @@ class BranchResource extends Resource
                             ->default(2),
 
                         FileUpload::make('logo')
+                            ->disk('public')
+                            ->visibility('public')
                             ->directory('wherehouses')
                             ->columnSpanFull(),
                         Toggle::make('is_active')

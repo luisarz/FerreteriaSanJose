@@ -79,6 +79,8 @@ class SmallCashBoxOperationResource extends Resource
                             ->columnSpanFull()
                             ->maxLength(255),
                         FileUpload::make('voucher')
+                            ->disk('public')
+                            ->visibility('public')
                             ->label('Comprobante')
                             ->directory('vouchers')
                             ->columnSpanFull(),
@@ -95,6 +97,7 @@ class SmallCashBoxOperationResource extends Resource
         return $table
             ->columns([
                 ImageColumn::make('voucher')
+                    ->disk('public')
                     ->circular()
                     ->label('Comprobante')
                     ->toggleable(isToggledHiddenByDefault: true)

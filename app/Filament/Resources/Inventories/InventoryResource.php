@@ -190,6 +190,7 @@ class InventoryResource extends Resource
                                 ->columns(1)
                                 ->schema([
                                     ImageColumn::make('product.images')
+                                        ->disk('public')
                                         ->placeholder('Sin imagen')
                                         ->defaultImageUrl(url('storage/products/noimage.png'))
                                         ->openUrlInNewTab()
