@@ -286,7 +286,6 @@ class InventoryResource extends Resource
             ->striped()
             ->filters([
                 Filter::make('product_name')
-                    ->live() // ← este activa el filtro automático
                     ->schema([
                         TextInput::make('value')
                             ->label('Producto')
@@ -313,7 +312,7 @@ class InventoryResource extends Resource
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
-            ->filtersApplyAction(fn() => null)
+            ->filtersApplyAction(null)
             ->persistFiltersInSession()
             ->recordActions([
                 ActionGroup::make([
