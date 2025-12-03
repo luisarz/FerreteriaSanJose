@@ -299,8 +299,8 @@ class ProductResource extends Resource
                     ->query(function ($query, array $data) {
                         return $query
                             ->when($data['value'], function ($query, $value) {
-                                $query->where('name', 'like', "%{$value}%")
-                                    ->orWhere('bar_code', 'like', "%{$value}%");
+                                $query->where('name', 'like', "{$value}%")
+                                    ->orWhere('bar_code', 'like', "{$value}%");
                             });
                     }),
 
