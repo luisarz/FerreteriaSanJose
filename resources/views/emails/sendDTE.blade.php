@@ -74,7 +74,12 @@
 <div class="email-container">
     <!-- Header -->
     <div class="header">
-        <img src="{{ $message->embed('storage/'.$sale->wherehouse->logo??'')}}" alt="{{$sale->wherehouse->company->name.' - '.$sale->wherehouse->name}}">
+        @php
+            $logoPath = $sale->wherehouse->logo ? storage_path('app/public/' . $sale->wherehouse->logo) : null;
+        @endphp
+        @if($logoPath && file_exists($logoPath))
+            <img src="{{ $message->embed($logoPath) }}" alt="{{ $sale->wherehouse->company->name ?? '' }} - {{ $sale->wherehouse->name ?? '' }}">
+        @endif
         <h1>FACTURA ELECTRÓNICA</h1>
         <p>Notificación de envío de DTE</p>
     </div>
