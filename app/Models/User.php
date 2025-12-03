@@ -22,6 +22,11 @@ class User extends Authenticatable implements FilamentUser
 //    use LogsActivity;
 
     /**
+     * Eager load employee relation by default
+     */
+    protected $with = ['employee'];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>

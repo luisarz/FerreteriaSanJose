@@ -11,6 +11,10 @@ class Employee extends Model
     use HasFactory;
     use SoftDeletes;
 
+    /**
+     * Eager load wherehouse relation by default
+     */
+    protected $with = ['wherehouse'];
 
     protected $fillable = [
         'name',

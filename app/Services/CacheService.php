@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Models\Company;
+use App\Models\DocumentType;
+use App\Models\PaymentMethod;
 use App\Models\Tribute;
 use Illuminate\Support\Facades\Cache;
+use Spatie\Permission\PermissionRegistrar;
 
 class CacheService
 {
@@ -79,5 +82,59 @@ class CacheService
         Cache::forget('tax_rates_iva_isr');
         Cache::forget('tribute_iva_rate');
         return self::getTributes();
+    }
+
+    /**
+     * Obtener tipos de documento con caché (para selects)
+     */
+    public static function getDocumentTypes(): array
+    {
+        return Cache::remember('document_types_all', 86400, function () {
+            return DocumentType::where('is_active', true)
+                ->pluck('name', 'id')
+                ->toArray();
+        });
+    }
+
+    /**
+     * Obtener métodos de pago con caché (para selects)
+     */
+    public static function getPaymentMethods(): array
+    {
+        return Cache::remember('payment_methods_all', 86400, function () {
+            return PaymentMethod::where('is_active', true)
+                ->pluck('name', 'id')
+                ->toArray();
+        });
+    }
+
+    /**
+     * Limpiar caché de permisos (Spatie Permission)
+     */
+    public static function clearPermissionsCache(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * Refrescar caché de catálogos
+     */
+    public static function refreshCatalogs(): void
+    {
+        Cache::forget('document_types_all');
+        Cache::forget('payment_methods_all');
+        self::getDocumentTypes();
+        self::getPaymentMethods();
+    }
+
+    /**
+     * Limpiar todas las cachés incluyendo permisos
+     */
+    public static function clearAllWithPermissions(): void
+    {
+        self::clearAll();
+        self::clearPermissionsCache();
+        Cache::forget('document_types_all');
+        Cache::forget('payment_methods_all');
     }
 }
