@@ -293,7 +293,8 @@ class ProductResource extends Resource
                     ->schema([
                         TextInput::make('value')
                             ->label('Producto')
-                            ->placeholder('Buscar por nombre o código de barra'),
+                            ->placeholder('Buscar por nombre o código de barra')
+                            ->live(debounce: 500),
                     ])
                     ->query(function ($query, array $data) {
                         return $query
@@ -303,25 +304,26 @@ class ProductResource extends Resource
                             });
                     }),
 
-                //
                 SelectFilter::make('category_id')
                     ->label('Categoría')
-                    //->searchable()
                     ->preload()
                     ->relationship('category', 'name')
                     ->options(fn() => Category::pluck('name', 'id')->toArray())
-                    ->default(null),
+                    ->default(null)
+                    ->live(),
                 SelectFilter::make('marca_id')
                     ->label('Marca')
-                    //->searchable()
                     ->preload()
                     ->relationship('marca', 'nombre')
                     ->options(fn() => Marca::pluck('nombre', 'id')->toArray())
-                    ->default(null),
-                TrashedFilter::make(),
+                    ->default(null)
+                    ->live(),
+                TrashedFilter::make()
+                    ->live(),
 
-
-            ],layout: FiltersLayout::AboveContent)->filtersFormColumns(2)
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
+            ->persistFiltersInSession()
             ->recordActions([
 
                 ActionGroup::make([
