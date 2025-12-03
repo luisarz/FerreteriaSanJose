@@ -153,8 +153,8 @@
 <body>
     <!-- Logo Empresa -->
     <div class="logo-container">
-        @if($datos['logo'])
-            <img src="{{ asset($datos['logo']) }}" alt="Logo de la empresa">
+        @if($datos['logo'] && file_exists($datos['logo']))
+            <img src="{{ $datos['logo'] }}" alt="Logo de la empresa">
         @endif
     </div>
 
@@ -318,7 +318,9 @@
     <!-- QR Code -->
     <div class="qr-container">
         <p style="margin-bottom: 5px;"><strong>Código QR</strong></p>
-        <img src="{{ asset($qr) }}" alt="Código QR">
+        @if($qr && file_exists($qr))
+            <img src="{{ $qr }}" alt="Código QR">
+        @endif
         <p style="font-size: 8px; margin-top: 5px;">Escanea para verificar el documento</p>
     </div>
 

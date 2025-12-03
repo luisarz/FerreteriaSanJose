@@ -1298,13 +1298,6 @@ class DTEController extends Controller
         $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
         $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
-        $datos = [
-            'empresa' => $DTE["emisor"],
-            'DTE' => $DTE,
-            'tipoDocumento' => $tipoDocumento,
-            'logo' => Storage::url($logo),
-        ];
-
         // Crear QR en carpeta temporal
         $directory = storage_path('app/temp/QR');
         if (!file_exists($directory)) {
@@ -1317,23 +1310,34 @@ class DTEController extends Controller
             throw new Exception("Error: El archivo QR no fue guardado correctamente");
         }
 
+        // Rutas absolutas para DomPDF
+        $logoPath = $logo ? storage_path('app/public/' . $logo) : null;
+
+        $datos = [
+            'empresa' => $DTE["emisor"],
+            'DTE' => $DTE,
+            'tipoDocumento' => $tipoDocumento,
+            'logo' => $logoPath,
+        ];
+
         // Usar ruta absoluta para el QR en el PDF
         $qr = $qrPath;
-
-        $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
 
         $pdf = Pdf::loadView('DTE.dte-print-ticket', compact('datos', 'qr'))
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => !$isLocalhost,
+                'isRemoteEnabled' => true,
             ]);
 
         $pdf->set_paper(array(0, 0, 250, 1000));
 
-        // Limpiar QR temporal después de generar PDF
+        // Renderizar PDF primero, luego limpiar QR temporal
+        $output = $pdf->output();
         @unlink($qrPath);
 
-        return $pdf->stream("{$codGeneracion}.pdf");
+        return response($output)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $codGeneracion . '.pdf"');
     }
 
     public
@@ -1368,13 +1372,6 @@ class DTEController extends Controller
         $tipoDocumento = $this->searchInArray($tipoDocumento, $tiposDTE);
         $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
-        $datos = [
-            'empresa' => $DTE["emisor"],
-            'DTE' => $DTE,
-            'tipoDocumento' => $tipoDocumento,
-            'logo' => Storage::url($logo),
-        ];
-
         // Crear QR en carpeta temporal
         $directory = storage_path('app/temp/QR');
         if (!file_exists($directory)) {
@@ -1387,19 +1384,31 @@ class DTEController extends Controller
             throw new Exception("Error: El archivo QR no fue guardado correctamente");
         }
 
+        // Rutas absolutas para DomPDF
+        $logoPath = $logo ? storage_path('app/public/' . $logo) : null;
+
+        $datos = [
+            'empresa' => $DTE["emisor"],
+            'DTE' => $DTE,
+            'tipoDocumento' => $tipoDocumento,
+            'logo' => $logoPath,
+        ];
+
         $qr = $qrPath;
-        $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
 
         $pdf = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => !$isLocalhost,
+                'isRemoteEnabled' => true,
             ]);
 
-        // Limpiar QR temporal
+        // Renderizar PDF primero, luego limpiar QR temporal
+        $output = $pdf->output();
         @unlink($qrPath);
 
-        return $pdf->stream("{$codGeneracion}.pdf");
+        return response($output)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $codGeneracion . '.pdf"');
     }
 
     public
