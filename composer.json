@@ -13,6 +13,7 @@
     "barryvdh/laravel-dompdf": "^v3.1.1",
     "bezhansalleh/filament-shield": "^4.0.1",
     "filament/filament": "~4.0",
+    "intervention/image-laravel": "^1.5",
     "laravel/framework": "v12.29.0",
     "laravel/tinker": "^2.9",
     "livewire/livewire": "^3.4",
