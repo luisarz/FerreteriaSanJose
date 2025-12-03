@@ -309,20 +309,18 @@ class ProductResource extends Resource
                     ->preload()
                     ->relationship('category', 'name')
                     ->options(fn() => Category::pluck('name', 'id')->toArray())
-                    ->default(null)
-                    ->live(),
+                    ->default(null),
                 SelectFilter::make('marca_id')
                     ->label('Marca')
                     ->preload()
                     ->relationship('marca', 'nombre')
                     ->options(fn() => Marca::pluck('nombre', 'id')->toArray())
-                    ->default(null)
-                    ->live(),
-                TrashedFilter::make()
-                    ->live(),
+                    ->default(null),
+                TrashedFilter::make(),
 
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->filtersApplyAction(fn () => null)
             ->persistFiltersInSession()
             ->recordActions([
 
