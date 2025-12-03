@@ -77,12 +77,11 @@ class InventoryCountingExport implements FromGenerator, WithHeadings, WithStyles
                 ];
             }
 
-            // Forzar código como texto agregando apóstrofe invisible
             $codigo = $inventory->bar_code ?: 'COD-' . $inventory->product_id;
 
             yield [
                 $index++,
-                "'" . $codigo, // Apóstrofe fuerza texto en Excel
+                (string) $codigo, // Forzar como string
                 $inventory->product_name . ($inventory->marca_name ? ' (' . $inventory->marca_name . ')' : ''),
                 $inventory->unit_description ?? 'N/A',
                 number_format($inventory->stock, 2),
