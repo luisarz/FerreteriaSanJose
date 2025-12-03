@@ -9,13 +9,17 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Generator;
 
-class InventoryCountingExport implements FromGenerator, WithHeadings, WithStyles, WithTitle, WithColumnWidths, WithColumnFormatting, WithEvents
+class InventoryCountingExport extends DefaultValueBinder implements FromGenerator, WithHeadings, WithStyles, WithTitle, WithColumnWidths, WithColumnFormatting, WithCustomValueBinder, WithEvents
 {
     protected int $branchId;
     protected string $branchName;
@@ -195,5 +199,19 @@ class InventoryCountingExport implements FromGenerator, WithHeadings, WithStyles
     public function title(): string
     {
         return 'Conteo Inventario';
+    }
+
+    /**
+     * Forzar columna B (código) como texto para evitar conversión a hexadecimal
+     */
+    public function bindValue(Cell $cell, $value): bool
+    {
+        // Columna B = códigos, forzar como texto
+        if ($cell->getColumn() === 'B' && $value !== '' && $value !== null) {
+            $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
+            return true;
+        }
+
+        return parent::bindValue($cell, $value);
     }
 }
