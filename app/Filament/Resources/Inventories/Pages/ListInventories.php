@@ -26,15 +26,15 @@ class ListInventories extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('counting_pdf')
+            Actions\Action::make('counting_excel')
                 ->label('Hoja de Conteo')
-                ->tooltip('Generar hoja de conteo de inventario')
+                ->tooltip('Generar hoja de conteo en Excel')
                 ->icon('heroicon-o-clipboard-document-list')
                 ->iconSize(IconSize::Large)
                 ->color('info')
                 ->modalHeading('Generar Hoja de Conteo de Inventario')
-                ->modalDescription('Seleccione la sucursal y formato. Excel es recomendado para muchos registros.')
-                ->modalSubmitActionLabel('Generar Reporte')
+                ->modalDescription('Seleccione la sucursal. El archivo se generará en formato Excel.')
+                ->modalSubmitActionLabel('Generar Excel')
                 ->schema([
                     Select::make('branch_id')
                         ->label('Sucursal')
@@ -48,19 +48,9 @@ class ListInventories extends ListRecords
                         ->label('Nombre del producto (opcional)')
                         ->placeholder('Ej: TORNILLO, TUERCA, CABLE... o dejar vacío para todos')
                         ->helperText('Deje vacío para listar todos los productos de la sucursal'),
-                    Select::make('format')
-                        ->label('Formato de salida')
-                        ->options([
-                            'excel' => 'Excel (.xlsx) - Recomendado para muchos registros',
-                            'pdf' => 'PDF - Solo para pocos registros',
-                        ])
-                        ->default('excel')
-                        ->required()
-                        ->helperText('Excel soporta +20,000 registros sin problemas'),
                 ])->action(function (array $data) {
                     $branchId = $data['branch_id'] ?? null;
                     $productName = trim($data['product_name'] ?? '');
-                    $format = $data['format'] ?? 'excel';
 
                     if (empty($branchId)) {
                         return Notification::make()
@@ -75,16 +65,14 @@ class ListInventories extends ListRecords
                         $params['product_name'] = $productName;
                     }
 
-                    $routeName = $format === 'excel' ? 'inventory.counting.excel' : 'inventory.counting.pdf';
-                    $url = route($routeName, $params);
-                    $formatLabel = $format === 'excel' ? 'Excel' : 'PDF';
+                    $url = route('inventory.counting.excel', $params);
 
                     return Notification::make()
-                        ->title("$formatLabel generado")
+                        ->title('Excel generado')
                         ->body('Haz clic para descargar la hoja de conteo.')
                         ->success()
                         ->actions([
-                            \Filament\Actions\Action::make("Descargar $formatLabel")
+                            \Filament\Actions\Action::make('Descargar Excel')
                                 ->button()
                                 ->url($url, true)
                         ])
