@@ -348,13 +348,16 @@ class PurchaseResource extends Resource
                     ->icon('heroicon-o-trash')
                     ->hidden(fn($record) => $record->status === 'Anulado')
                     ->action(function (Purchase $purchase) {
-                        $purchaseItems = PurchaseItem::where('purchase_id', $purchase->id)->get();
+                        // Eager loading para evitar N+1 queries
+                        $purchaseItems = PurchaseItem::where('purchase_id', $purchase->id)
+                            ->with('inventory')
+                            ->get();
                         $provider = Provider::with('pais')->find($purchase->provider_id);
                         $entity = $provider->comercial_name;
                         $pais = $provider->pais->name;
 
                         foreach ($purchaseItems as $item) {
-                            $inventory = Inventory::find($item->inventory_id);
+                            $inventory = $item->inventory;
 
                             // Verifica si el inventario existe
                             if (!$inventory) {

@@ -282,7 +282,11 @@ class InventoryResource extends Resource
                 'xs' => 4,
             ])
             ->deferLoading()
-            ->modifyQueryUsing(fn($query) => $query->with(['product', 'branch', 'prices']))
+            ->modifyQueryUsing(fn($query) => $query->with([
+                'product',
+                'branch',
+                'prices' => fn($q) => $q->where('is_default', 1)->limit(1)
+            ]))
             ->striped()
             ->filters([
                 Filter::make('product_name')

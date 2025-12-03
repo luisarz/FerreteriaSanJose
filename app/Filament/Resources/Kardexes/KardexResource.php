@@ -120,7 +120,7 @@ class KardexResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('inventory_id')
                     ->label('Inventario')
-//                    ->searchable(isIndividual: true)
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date')
                     ->label('Fecha')
@@ -131,9 +131,11 @@ class KardexResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('document_type')
                     ->label('Tipo')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->searchable(),
                 Tables\Columns\TextColumn::make('entity')
                     ->label('Razon Social')
+                    ->toggleable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('nationality')
                     ->label('Nacionalidad')
