@@ -1310,18 +1310,31 @@ class DTEController extends Controller
             throw new Exception("Error: El archivo QR no fue guardado correctamente");
         }
 
-        // Rutas absolutas para DomPDF
-        $logoPath = $logo ? storage_path('app/public/' . $logo) : null;
+        // Convertir imágenes a base64 para DomPDF (más confiable)
+        $logoBase64 = null;
+        if ($logo) {
+            $logoFullPath = storage_path('app/public/' . $logo);
+            if (file_exists($logoFullPath)) {
+                $logoData = file_get_contents($logoFullPath);
+                $logoMime = mime_content_type($logoFullPath);
+                $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
+            }
+        }
+
+        $qrBase64 = null;
+        if (file_exists($qrPath)) {
+            $qrData = file_get_contents($qrPath);
+            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrData);
+        }
 
         $datos = [
             'empresa' => $DTE["emisor"],
             'DTE' => $DTE,
             'tipoDocumento' => $tipoDocumento,
-            'logo' => $logoPath,
+            'logo' => $logoBase64,
         ];
 
-        // Usar ruta absoluta para el QR en el PDF
-        $qr = $qrPath;
+        $qr = $qrBase64;
 
         $pdf = Pdf::loadView('DTE.dte-print-ticket', compact('datos', 'qr'))
             ->setOptions([
@@ -1331,7 +1344,7 @@ class DTEController extends Controller
 
         $pdf->set_paper(array(0, 0, 250, 1000));
 
-        // Renderizar PDF primero, luego limpiar QR temporal
+        // Renderizar PDF y limpiar QR temporal
         $output = $pdf->output();
         @unlink($qrPath);
 
@@ -1384,17 +1397,31 @@ class DTEController extends Controller
             throw new Exception("Error: El archivo QR no fue guardado correctamente");
         }
 
-        // Rutas absolutas para DomPDF
-        $logoPath = $logo ? storage_path('app/public/' . $logo) : null;
+        // Convertir imágenes a base64 para DomPDF (más confiable)
+        $logoBase64 = null;
+        if ($logo) {
+            $logoFullPath = storage_path('app/public/' . $logo);
+            if (file_exists($logoFullPath)) {
+                $logoData = file_get_contents($logoFullPath);
+                $logoMime = mime_content_type($logoFullPath);
+                $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
+            }
+        }
+
+        $qrBase64 = null;
+        if (file_exists($qrPath)) {
+            $qrData = file_get_contents($qrPath);
+            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrData);
+        }
 
         $datos = [
             'empresa' => $DTE["emisor"],
             'DTE' => $DTE,
             'tipoDocumento' => $tipoDocumento,
-            'logo' => $logoPath,
+            'logo' => $logoBase64,
         ];
 
-        $qr = $qrPath;
+        $qr = $qrBase64;
 
         $pdf = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
             ->setOptions([
@@ -1402,7 +1429,7 @@ class DTEController extends Controller
                 'isRemoteEnabled' => true,
             ]);
 
-        // Renderizar PDF primero, luego limpiar QR temporal
+        // Renderizar PDF y limpiar QR temporal
         $output = $pdf->output();
         @unlink($qrPath);
 

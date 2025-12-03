@@ -163,7 +163,7 @@
                 <table style="width: 100%; font-size: 10px; font-family: Arial, sans-serif; border-collapse: collapse;">
                     <tr>
                         <td style="padding: 4px 0; width: 90px; vertical-align: middle;">
-                            @if($datos['logo'] && file_exists($datos['logo']))
+                            @if($datos['logo'])
                                 <img src="{{ $datos['logo'] }}" alt="Logo Empresa" style="max-height: 75px; max-width: 85px;">
                             @endif
                         </td>
@@ -298,7 +298,7 @@
                     </tr>
                     <tr>
                         <td style="text-align: center; padding: 8px 4px; border: none;">
-                            @if($qr && file_exists($qr))
+                            @if($qr)
                                 <img src="{{ $qr }}" alt="QR Código"
                                      style="width: 100px; height: 100px; border: 2px solid #999; padding: 5px;">
                             @endif
