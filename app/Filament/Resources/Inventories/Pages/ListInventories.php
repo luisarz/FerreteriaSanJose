@@ -33,22 +33,33 @@ class ListInventories extends ListRecords
                 ->iconSize(IconSize::Large)
                 ->color('info')
                 ->modalHeading('Generar Hoja de Conteo de Inventario')
-                ->modalDescription('Seleccione los filtros para generar la hoja de conteo. Deje en blanco para incluir todos los productos.')
+                ->modalDescription('Debe seleccionar al menos una categoría o marca para generar el reporte.')
                 ->modalSubmitActionLabel('Generar PDF')
                 ->schema([
                     Select::make('category_id')
                         ->label('Categoría')
-                        ->placeholder('Todas las categorías')
+                        ->placeholder('Seleccione una categoría')
                         ->options(fn () => Category::whereNotNull('parent_id')->orderBy('name')->pluck('name', 'id'))
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->helperText('Filtra productos por categoría'),
                     Select::make('marca_id')
                         ->label('Marca')
-                        ->placeholder('Todas las marcas')
+                        ->placeholder('Seleccione una marca')
                         ->options(fn () => Marca::where('estado', true)->orderBy('nombre')->pluck('nombre', 'id'))
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->helperText('Filtra productos por marca'),
                 ])->action(function (array $data) {
+                    // Validar que al menos un filtro esté seleccionado
+                    if (empty($data['category_id']) && empty($data['marca_id'])) {
+                        return Notification::make()
+                            ->title('Filtro requerido')
+                            ->body('Debe seleccionar al menos una categoría o una marca para generar el reporte.')
+                            ->danger()
+                            ->send();
+                    }
+
                     $params = [];
 
                     if (!empty($data['category_id'])) {
