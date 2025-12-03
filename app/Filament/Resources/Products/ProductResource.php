@@ -311,14 +311,17 @@ class ProductResource extends Resource
                 SelectFilter::make('category_id')
                     ->label('Categoría')
                     ->preload()
+                    ->selectablePlaceholder(false)
                     ->relationship('category', 'name'),
                 SelectFilter::make('marca_id')
                     ->label('Marca')
                     ->preload()
+                    ->selectablePlaceholder(false)
                     ->relationship('marca', 'nombre'),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
+            ->filtersApplyAction(fn () => null)
             ->persistFiltersInSession()
             ->recordActions([
 

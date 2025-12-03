@@ -307,10 +307,12 @@ class InventoryResource extends Resource
                     ->relationship('branch', 'name')
                     ->label('Sucursal')
                     ->preload()
+                    ->selectablePlaceholder(false)
                     ->default(Auth::user()->employee->wherehouse->id),
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
+            ->filtersApplyAction(fn () => null)
             ->persistFiltersInSession()
             ->recordActions([
                 ActionGroup::make([
