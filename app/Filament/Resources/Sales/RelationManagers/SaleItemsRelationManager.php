@@ -44,7 +44,7 @@ class SaleItemsRelationManager extends RelationManager
 {
     protected static string $relationship = 'saleDetails';
     protected static ?string $title = "Prodúctos agregados";
-    protected static ?string $pollingInterval = '1s';
+    protected static ?string $pollingInterval = null;
 
 
     public function form(Schema $schema): Schema

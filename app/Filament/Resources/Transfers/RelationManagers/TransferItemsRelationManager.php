@@ -43,7 +43,7 @@ class TransferItemsRelationManager extends RelationManager
 {
     protected static string $relationship = 'transferDetails';
     protected static ?string $label = 'Prodúctos agregados';
-    protected static ?string $pollingInterval = '1s';
+    protected static ?string $pollingInterval = null;
 
 
     public function form(Schema $schema): Schema

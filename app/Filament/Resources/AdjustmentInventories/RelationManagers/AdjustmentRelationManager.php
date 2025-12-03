@@ -43,7 +43,7 @@ class AdjustmentRelationManager extends RelationManager
     protected static string $relationship = 'adjustItems';
     protected static ?string $title = "Prodúctos agregados";
     protected static ?string $label="Producto a procesar";
-    protected static ?string $pollingInterval = '1s';
+    protected static ?string $pollingInterval = null;
 
 
     public function form(Schema $schema): Schema
