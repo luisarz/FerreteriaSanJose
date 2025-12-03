@@ -286,16 +286,31 @@ class InventoryResource extends Resource
             ->deferLoading()
             ->modifyQueryUsing(fn($query) => $query->with(['product', 'branch', 'prices']))
             ->striped()
-            ->searchDebounce('500ms')
             ->filters([
+                Filter::make('product_name')
+                    ->schema([
+                        TextInput::make('value')
+                            ->label('Producto')
+                            ->placeholder('Buscar por nombre de producto')
+                            ->live(debounce: 500),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['value'], function ($query, $value) {
+                                $query->whereHas('product', function ($q) use ($value) {
+                                    $q->where('name', 'like', "{$value}%")
+                                        ->orWhere('bar_code', 'like', "{$value}%");
+                                });
+                            });
+                    }),
                 SelectFilter::make('branch_id')
                     ->relationship('branch', 'name')
                     ->label('Sucursal')
                     ->preload()
-                    ->searchable()
                     ->default(Auth::user()->employee->wherehouse->id),
                 TrashedFilter::make(),
-            ])
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
             ->persistFiltersInSession()
             ->recordActions([
                 ActionGroup::make([

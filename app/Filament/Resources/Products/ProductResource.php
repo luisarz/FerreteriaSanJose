@@ -293,20 +293,32 @@ class ProductResource extends Resource
             ->paginationPageOptions([
                 5, 10, 25, 50, 100
             ])
-            ->searchDebounce('500ms')
             ->filters([
+                Filter::make('product_name')
+                    ->schema([
+                        TextInput::make('value')
+                            ->label('Producto')
+                            ->placeholder('Buscar por nombre o código de barra')
+                            ->live(debounce: 500),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['value'], function ($query, $value) {
+                                $query->where('name', 'like', "{$value}%")
+                                    ->orWhere('bar_code', 'like', "{$value}%");
+                            });
+                    }),
                 SelectFilter::make('category_id')
                     ->label('Categoría')
                     ->preload()
-                    ->searchable()
                     ->relationship('category', 'name'),
                 SelectFilter::make('marca_id')
                     ->label('Marca')
                     ->preload()
-                    ->searchable()
                     ->relationship('marca', 'nombre'),
                 TrashedFilter::make(),
-            ])
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->persistFiltersInSession()
             ->recordActions([
 
