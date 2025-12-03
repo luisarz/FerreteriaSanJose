@@ -312,7 +312,7 @@ class InventoryResource extends Resource
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
-//            ->filtersApplyAction(null)
+            ->deferFilters(false)
             ->persistFiltersInSession()
             ->recordActions([
                 ActionGroup::make([
