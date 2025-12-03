@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Inventories\Pages;
 
+use App\Models\Branch;
+use Auth;
 use Filament\Notifications\Notification;
 use App\Filament\Resources\Inventories\InventoryResource;
 use Filament\Actions;
@@ -31,27 +33,39 @@ class ListInventories extends ListRecords
                 ->iconSize(IconSize::Large)
                 ->color('info')
                 ->modalHeading('Generar Hoja de Conteo de Inventario')
-                ->modalDescription('Ingrese el inicio del nombre del producto para buscar.')
+                ->modalDescription('Seleccione la sucursal. El filtro por nombre es opcional.')
                 ->modalSubmitActionLabel('Generar PDF')
                 ->schema([
-                    TextInput::make('product_name')
-                        ->label('Nombre del producto')
-                        ->placeholder('Ej: TORNILLO, TUERCA, CABLE...')
+                    Select::make('branch_id')
+                        ->label('Sucursal')
+                        ->options(fn () => Branch::where('is_active', true)->orderBy('name')->pluck('name', 'id'))
+                        ->default(fn () => Auth::user()->employee->wherehouse->id ?? null)
                         ->required()
-                        ->minLength(2)
-                        ->helperText('Ingrese como empieza el nombre del producto (mínimo 2 caracteres)'),
+                        ->searchable()
+                        ->preload()
+                        ->helperText('Seleccione la sucursal para el conteo'),
+                    TextInput::make('product_name')
+                        ->label('Nombre del producto (opcional)')
+                        ->placeholder('Ej: TORNILLO, TUERCA, CABLE... o dejar vacío para todos')
+                        ->helperText('Deje vacío para listar todos los productos de la sucursal'),
                 ])->action(function (array $data) {
+                    $branchId = $data['branch_id'] ?? null;
                     $productName = trim($data['product_name'] ?? '');
 
-                    if (strlen($productName) < 2) {
+                    if (empty($branchId)) {
                         return Notification::make()
-                            ->title('Búsqueda muy corta')
-                            ->body('Debe ingresar al menos 2 caracteres para buscar.')
+                            ->title('Sucursal requerida')
+                            ->body('Debe seleccionar una sucursal.')
                             ->danger()
                             ->send();
                     }
 
-                    $url = route('inventory.counting.pdf', ['product_name' => $productName]);
+                    $params = ['branch_id' => $branchId];
+                    if (!empty($productName)) {
+                        $params['product_name'] = $productName;
+                    }
+
+                    $url = route('inventory.counting.pdf', $params);
 
                     return Notification::make()
                         ->title('PDF generado')

@@ -7,6 +7,7 @@ use App\Exports\inventoryExport;
 use App\Exports\InventoryMovimentExport;
 use App\Exports\SalesExportFac;
 use App\Filament\Exports\InventoryExporter;
+use App\Models\Branch;
 use App\Models\Inventory;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -21,15 +22,21 @@ class InventoryReport extends Controller
     public function inventoryCountingPdf(Request $request)
     {
         // Aumentar límites para procesamiento
-        set_time_limit(120);
-        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+        ini_set('memory_limit', '1024M');
 
-        $productName = $request->get('product_name');
+        $productName = trim($request->get('product_name', ''));
         $branchId = $request->get('branch_id');
 
-        // Validar que el filtro por nombre esté presente
-        if (empty($productName) || strlen($productName) < 2) {
-            return redirect()->back()->with('error', 'Debe ingresar al menos 2 caracteres para buscar.');
+        // Validar que la sucursal esté presente
+        if (empty($branchId)) {
+            return redirect()->back()->with('error', 'Debe seleccionar una sucursal.');
+        }
+
+        // Obtener nombre de la sucursal
+        $branch = Branch::find($branchId);
+        if (!$branch) {
+            return redirect()->back()->with('error', 'Sucursal no encontrada.');
         }
 
         // Query optimizada con select específico y joins
@@ -37,7 +44,6 @@ class InventoryReport extends Controller
             ->select([
                 'inventories.id',
                 'inventories.product_id',
-                'inventories.branch_id',
                 'inventories.stock',
                 'products.name as product_name',
                 'products.bar_code',
@@ -49,46 +55,43 @@ class InventoryReport extends Controller
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
             ->leftJoin('marcas', 'products.marca_id', '=', 'marcas.id')
             ->leftJoin('unit_measurements', 'products.unit_measurement_id', '=', 'unit_measurements.id')
+            ->where('inventories.branch_id', $branchId)
             ->where('inventories.is_active', true)
             ->where('products.is_active', true)
             ->whereNull('products.deleted_at')
             ->whereNull('inventories.deleted_at');
 
-        // Filtrar por sucursal si se especifica
-        if ($branchId) {
-            $query->where('inventories.branch_id', $branchId);
+        // Filtrar por nombre del producto solo si se especifica
+        if (!empty($productName)) {
+            $query->where('products.name', 'LIKE', $productName . '%');
         }
-
-        // Filtrar por nombre del producto (empieza con)
-        $query->where('products.name', 'LIKE', $productName . '%');
 
         // Ordenar por categoría y nombre de producto
         $query->orderBy('categories.name')
               ->orderBy('products.name');
 
-        // Obtener datos en chunks y agrupar
+        // Usar cursor para mejor rendimiento con muchos datos
         $groupedInventories = collect();
         $totalProductos = 0;
 
-        $query->chunk(500, function ($inventories) use (&$groupedInventories, &$totalProductos) {
-            foreach ($inventories as $inventory) {
-                $categoryName = $inventory->category_name ?? 'Sin Categoría';
+        foreach ($query->cursor() as $inventory) {
+            $categoryName = $inventory->category_name ?? 'Sin Categoría';
 
-                if (!$groupedInventories->has($categoryName)) {
-                    $groupedInventories[$categoryName] = collect();
-                }
-
-                $groupedInventories[$categoryName]->push($inventory);
-                $totalProductos++;
+            if (!$groupedInventories->has($categoryName)) {
+                $groupedInventories[$categoryName] = collect();
             }
-        });
+
+            $groupedInventories[$categoryName]->push($inventory);
+            $totalProductos++;
+        }
 
         // Ordenar las categorías alfabéticamente
         $groupedInventories = $groupedInventories->sortKeys();
 
         $data = [
             'groupedInventories' => $groupedInventories,
-            'searchTerm' => $productName,
+            'branchName' => $branch->name,
+            'searchTerm' => $productName ?: 'Todos los productos',
             'fecha' => now()->format('d/m/Y H:i'),
             'totalProductos' => $totalProductos,
         ];
@@ -100,7 +103,7 @@ class InventoryReport extends Controller
         $pdf->setOption('margin-left', '10mm');
         $pdf->setOption('margin-right', '10mm');
 
-        return $pdf->stream('conteo-inventario-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('conteo-inventario-' . $branch->name . '-' . now()->format('Y-m-d') . '.pdf');
     }
 
     public function inventoryReportExport($update,$startDate, $endDate): BinaryFileResponse

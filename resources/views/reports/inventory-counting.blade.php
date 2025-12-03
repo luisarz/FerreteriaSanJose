@@ -31,7 +31,7 @@
 <div class="header">
     <h1>HOJA DE CONTEO DE INVENTARIO</h1>
     <p>
-        Búsqueda: "{{ $searchTerm }}..." | {{ $fecha }} | Total: {{ $totalProductos }} productos
+        <strong>Sucursal:</strong> {{ $branchName }} | <strong>Filtro:</strong> {{ $searchTerm }} | {{ $fecha }} | <strong>Total:</strong> {{ number_format($totalProductos) }} productos
     </p>
 </div>
 
