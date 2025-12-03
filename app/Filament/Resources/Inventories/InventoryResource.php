@@ -290,28 +290,31 @@ class InventoryResource extends Resource
                     ->schema([
                         TextInput::make('value')
                             ->label('Producto')
-                            ->placeholder('Buscar por nombre de producto'),
+                            ->placeholder('Buscar por nombre de producto')
+                            ->live(debounce: 500),
                     ])
                     ->query(function ($query, array $data) {
                         return $query
                             ->when($data['value'], function ($query, $value) {
                                 $query->whereHas('product', function ($q) use ($value) {
-                                    $q->where('name', 'like', "%{$value}%")
-                                        ->orWhere('bar_code', 'like', "%{$value}%");
+                                    $q->where('name', 'like', "{$value}%")
+                                        ->orWhere('bar_code', 'like', "{$value}%");
                                 });
                             });
                     }),
 
-
-                TrashedFilter::make(),
                 SelectFilter::make('branch_id')
                     ->relationship('branch', 'name')
                     ->label('Sucursal')
                     ->preload()
                     ->default(Auth::user()->employee->wherehouse->id)
                     ->placeholder('Buscar por sucursal'),
-//
-            ],layout: FiltersLayout::AboveContent)->filtersFormColumns(2)
+                TrashedFilter::make(),
+
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+            ->filtersApplyAction(fn () => null)
+            ->persistFiltersInSession()
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
