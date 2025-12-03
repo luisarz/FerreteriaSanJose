@@ -65,9 +65,9 @@ class ListInventories extends ListRecords
                         ->body('Haz clic para abrir la hoja de conteo.')
                         ->success()
                         ->actions([
-                            \Filament\Notifications\Actions\Action::make('Abrir PDF')
+                            \Filament\Actions\Action::make('Abrir PDF')
                                 ->button()
-                                ->url($url, shouldOpenInNewTab: true)
+                                ->url($url, true)
                         ])
                         ->send();
                 }),
