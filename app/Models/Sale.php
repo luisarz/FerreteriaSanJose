@@ -12,6 +12,11 @@ class Sale extends Model
 {
     use softDeletes;
 
+    /**
+     * Relaciones que siempre se cargan con el modelo
+     */
+    protected $with = ['documenttype', 'wherehouse'];
+
     protected $fillable = [
         'cashbox_open_id',
         'operation_date',

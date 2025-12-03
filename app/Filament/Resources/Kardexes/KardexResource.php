@@ -108,6 +108,11 @@ class KardexResource extends Resource
     {
 
         return $table
+            ->deferLoading()
+            ->modifyQueryUsing(fn($query) => $query->with([
+                'whereHouse',
+                'inventory.product.unitmeasurement'
+            ]))
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
@@ -159,13 +164,13 @@ class KardexResource extends Resource
                 Tables\Columns\TextColumn::make('previous_stock')
                     ->label('S. Anterior')
                     ->numeric()
-                    ->extraAttributes(['class' => ' color-success bg-success-200']) // Agregar clases CSS para el borde
+//                    ->extraAttributes(['class' => ' color-success bg-success-200']) // Agregar clases CSS para el borde
                     ->sortable(),
                 ColumnGroup::make('DETALLE DE UNIDADES ( CANT)', [
                     Tables\Columns\TextColumn::make('stock_in')
                         ->label('Entrada')
                         ->numeric()
-                        ->color('success') // 🟢 Aplica color de texto verde estilo Filament
+//                        ->color('success') // 🟢 Aplica color de texto verde estilo Filament
                         ->formatStateUsing(fn ($state) => number_format($state, 2)) //
                         ->summarize(Sum::make()->label('Entrada'))
 //                        ->extraAttributes(['class' => 'bg-success-200']) // Agregar clases CSS para el borde

@@ -80,12 +80,14 @@ function updateTotalSale(mixed $idItem, array $data): void
     $sale = Sale::find($idItem);
 
     if ($sale) {
-        // Fetch tax rates with default values
-        $ivaRate = Tribute::where('id', 1)->value('rate') ?? 0;
-        $isrRate = Tribute::where('id', 3)->value('rate') ?? 0;
+        // Fetch tax rates with cache - una sola consulta en lugar de dos
+        $taxes = cache()->remember('tax_rates_iva_isr', 3600, function () {
+            return Tribute::whereIn('id', [1, 3])->pluck('rate', 'id')->toArray();
+        });
 
-        $ivaRate /= 100;
-        $isrRate /= 100;
+        $ivaRate = ($taxes[1] ?? 0) / 100;
+        $isrRate = ($taxes[3] ?? 0) / 100;
+
         // Calculate total and net amounts
         $montoTotal = SaleItem::where('sale_id', $sale->id)->sum('total') ?? 0;
         $neto = $applyTax && $ivaRate > 0 ? $montoTotal / (1 + $ivaRate) : $montoTotal;
@@ -632,12 +634,11 @@ class SaleResource extends Resource
                     ->sortable(),
             ])
             ->modifyQueryUsing(fn($query) => $query
+                ->with(['seller', 'customer', 'salescondition', 'billingModel', 'transmisionType'])
                 ->where('is_invoiced', 1)
                 ->whereIn('sale_status', ['Facturada','Finalizado','Anulado'])
                 ->whereIn('operation_type', ['Sale', 'Order', 'Quote'])
                 ->orderByDesc('created_at')
-//                ->orderByDesc('document_internal_number')
-//                ->orderByDesc('is_dte')
             )
             ->recordUrl(function ($record) {
                 return self::getUrl('sale',

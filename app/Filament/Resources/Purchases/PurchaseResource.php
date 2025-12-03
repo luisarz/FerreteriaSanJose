@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Purchases;
 
+use Filament\Actions\ExportAction;
+use Filament\Actions\ExportBulkAction;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
@@ -52,23 +54,24 @@ function updateTotaPurchase(mixed $idItem, array $data): void
 
     $purchase = Purchase::find($idItem);
     if ($purchase) {
-        // Fetch tax rates with default values
-        $ivaRate = Tribute::where('id', 1)->value('rate') ?? 0;
-        $isrRate = 1;//Tribute::where('id', 3)->value('rate') ?? 0;
+        // Usar caché para obtener tasa de IVA
+        $ivaRate = cache()->remember('tax_rates_iva_isr', 3600, function () {
+            return Tribute::whereIn('id', [1, 3])->pluck('rate', 'id')->toArray();
+        });
+        $ivaRateValue = ($ivaRate[1] ?? 0) / 100;
+        $isrRate = 1 / 100;
 
-        $ivaRate /= 100;
-        $isrRate /= 100;
         // Calculate total and net amounts
         $montoTotal = PurchaseItem::where('purchase_id', $purchase->id)->sum('total') ?? 0;
         // Calculate tax and retention conditionally
-        $iva =$montoTotal * 0.13 ;
+        $iva = $montoTotal * $ivaRateValue;
         $perception = $have_perception ? $montoTotal * $isrRate : 0;
 
         // Round and save calculated values
         $purchase->net_value = round($montoTotal, 2);
         $purchase->taxe_value = round($iva, 2);
         $purchase->perception_value = round($perception, 2);
-        $purchase->purchase_total = round($montoTotal + $perception+$iva, 2);
+        $purchase->purchase_total = round($montoTotal + $perception + $iva, 2);
         $purchase->save();
     }
 }
@@ -77,7 +80,7 @@ class PurchaseResource extends Resource
 {
     protected static ?string $model = Purchase::class;
     protected static ?string $label = 'Compras';
-    protected static string | \UnitEnum | null $navigationGroup = 'Inventario';
+    protected static string|\UnitEnum|null $navigationGroup = 'Inventario';
 
 //    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -103,7 +106,7 @@ class PurchaseResource extends Resource
                                     ->relationship('employee', 'name')
                                     ->label('Empleado')
                                     ->preload()
-                                    ->default(fn () => optional(Auth::user()->employee)->id ?? '')
+                                    ->default(fn() => optional(Auth::user()->employee)->id ?? '')
                                     ->searchable()
                                     ->required(),
                                 Select::make('wherehouse_id')
@@ -263,8 +266,8 @@ class PurchaseResource extends Resource
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('status')
-                ->badge()
-                ->label('Estado')
+                    ->badge()
+                    ->label('Estado')
                     ->color(fn($record) => match ($record->status) {
                         'Anulado' => 'danger',
                         'Procesando' => 'warning',
@@ -293,12 +296,11 @@ class PurchaseResource extends Resource
                 TextColumn::make('purchase_total')
                     ->label('Total')
                     ->summarize(
-                        Sum::make()->query(fn (Builder $query) => $query->where('status','!=', 'Anulado')),
+                        Sum::make()->query(fn(Builder $query) => $query->where('status', '!=', 'Anulado')),
 
                     )
                     ->money('USD', locale: 'en_US')
                     ->sortable(),
-
 
 
                 IconColumn::make('paid')
@@ -324,7 +326,8 @@ class PurchaseResource extends Resource
                     ]);
             })
             ->modifyQueryUsing(function ($query) {
-                $query->where('process_document_type','=','Compra');
+                $query->with(['provider', 'employee', 'wherehouse'])
+                    ->where('process_document_type', '=', 'Compra');
             })
             ->filters([
                 DateRangeFilter::make('purchase_date')
@@ -345,65 +348,67 @@ class PurchaseResource extends Resource
                     ->icon('heroicon-o-trash')
                     ->hidden(fn($record) => $record->status === 'Anulado')
                     ->action(function (Purchase $purchase) {
-                    $purchaseItems = PurchaseItem::where('purchase_id', $purchase->id)->get();
-                    $provider = Provider::with('pais')->find($purchase->provider_id);
-                    $entity = $provider->comercial_name;
-                    $pais = $provider->pais->name;
+                        $purchaseItems = PurchaseItem::where('purchase_id', $purchase->id)->get();
+                        $provider = Provider::with('pais')->find($purchase->provider_id);
+                        $entity = $provider->comercial_name;
+                        $pais = $provider->pais->name;
 
-                    foreach ($purchaseItems as $item) {
-                        $inventory = Inventory::find($item->inventory_id);
+                        foreach ($purchaseItems as $item) {
+                            $inventory = Inventory::find($item->inventory_id);
 
-                        // Verifica si el inventario existe
-                        if (!$inventory) {
-                            Log::error("Inventario no encontrado para el item de compra: {$item->id}");
-                            continue; // Si no se encuentra el inventario, continua con el siguiente item
+                            // Verifica si el inventario existe
+                            if (!$inventory) {
+                                Log::error("Inventario no encontrado para el item de compra: {$item->id}");
+                                continue; // Si no se encuentra el inventario, continua con el siguiente item
+                            }
+
+                            // Actualiza el stock del inventario
+                            $newStock = $inventory->stock - $item->quantity;
+                            $inventory->update(['stock' => $newStock, "cost_without_taxes" => $item->price]);
+
+                            // Crear el Kardex
+                            $kardex = KardexHelper::createKardexFromInventory(
+                                $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
+                                now(), // date
+                                'Anulacion', // operation_type
+                                $purchase->id, // operation_id
+
+                                $item->id, // operation_detail_id
+                                'ANULACION -CCF', // document_type
+                                $purchase->document_number, // document_number
+                                $entity, // entity
+                                $pais, // nationality
+                                $inventory->id, // inventory_id
+                                $inventory->stock + $item->quantity, // previous_stock
+                                0, // stock_in
+                                $item->quantity, // stock_out
+                                $inventory->stock, // stock_actual
+                                $item->quantity * $item->price, // money_in
+                                0, // money_out
+                                $inventory->stock * $item->price, // money_actual
+                                0, // sale_price
+                                $item->price // purchase_price
+                            );
+
+                            // Verifica si la creación del Kardex fue exitosa
+                            if (!$kardex) {
+                                Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                            }
+                            $purchase->update(['status' => "Anulado"]);
+                            Notification::make('Anulacion de compra')
+                                ->title('Compra anulada de manera existosa')
+                                ->body('La compra fue anulada de manera existosa')
+                                ->success()
+                                ->send();
                         }
-
-                        // Actualiza el stock del inventario
-                        $newStock = $inventory->stock - $item->quantity;
-                        $inventory->update(['stock' => $newStock,"cost_without_taxes"=>$item->price]);
-
-                        // Crear el Kardex
-                        $kardex = KardexHelper::createKardexFromInventory(
-                            $inventory->branch_id, // Se pasa solo el valor de branch_id (entero)
-                            now(), // date
-                            'Anulacion', // operation_type
-                            $purchase->id, // operation_id
-
-                            $item->id, // operation_detail_id
-                            'ANULACION -CCF', // document_type
-                            $purchase->document_number, // document_number
-                            $entity, // entity
-                            $pais, // nationality
-                            $inventory->id, // inventory_id
-                            $inventory->stock + $item->quantity, // previous_stock
-                            0, // stock_in
-                            $item->quantity, // stock_out
-                            $inventory->stock, // stock_actual
-                            $item->quantity * $item->price, // money_in
-                            0, // money_out
-                            $inventory->stock * $item->price, // money_actual
-                            0, // sale_price
-                            $item->price // purchase_price
-                        );
-
-                        // Verifica si la creación del Kardex fue exitosa
-                        if (!$kardex) {
-                            Log::error("Error al crear Kardex para el item de compra: {$item->id}");
-                        }
-                        $purchase->update(['status' =>"Anulado"]);
-                        Notification::make('Anulacion de compra')
-                            ->title('Compra anulada de manera existosa')
-                            ->body('La compra fue anulada de manera existosa')
-                            ->success()
-                            ->send();
-                    }
-                }),
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    ExportBulkAction::make()
+                        ->label('Exportar'),
+
+                ])
             ]);
     }
 

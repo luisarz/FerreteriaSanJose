@@ -55,7 +55,7 @@ class Inventory extends Model
 
             // Verifica si la creación del Kardex fue exitosa
             if (!$kardex) {
-                Log::error("Error al crear Kardex para el item de compra: {$item->id}");
+                Log::error("Error al crear Kardex para el inventario: {$inventory->id}");
             }
         });
     }

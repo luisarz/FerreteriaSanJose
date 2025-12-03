@@ -275,6 +275,10 @@ class CustomerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->deferLoading()
+            ->modifyQueryUsing(fn($query) => $query->with([
+                'wherehouse', 'country', 'departamento', 'distrito', 'municipio'
+            ]))
             ->columns([
                 TextColumn::make('wherehouse.name')
                     ->label('Sucursal')

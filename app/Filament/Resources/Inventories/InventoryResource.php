@@ -70,12 +70,13 @@ class InventoryResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $tax = Tribute::find(1)->select('rate', 'is_percentage')->first();
-        if (!$tax) {
-            $tax = (object)['rate' => 0, 'is_percentage' => false];
-        }
-        $divider = ($tax->is_percentage) ? 100 : 1;
-        $iva = $tax->rate / $divider;
+        // Cachear impuesto IVA para evitar consultas repetidas
+        $tax = cache()->remember('tribute_iva_rate', 3600, function () {
+            return Tribute::find(1)?->only(['rate', 'is_percentage'])
+                ?? ['rate' => 0, 'is_percentage' => false];
+        });
+        $divider = ($tax['is_percentage'] ?? false) ? 100 : 1;
+        $iva = ($tax['rate'] ?? 0) / $divider;
         return $schema
             ->components([
                 Section::make()
@@ -281,7 +282,8 @@ class InventoryResource extends Resource
                 'md' => 3,
                 'xs' => 4,
             ])
-//            ->deferLoading()
+            ->deferLoading()
+            ->modifyQueryUsing(fn($query) => $query->with(['product', 'branch', 'prices']))
             ->striped()
             ->filters([
                 Filter::make('product_name')

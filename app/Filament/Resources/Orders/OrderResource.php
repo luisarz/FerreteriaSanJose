@@ -210,6 +210,11 @@ class OrderResource extends Resource
     static function table(Table $table): Table
     {
         return $table
+            ->deferLoading()
+            ->modifyQueryUsing(fn($query) => $query
+                ->with(['wherehouse', 'seller', 'customer'])
+                ->where('operation_type', 'Order')
+            )
             ->columns([
 
 
