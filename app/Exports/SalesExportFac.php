@@ -58,7 +58,7 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
 
     public function collection(): Collection
     {
-        $sales = Sale::select(
+        $query = Sale::select(
             'id',
             'operation_date as fecha',
             'sale_total as venta_gravada',
@@ -76,16 +76,22 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
             'transmision_type',
             'is_dte',
             'is_hacienda_send'
-
         )
             ->where('is_dte', '1')
-            ->whereIn('document_type_id', [$this->documentType])//1- Fac 3-CCF 5-NC 11-FExportacion 14-Sujeto excluido
-//            ->whereIn('document_type_id', [1, 3, 5, 11, 14])//1- Fac 3-CCF 5-NC 11-FExportacion 14-Sujeto excluido
-            ->whereBetween('operation_date', [$this->startDate, $this->endDate])
+            ->whereBetween('operation_date', [$this->startDate, $this->endDate]);
+
+        // Si se especifica tipo de documento, filtra; sino, trae todos los tipos DTE
+        if (!empty($this->documentType)) {
+            $query->whereIn('document_type_id', [$this->documentType]);
+        } else {
+            $query->whereIn('document_type_id', [1, 3, 5, 11, 14]); // Todos los tipos DTE
+        }
+
+        $sales = $query
             ->orderBy('operation_date', 'asc')
             ->with(['dteProcesado' => function ($query) {
-                $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'fhProcesamiento')
-                    ->whereNotNull('selloRecibido');
+                $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'fhProcesamiento', 'estado')
+                    ->where('estado', 'PROCESADO');
             },
                 'documenttype', 'customer', 'billingModel', 'salescondition', 'seller'])
             ->get()

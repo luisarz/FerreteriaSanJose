@@ -15,7 +15,6 @@ use Illuminate\Http\Response;
 use Maatwebsite\Excel\Facades\Excel;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use ZipArchive;
-use Illuminate\Support\Facades\Storage;
 
 
 class ReportsController extends Controller
@@ -36,9 +35,10 @@ class ReportsController extends Controller
     {
         set_time_limit(0);
 
-        // Obtener DTEs directamente de history_dtes
-        $historyDtes = HistoryDte::whereNotNull('selloRecibido')
+        // Obtener DTEs directamente de history_dtes (incluye contingencias sin sello)
+        $historyDtes = HistoryDte::whereNotNull('codigoGeneracion')
             ->whereNotNull('dte')
+            ->where('estado', 'PROCESADO')
             ->whereHas('salesInvoice', function ($query) use ($startDate, $endDate) {
                 $query->where('is_dte', '1')
                     ->whereIn('document_type_id', [1, 3, 5, 11, 14])
@@ -99,9 +99,10 @@ class ReportsController extends Controller
     {
         set_time_limit(0);
 
-        // Obtener DTEs directamente de history_dtes
-        $historyDtes = HistoryDte::whereNotNull('selloRecibido')
+        // Obtener DTEs directamente de history_dtes (incluye contingencias sin sello)
+        $historyDtes = HistoryDte::whereNotNull('codigoGeneracion')
             ->whereNotNull('dte')
+            ->where('estado', 'PROCESADO')
             ->whereHas('salesInvoice', function ($query) use ($startDate, $endDate) {
                 $query->where('is_dte', '1')
                     ->whereIn('document_type_id', [1, 3, 5, 11, 14])
@@ -162,7 +163,7 @@ class ReportsController extends Controller
     {
         try {
             $tipoDocumento = $DTE['identificacion']['tipoDte'] ?? 'DESCONOCIDO';
-            $logo = auth()->user()->employee->wherehouse->logo;
+            $logo = auth()->user()->employee->wherehouse->logo ?? null;
 
             $tiposDTE = [
                 '03' => 'COMPROBANTE DE CREDITO FISCAL',
@@ -181,13 +182,6 @@ class ReportsController extends Controller
             $tipoDocumentoNombre = $tiposDTE[$tipoDocumento] ?? 'DOCUMENTO';
             $contenidoQR = "https://admin.factura.gob.sv/consultaPublica?ambiente=" . env('DTE_AMBIENTE_QR') . "&codGen=" . $DTE['identificacion']['codigoGeneracion'] . "&fechaEmi=" . $DTE['identificacion']['fecEmi'];
 
-            $datos = [
-                'empresa' => $DTE["emisor"],
-                'DTE' => $DTE,
-                'tipoDocumento' => $tipoDocumentoNombre,
-                'logo' => Storage::url($logo),
-            ];
-
             // Crear QR temporal
             $qrDir = storage_path('app/temp/QR');
             if (!file_exists($qrDir)) {
@@ -196,13 +190,36 @@ class ReportsController extends Controller
             $qrPath = $qrDir . '/' . $codGeneracion . '.jpg';
             QrCode::size(300)->generate($contenidoQR, $qrPath);
 
-            $qr = $qrPath;
-            $isLocalhost = in_array(request()->getHost(), ['127.0.0.1', 'localhost']);
+            // Convertir imágenes a base64 para DomPDF
+            $logoBase64 = null;
+            if ($logo) {
+                $logoFullPath = storage_path('app/public/' . $logo);
+                if (file_exists($logoFullPath)) {
+                    $logoData = file_get_contents($logoFullPath);
+                    $logoMime = mime_content_type($logoFullPath);
+                    $logoBase64 = 'data:' . $logoMime . ';base64,' . base64_encode($logoData);
+                }
+            }
+
+            $qrBase64 = null;
+            if (file_exists($qrPath)) {
+                $qrData = file_get_contents($qrPath);
+                $qrBase64 = 'data:image/png;base64,' . base64_encode($qrData);
+            }
+
+            $datos = [
+                'empresa' => $DTE["emisor"],
+                'DTE' => $DTE,
+                'tipoDocumento' => $tipoDocumentoNombre,
+                'logo' => $logoBase64,
+            ];
+
+            $qr = $qrBase64;
 
             $pdf = Pdf::loadView('DTE.dte-print-pdf', compact('datos', 'qr'))
                 ->setOptions([
                     'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => !$isLocalhost,
+                    'isRemoteEnabled' => true,
                 ]);
 
             $pdfPath = $tempDir . '/' . $codGeneracion . '.pdf';
