@@ -59,11 +59,10 @@ class InventoryResource extends Resource
     }
 
     protected static ?string $model = Inventory::class;
-    protected static string | \UnitEnum | null $navigationGroup = 'Inventario';
+    protected static string|\UnitEnum|null $navigationGroup = 'Inventario';
     protected static ?string $label = 'Inventario'; // Singular
     protected static ?string $pluralLabel = "Lista de inventario";
     protected static ?string $badgeColor = 'danger';
-
 
 
 //
@@ -140,9 +139,9 @@ class InventoryResource extends Resource
                                     ->debounce(500) // Espera 500 ms después de que el usuario deje de escribir
                                     ->afterStateUpdated(function ($state, callable $set) use ($iva) {
                                         $costWithoutTaxes = $state ?: 0; // Valor predeterminado en 0 si está vacío
-                                        $costWithTaxes = number_format($costWithoutTaxes * $iva, 2,'.',''); // Cálculo del costo con impuestos
+                                        $costWithTaxes = number_format($costWithoutTaxes * $iva, 2, '.', ''); // Cálculo del costo con impuestos
                                         $costWithTaxes += $costWithoutTaxes; // Suma el costo sin impuestos
-                                        $set('cost_with_taxes',number_format( $costWithTaxes,2,'.','')); // Actualiza el campo
+                                        $set('cost_with_taxes', number_format($costWithTaxes, 2, '.', '')); // Actualiza el campo
                                     })
                                     ->default(0.00),
                                 TextInput::make('cost_with_taxes')
@@ -207,7 +206,6 @@ class InventoryResource extends Resource
                                     ->weight(FontWeight::Medium)
                                     ->sortable()
                                     ->wrap()
-
                                     ->icon('heroicon-s-cube')
                                     ->searchable()
                                     ->sortable(),
@@ -288,11 +286,12 @@ class InventoryResource extends Resource
             ->striped()
             ->filters([
                 Filter::make('product_name')
+                    ->live() // ← este activa el filtro automático
                     ->schema([
                         TextInput::make('value')
                             ->label('Producto')
                             ->placeholder('Buscar por nombre de producto')
-                            ->live(debounce: 500),
+                            ->live(debounce: 500), // ← este activa la escritura en vivo
                     ])
                     ->query(function ($query, array $data) {
                         return $query
@@ -303,6 +302,8 @@ class InventoryResource extends Resource
                                 });
                             });
                     }),
+
+
                 SelectFilter::make('branch_id')
                     ->relationship('branch', 'name')
                     ->label('Sucursal')
@@ -312,7 +313,7 @@ class InventoryResource extends Resource
                 TrashedFilter::make(),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(3)
-            ->filtersApplyAction(fn () => null)
+            ->filtersApplyAction(fn() => null)
             ->persistFiltersInSession()
             ->recordActions([
                 ActionGroup::make([
@@ -392,14 +393,11 @@ class InventoryResource extends Resource
         $relations = [];
 
 
-
         return [
             PricesRelationManager::class,
             GroupingInventoryRelationManager::class,
         ];
     }
-
-
 
 
     public static function getPages(): array
