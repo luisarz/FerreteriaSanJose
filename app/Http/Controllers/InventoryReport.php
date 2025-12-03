@@ -38,6 +38,7 @@ class InventoryReport extends Controller
                 'inventories.id',
                 'inventories.product_id',
                 'inventories.branch_id',
+                'inventories.stock',
                 'products.name as product_name',
                 'products.bar_code',
                 'categories.name as category_name',
@@ -94,6 +95,10 @@ class InventoryReport extends Controller
 
         $pdf = Pdf::loadView('reports.inventory-counting', $data);
         $pdf->setPaper('letter', 'portrait');
+        $pdf->setOption('margin-top', '15mm');
+        $pdf->setOption('margin-bottom', '15mm');
+        $pdf->setOption('margin-left', '10mm');
+        $pdf->setOption('margin-right', '10mm');
 
         return $pdf->stream('conteo-inventario-' . now()->format('Y-m-d') . '.pdf');
     }

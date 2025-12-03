@@ -16,10 +16,11 @@
         td { padding: 3px 4px; border: 1px solid #ddd; font-size: 8px; }
         tr:nth-child(even) { background: #f9f9f9; }
         .n { width: 4%; text-align: center; }
-        .cod { width: 14%; font-family: monospace; }
-        .prod { width: 42%; }
-        .pres { width: 12%; text-align: center; }
-        .cont { width: 14%; background: #fffef0; }
+        .cod { width: 12%; font-family: monospace; }
+        .prod { width: 34%; }
+        .pres { width: 10%; text-align: center; }
+        .stock { width: 8%; text-align: center; font-weight: bold; }
+        .cont { width: 12%; background: #fffef0; }
         .box { border: 1px dashed #999; min-height: 14px; }
         .footer { margin-top: 15px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 8px; }
         .sig { display: inline-block; width: 180px; border-top: 1px solid #333; text-align: center; padding-top: 3px; margin-right: 30px; margin-top: 25px; }
@@ -43,6 +44,7 @@
             <th class="cod">CÓDIGO</th>
             <th class="prod">PRODUCTO</th>
             <th class="pres c">PRES.</th>
+            <th class="stock c">STOCK</th>
             <th class="cont c">CONTEO 1</th>
             <th class="cont c">CONTEO 2</th>
         </tr>
@@ -54,6 +56,7 @@
             <td class="cod">{{ $inv->bar_code ?: 'COD-'.$inv->product_id }}</td>
             <td class="prod">{{ $inv->product_name }}@if($inv->marca_name) <small>({{ $inv->marca_name }})</small>@endif</td>
             <td class="pres">{{ $inv->unit_description ?? 'N/A' }}</td>
+            <td class="stock">{{ number_format($inv->stock, 2) }}</td>
             <td class="cont"><div class="box"></div></td>
             <td class="cont"><div class="box"></div></td>
         </tr>
