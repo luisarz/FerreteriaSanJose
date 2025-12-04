@@ -225,7 +225,7 @@
                                     <td style="text-align: left; padding: 5px 6px; font-weight: bold; color: #57595B; font-size: 10px; line-height: 1.3; vertical-align: top;">
                                         CORREO:
                                     </td>
-                                    <td style="text-align: left; padding: 5px 6px; color: #333; font-size: 9.5px; text-transform: lowercase; line-height: 1.3;">{{ $datos['empresa']['correo'] ?? '' }}</td>
+                                    <td style="text-align: left; padding: 5px 6px; color: #333; font-size: 10.5px; text-transform: lowercase; line-height: 1.3;">{{ $datos['empresa']['correo'] ?? '' }}</td>
                                 </tr>
                                 <tr style="background-color: #ffffff;">
                                     <td style="text-align: left; padding: 5px 6px; font-weight: bold; color: #57595B; font-size: 10px; line-height: 1.3; vertical-align: top;">
