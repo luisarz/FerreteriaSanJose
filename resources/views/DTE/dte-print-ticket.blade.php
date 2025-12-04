@@ -247,7 +247,7 @@
                 </div>
                 <div class="item-detalle">
                     <span>P.Unit: ${{ number_format($item['precioUni'], 2) }}</span>
-                    <span>Desc: ${{ number_format($item['montoDescu'], 2) }}</span>
+                    <span>@if($item['montoDescu'] > 0)Desc: ${{ number_format($item['montoDescu'], 2) }}@endif</span>
                     <span><strong>${{ number_format($item['ventaGravada'] ?? $item['compra'] ?? 0, 2) }}</strong></span>
                 </div>
             </div>
