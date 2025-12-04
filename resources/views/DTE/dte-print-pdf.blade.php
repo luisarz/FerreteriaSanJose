@@ -227,12 +227,6 @@
                                     </td>
                                     <td style="text-align: left; padding: 5px 6px; color: #333; font-size: 10.5px; text-transform: lowercase; line-height: 1.3;">{{ $datos['empresa']['correo'] ?? '' }}</td>
                                 </tr>
-                                <tr style="background-color: #ffffff;">
-                                    <td style="text-align: left; padding: 5px 6px; font-weight: bold; color: #57595B; font-size: 10px; line-height: 1.3; vertical-align: top;">
-                                        SITIO WEB:
-                                    </td>
-                                    <td style="text-align: left; padding: 5px 6px; color: #333; font-size: 9.5px; text-transform: uppercase; line-height: 1.3;">{{ $datos['empresa']['web'] ?? '' }}</td>
-                                </tr>
                             </table>
                         </td>
                     </tr>
@@ -296,64 +290,21 @@
                             {{ $datos['DTE']['identificacion']['horEmi'] }}
                         </td>
                     </tr>
+                    @php
+                        $variables = [];
+                        if (!empty($datos['DTE']['apendice']) && is_array($datos['DTE']['apendice'])) {
+                            foreach ($datos['DTE']['apendice'] as $item) {
+                                $variables[$item['campo']] = $item['valor'];
+                            }
+                        }
+                        $creditDays = $variables['CREDIT_DAYS'] ?? '-';
+                    @endphp
                     <tr>
-                        <td style="text-align: center; padding: 8px 4px; border: none;">
+                        <td colspan="2" style="text-align: center; padding: 8px 4px; border: none;">
                             @if($qr)
                                 <img src="{{ $qr }}" alt="QR Código"
                                      style="width: 100px; height: 100px; border: 2px solid #999; padding: 5px;">
                             @endif
-                        </td>
-                        <td style="padding: 0 4px; border: none;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 9px; border: none;">
-                                @php
-                                    $variables = [];
-
-                                    if (!empty($datos['DTE']['apendice']) && is_array($datos['DTE']['apendice'])) {
-                                        foreach ($datos['DTE']['apendice'] as $item) {
-                                            $variables[$item['campo']] = $item['valor'];
-                                        }
-                                    }
-
-                                    $codCliente   = $variables['COD_CLIENTE'] ?? '-';
-                                    $vendedor     = $variables['VENDEDOR'] ?? '-';
-                                    $almacen      = $variables['ALMACEN'] ?? '-';
-                                    $orderNumber  = $variables['ORDER_NUMBER'] ?? '-';
-                                    $creditDays   = $variables['CREDIT_DAYS'] ?? '-';
-                                @endphp
-                                <thead>
-                                <tr>
-                                    <td colspan="2" style="text-align: center; font-weight: bold; padding: 5px; background-color: #1e6bb8; color: white; font-size: 9px; line-height: 1.2;">
-                                        DETALLES ADICIONALES
-                                    </td>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr style="background-color: #f5f5f5;">
-                                    <td style="text-align: left; padding: 4px 6px; font-weight: bold; color: #57595B; font-size: 8px; width: 45%;">
-                                        CÓDIGO CLIENTE:
-                                    </td>
-                                    <td style="text-align: left; padding: 4px 6px; color: #333; font-size: 8.5px;">{{$codCliente}}</td>
-                                </tr>
-                                <tr style="background-color: #ffffff;">
-                                    <td style="text-align: left; padding: 4px 6px; font-weight: bold; color: #57595B; font-size: 8px;">
-                                        VENDEDOR:
-                                    </td>
-                                    <td style="text-align: left; padding: 4px 6px; color: #333; font-size: 8.5px;">{{$vendedor}}</td>
-                                </tr>
-                                <tr style="background-color: #f5f5f5;">
-                                    <td style="text-align: left; padding: 4px 6px; font-weight: bold; color: #57595B; font-size: 8px;">
-                                        ALMACÉN:
-                                    </td>
-                                    <td style="text-align: left; padding: 4px 6px; color: #333; font-size: 8.5px;">{{substr($almacen,0,28)}}</td>
-                                </tr>
-                                <tr style="background-color: #ffffff;">
-                                    <td style="text-align: left; padding: 4px 6px; font-weight: bold; color: #57595B; font-size: 8px;">
-                                        ORDEN DE COMPRA:
-                                    </td>
-                                    <td style="text-align: left; padding: 4px 6px; color: #333; font-size: 8.5px;">{{$orderNumber}}</td>
-                                </tr>
-                                </tbody>
-                            </table>
                         </td>
                     </tr>
                 </table>
