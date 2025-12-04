@@ -50,7 +50,12 @@ class OrdenController extends Controller
     public function ordenGenerarTicket($idVenta)
     {
         //abrir el json en DTEs
-        $datos = Sale::with('customer', 'saleDetails', 'whereHouse', 'saleDetails.inventory', 'saleDetails.inventory.product', 'documenttype', 'seller', 'mechanic')->find($idVenta);
+        $datos = Sale::withTrashed()->with('customer', 'saleDetails', 'whereHouse', 'saleDetails.inventory', 'saleDetails.inventory.product', 'documenttype', 'seller', 'mechanic')->find($idVenta);
+
+        if (!$datos) {
+            abort(404, 'Orden no encontrada');
+        }
+
         $empresa = $this->getConfiguracion();
         $logo = auth()->user()->employee->wherehouse->logo;
         $logoPath=Storage::url($logo);
