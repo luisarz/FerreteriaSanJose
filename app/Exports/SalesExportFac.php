@@ -51,7 +51,8 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
             'ISR 10%',
             'Total Venta',
             'Estado',
-            'fecha MH'
+            'fecha MH',
+            'Mensaje MH'
         ];
 
 
@@ -91,7 +92,7 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
         $sales = $query
             ->orderBy('operation_date', 'asc')
             ->with(['dteProcesado' => function ($query) {
-                $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'fhProcesamiento', 'estado')
+                $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'fhProcesamiento', 'estado', 'descripcionMsg')
                     ->where('estado', 'PROCESADO');
             },
                 'documenttype', 'customer', 'billingModel', 'salescondition', 'seller'])
@@ -174,9 +175,8 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
 //                    'vendedor' => $sale->seller->name ?? null,
 //                    'condicion' => $sale->salescondition->name ?? null,
                     'estado' => strtoupper($sale->sale_status),
-                    'fecha_mh' => $sale->dteProcesado?->fhProcesamiento? date('d/m/Y', strtotime($sale->dteProcesado->fhProcesamiento)): null,
-
-
+                    'fecha_mh' => $sale->dteProcesado?->fhProcesamiento ? date('d/m/Y', strtotime($sale->dteProcesado->fhProcesamiento)) : null,
+                    'mensaje_mh' => $sale->dteProcesado->descripcionMsg ?? null,
                 ];
             });
 

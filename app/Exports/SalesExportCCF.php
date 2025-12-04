@@ -50,6 +50,7 @@ class SalesExportCCF implements FromCollection, WithHeadings, WithEvents
             'Total Venta',
             'DUI',
             'Numero Anexo',
+            'Mensaje MH',
         ];
     }
 
@@ -70,7 +71,7 @@ class SalesExportCCF implements FromCollection, WithHeadings, WithEvents
             ->orderBy('operation_date', 'asc')
             ->with(
                 ['dteProcesado' => function ($query) {
-                    $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'estado')
+                    $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'estado', 'descripcionMsg')
                         ->where('estado', 'PROCESADO');
                 },
                     'customer' => function ($query) {
@@ -104,6 +105,7 @@ class SalesExportCCF implements FromCollection, WithHeadings, WithEvents
                     'total_venta' => $sale->total,
                     'dui' => $sale->customer->dui,
                     'anexo' => 1,
+                    'mensaje_mh' => $sale->dteProcesado->descripcionMsg ?? null,
                 ];
             });
 
