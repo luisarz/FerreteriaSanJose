@@ -114,6 +114,21 @@
             padding-left: 10px;
         }
 
+        .tabla-productos .item-detalle span:first-child {
+            text-align: left;
+            flex: 1;
+        }
+
+        .tabla-productos .item-detalle span:nth-child(2) {
+            text-align: center;
+            flex: 1;
+        }
+
+        .tabla-productos .item-detalle span:last-child {
+            text-align: right;
+            flex: 1;
+        }
+
         .footer {
             text-align: left;
             margin-top: 10px;
@@ -247,7 +262,7 @@
                 </div>
                 <div class="item-detalle">
                     <span>P.Unit: ${{ number_format($item['precioUni'], 2) }}</span>
-                    <span>@if($item['montoDescu'] > 0)Desc: ${{ number_format($item['montoDescu'], 2) }}@endif</span>
+                    <span>@if($item['montoDescu'] > 0)Desc: ${{ number_format($item['montoDescu'], 2) }}@else&nbsp;@endif</span>
                     <span><strong>${{ number_format($item['ventaGravada'] ?? $item['compra'] ?? 0, 2) }}</strong></span>
                 </div>
             </div>
