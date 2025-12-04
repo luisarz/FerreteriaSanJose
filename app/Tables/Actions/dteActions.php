@@ -6,7 +6,6 @@ use Filament\Actions\Action;
 use App\Filament\Resources\DteTransmisionWherehouses\DteTransmisionWherehouseResource;
 use App\Models\Branch;
 use App\Models\DteTransmisionWherehouse;
-use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Forms\Components\Select;
 use Filament\Support\Enums\IconSize;
 use App\Http\Controllers\DTEController;
@@ -40,7 +39,7 @@ class dteActions
                 $dteController = new DTEController();
                 $resultado = $dteController->generarDTE($record->id);
                 if ($resultado['estado'] === 'EXITO') {
-                    PageAlert::make()
+                    Notification::make()
                         ->title('Envío Exitoso')
                         ->success()
                         ->send();
@@ -49,14 +48,14 @@ class dteActions
                     self::enviarEmailDTE()->action($record);
 //                    }
                 } else {
-                    PageAlert::make()
+                    Notification::make()
                         ->title($resultado['estado'])
                         ->danger()
                         ->body($resultado["mensaje"])
                         ->send();
                 }
 //                } else {
-//                    PageAlert::make()
+//                    Notification::make()
 //                        ->title('Se canceló el envío')
 //                        ->warning()
 //                        ->send();
@@ -88,12 +87,12 @@ class dteActions
                     $dteController = new DTEController();
                     $resultado = $dteController->anularDTE($record->id);
                     if ($resultado['estado'] === 'EXITO') {
-                        PageAlert::make()
+                        Notification::make()
                             ->title('Anulación Exitosa')
                             ->success()
                             ->send();
                     } else {
-                        PageAlert::make()
+                        Notification::make()
                             ->title('Fallo en anulación')
                             ->danger()
                             ->duration(5000)

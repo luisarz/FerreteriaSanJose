@@ -92,7 +92,7 @@ class EditOrder extends EditRecord
                 ])
                 ->action(function (DeleteAction $delete) {
                     if ($this->record->is_dte) {
-                        PageAlert::make()
+                        Notification::make()
                             ->title('Error al anular venta')
                             ->body('No se puede cancelar una venta con DTE.')
                             ->danger()
@@ -136,7 +136,7 @@ class EditOrder extends EditRecord
 //            ->success()
 //            ->send();
 
-        PageAlert::make()
+        Notification::make()
             ->title('Orden enviada')
             ->body('La orden ha sido enviada correctamente')
             ->success()

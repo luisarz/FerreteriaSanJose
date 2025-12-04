@@ -110,7 +110,7 @@ class ContingencyResource extends Resource
                         if ($data['confirmacion'] === 'si') {
                             $dteController = new ContingencyController();
                             if($record->uuid_hacienda == null){
-                                PageAlert::make()
+                                Notification::make()
                                     ->title('No se puede cerrar la contingencia')
                                     ->danger()
                                     ->send();
@@ -118,18 +118,18 @@ class ContingencyResource extends Resource
                             $resultado = $dteController->contingencyCloseDTE($record->uuid_hacienda);
                             dd($resultado);
                             if($resultado){
-                                PageAlert::make()
+                                Notification::make()
                                     ->title('Contingencia generada Exitosa')
                                     ->success()
                                     ->send();
                             }else{
-                                PageAlert::make()
+                                Notification::make()
                                     ->title('Fallo en envío')
                                     ->danger()
                                     ->send();
                             }
                         } else {
-                            PageAlert::make()
+                            Notification::make()
                                 ->title('Se canceló el envío')
                                 ->warning()
                                 ->send();

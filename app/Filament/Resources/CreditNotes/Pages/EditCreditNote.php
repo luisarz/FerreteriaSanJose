@@ -203,7 +203,7 @@ class EditCreditNote extends EditRecord
 //                    $correlativo = CashBoxCorrelative::where('cash_box_id', $idCajaAbierta)->where('document_type_id', $documentType)->first();
 //                    $correlativo->current_number = $document_internal_number_new;
 //                    $correlativo->save();
-                    PageAlert::make()
+                    Notification::make()
                         ->title('Nota Finalizada')
                         ->body('Nota finalizada con éxito. # Comprobante **' . $document_internal_number_new . '**')
                         ->success()
@@ -225,7 +225,7 @@ class EditCreditNote extends EditRecord
                 ->modalButton('Sí, cancelar venta')
                 ->action(function (DeleteAction $delete) {
                     if ($this->record->is_dte) {
-                        PageAlert::make()
+                        Notification::make()
                             ->title('Error al anular venta')
                             ->body('No se puede cancelar una venta con DTE.')
                             ->danger()

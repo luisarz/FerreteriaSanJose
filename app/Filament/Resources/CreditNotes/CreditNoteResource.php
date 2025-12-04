@@ -60,7 +60,7 @@ function updateTotalNC(mixed $idItem, array $data): void
     $change = $data['change'] ?? false;
     if ($cash < 0) {
 
-        PageAlert::make()
+        Notification::make()
             ->title('Saved successfully')
             ->body('El monto ingresado no puede ser menor que 0.')
             ->success()

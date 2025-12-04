@@ -16,7 +16,6 @@ use App\Models\DteTransmisionWherehouse;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use Devonab\FilamentEasyFooter\EasyFooterPlugin;
-use EightyNine\FilamentPageAlerts\FilamentPageAlertsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
