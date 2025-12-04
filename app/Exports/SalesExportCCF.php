@@ -69,8 +69,7 @@ class SalesExportCCF implements FromCollection, WithHeadings, WithEvents
             ->orderBy('operation_date', 'asc')
             ->with(
                 ['dteProcesado' => function ($query) {
-                    $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion')
-                        ->whereNotNull('selloRecibido');
+                    $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion');
                 },
                     'customer' => function ($query) {
                         $query->select('id', 'name', 'last_name', 'document_type_id', 'nit', 'dui', 'nrc');
