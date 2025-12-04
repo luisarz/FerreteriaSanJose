@@ -6,7 +6,6 @@ use Filament\Actions\DeleteAction;
 use App\Models\Sale;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Models\SaleItem;
-use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;

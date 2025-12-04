@@ -43,7 +43,7 @@ class EditAdjustmentInventory extends EditRecord
                     $id_sale = $this->record->id; // Obtener el registro de la compra
                     $ajusteProceso = adjustmentInventory::find($id_sale);
                     if ($ajusteProceso->monto <= 0) {
-                        PageAlert::make('No se puede finalizar la venta')
+                        Notification::make()
                             ->title('Error al finalizar proceso')
                             ->body('El monto total del proceso debe ser mayor a 0')
                             ->danger()

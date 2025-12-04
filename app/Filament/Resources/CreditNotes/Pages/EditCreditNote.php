@@ -14,7 +14,6 @@ use App\Models\InventoryGrouped;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Service\GetCashBoxOpenedService;
-use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -45,7 +44,7 @@ class EditCreditNote extends EditRecord
                 ->modalButton('Sí, Finalizar Nota')
                 ->action(function (EditAction $edit) {
                     if ($this->record->sale_total <= 0) {
-                        PageAlert::make('No se puede finalizar la venta')
+                        Notification::make()
                             ->title('Error al finalizar Nota')
                             ->body('El monto total de la Nota debe ser mayor a 0')
                             ->danger()
@@ -58,7 +57,7 @@ class EditCreditNote extends EditRecord
 
                     $documentType = $this->data['document_type_id'];
                     if ($documentType == "") {
-                        PageAlert::make('No se puede finalizar la venta')
+                        Notification::make()
                             ->title('Tipo de documento')
                             ->body('No se puede finalizar la venta, selecciona el tipo de documento a emitir')
                             ->danger()
@@ -69,7 +68,7 @@ class EditCreditNote extends EditRecord
 
 //                    $openedCashBox = (new GetCashBoxOpenedService())->getOpenCashBox(false);
 //                    if (!$openedCashBox) {
-//                        PageAlert::make('No se puede finalizar la venta')
+//                        Notification::make()
 //                            ->title('Caja cerrada')
 //                            ->body('No se puede finalizar la NOTA porque no hay caja abierta')
 //                            ->danger()

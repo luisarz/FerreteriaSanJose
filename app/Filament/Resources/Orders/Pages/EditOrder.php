@@ -10,7 +10,6 @@ use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
