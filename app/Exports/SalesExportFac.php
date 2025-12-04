@@ -93,7 +93,9 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
             ->orderBy('operation_date', 'asc')
             ->with(['dteProcesado' => function ($query) {
                 $query->select('sales_invoice_id', 'num_control', 'selloRecibido', 'codigoGeneracion', 'fhProcesamiento', 'estado', 'descripcionMsg')
-                    ->where('estado', 'PROCESADO');
+                    ->whereIn('estado', ['PROCESADO', 'PENDIENTE'])
+                    ->orderByRaw("FIELD(estado, 'PROCESADO', 'PENDIENTE')")
+                    ->limit(1);
             },
                 'documenttype', 'customer', 'billingModel', 'salescondition', 'seller'])
             ->get()
