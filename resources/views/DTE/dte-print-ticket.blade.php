@@ -107,26 +107,17 @@
             margin-bottom: 3px;
         }
 
-        .tabla-productos .item-detalle {
-            display: flex;
-            justify-content: space-between;
+        .tabla-productos .item-detalle-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 9px;
-            padding-left: 10px;
+            margin-left: 10px;
         }
 
-        .tabla-productos .item-detalle span:first-child {
-            text-align: left;
-            flex: 1;
-        }
-
-        .tabla-productos .item-detalle span:nth-child(2) {
-            text-align: center;
-            flex: 1;
-        }
-
-        .tabla-productos .item-detalle span:last-child {
-            text-align: right;
-            flex: 1;
+        .tabla-productos .item-detalle-table td {
+            padding: 2px 5px;
+            border: none;
+            width: 33.33%;
         }
 
         .footer {
@@ -260,11 +251,13 @@
                 <div class="item-descripcion">
                     {{ $item['cantidad'] }} x {{ $item['descripcion'] }}
                 </div>
-                <div class="item-detalle">
-                    <span>P.Unit: ${{ number_format($item['precioUni'], 2) }}</span>
-                    <span>@if($item['montoDescu'] > 0)Desc: ${{ number_format($item['montoDescu'], 2) }}@else&nbsp;@endif</span>
-                    <span><strong>${{ number_format($item['ventaGravada'] ?? $item['compra'] ?? 0, 2) }}</strong></span>
-                </div>
+                <table class="item-detalle-table">
+                    <tr>
+                        <td style="text-align: left;">P.Unit: ${{ number_format($item['precioUni'], 2) }}</td>
+                        <td style="text-align: center;">@if($item['montoDescu'] > 0)Desc: ${{ number_format($item['montoDescu'], 2) }}@endif</td>
+                        <td style="text-align: right;"><strong>${{ number_format($item['ventaGravada'] ?? $item['compra'] ?? 0, 2) }}</strong></td>
+                    </tr>
+                </table>
             </div>
         @endforeach
     </div>
