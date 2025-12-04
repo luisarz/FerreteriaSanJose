@@ -31,7 +31,6 @@ class SalesExportCCF implements FromCollection, WithHeadings, WithEvents
     public function headings(): array
     {
         return [
-            'ID Venta',
             'Fecha Emisión',
             'Clase de Documento',
             'Tipo de Documento',
@@ -88,7 +87,6 @@ class SalesExportCCF implements FromCollection, WithHeadings, WithEvents
                 $this->totalVenta += $sale->total;
 
                 return [
-                    'id_venta' => $sale->id,
                     'fecha' => $sale->fecha,
                     'clase_documento' => $this->documentType,
                     'tipo_documento' => 'Factura', // Ajusta según sea necesario
