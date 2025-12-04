@@ -32,6 +32,7 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
     public function headings(): array
     {
         return [
+            'ID Venta',
             'Fecha',
             'Clase',
             'Tipo',
@@ -140,6 +141,7 @@ class SalesExportFac implements FromCollection, WithHeadings, WithEvents, WithCo
 
 
                 return [
+                    'id_venta' => $sale->id,
                     'fecha' =>date('d/m/Y', strtotime($sale->fecha)),
 //                    'fecha' => Carbon::parse($sale->operation_date)->format('d/m/Y'),
                     'document_type' => '4',
