@@ -61,7 +61,6 @@ class ListOrders extends ListRecords
                 ->label('Anuladas')
                 ->badge($anuladas)
                 ->badgeColor('danger')
-                ->iconSize('lg')
                 ->icon('heroicon-o-archive-box-x-mark')
                 ->modifyQueryUsing(function (Builder $query) {
                     return $query->where('operation_type', "Order")
