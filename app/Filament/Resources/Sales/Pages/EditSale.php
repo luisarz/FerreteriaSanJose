@@ -19,7 +19,6 @@ use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Service\GetCashBoxOpenedService;
-use EightyNine\FilamentPageAlerts\PageAlert;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
@@ -306,7 +305,7 @@ class EditSale extends EditRecord
                 ])
                 ->action(function (DeleteAction $delete) {
                     if ($this->record->is_dte) {
-                        PageAlert::make()
+                        Notification::make()
                             ->title('Error al anular venta')
                             ->body('No se puede cancelar una venta con DTE.')
                             ->danger()
