@@ -17,7 +17,7 @@ use App\Filament\Resources\Cashboxes\Pages\CreateCashbox;
 use App\Filament\Resources\Cashboxes\Pages\EditCashbox;
 use App\Filament\Resources\CashboxResource\Pages;
 use App\Filament\Resources\CashboxResource\RelationManagers;
-use App\Filament\Resources\CashBoxResource\RelationManagers\CorrelativesRelationManager;
+use App\Filament\Resources\Cashboxes\RelationManagers\CorrelativesRelationManager;
 use App\Models\CashBox;
 use App\Models\CashBoxOpen;
 use Filament\Forms;

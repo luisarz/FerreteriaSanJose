@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\CashBoxResource\RelationManagers;
+namespace App\Filament\Resources\Cashboxes\RelationManagers;
 
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;

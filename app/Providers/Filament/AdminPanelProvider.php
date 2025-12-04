@@ -2,7 +2,7 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\pages\Dashboard;
+use App\Filament\Pages\Dashboard;
 use App\Filament\Resources\Sales\Widgets\ChartWidgetSales;
 use Filafly\Themes\Brisk\BriskTheme;
 use Filament\Pages\Enums\SubNavigationPosition;
