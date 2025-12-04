@@ -154,6 +154,9 @@
     </style>
 </head>
 <body>
+@php
+    $ext = $datos['DTE']['extencion'] ?? $datos['DTE']['extension'] ?? null;
+@endphp
 <!-- Header Empresa -->
 <div class="header" style="border: 0px solid #ccc; border-radius: 10px; padding: 0px; font-family: Arial, sans-serif;">
     <table style="width: 100%; border-collapse: collapse;">
@@ -227,6 +230,12 @@
                                     </td>
                                     <td style="text-align: left; padding: 5px 6px; color: #333; font-size: 10.5px; text-transform: lowercase; line-height: 1.3;">{{ $datos['empresa']['correo'] ?? '' }}</td>
                                 </tr>
+                                <tr style="background-color: #ffffff;">
+                                    <td style="text-align: left; padding: 5px 6px; font-weight: bold; color: #57595B; font-size: 10px; line-height: 1.3; vertical-align: top;">
+                                        VENDEDOR:
+                                    </td>
+                                    <td style="text-align: left; padding: 5px 6px; color: #333; font-size: 9.5px; text-transform: uppercase; line-height: 1.3;">{{ $ext['nombEntrega'] ?? '' }}</td>
+                                </tr>
                             </table>
                         </td>
                     </tr>
@@ -298,6 +307,7 @@
                             }
                         }
                         $creditDays = $variables['CREDIT_DAYS'] ?? '-';
+                        $vendedor = $variables['VENDEDOR'] ?? '-';
                     @endphp
                     <tr>
                         <td colspan="2" style="text-align: center; padding: 8px 4px; border: none;">
@@ -414,10 +424,7 @@
                         </td>
                     </tr>
                     <tr>
-                        @php
-                            $ext = $datos['DTE']['extencion'] ?? $datos['DTE']['extension'] ?? null;
-                        @endphp
-                        <td>Entregado por: {{ $ext['nombEntrega']??'S/N' }}</td>
+                        <td>Entregado por:</td>
                         <td>Recibido por:</td>
                     </tr>
                     <tr>
